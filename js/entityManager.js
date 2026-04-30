@@ -164,6 +164,13 @@ export function resetLamps() {
         l.style.boxShadow = 'none';
         l.style.transition = 'background-color 0s linear, box-shadow 0s linear';
     });
+    
+    // Wichtig: Auch den gespeicherten Zustand zurücksetzen!
+    Object.keys(lampStates).forEach(id => {
+        lampStates[id].isOff = true;
+        lampStates[id].brightness = 0;
+    });
+
     // Reset browser states
     document.querySelectorAll('.entity-body span').forEach(s => s.innerText = 'Aus');
     document.querySelectorAll('.entity-badge').forEach(b => {
@@ -186,16 +193,22 @@ function renderEntityBrowser(uniqueIds) {
     const groupNodes = {}; 
     
     uniqueIds.forEach(id => {
-        let isChild = false;
+        if (groups[id]) {
+            groupNodes[id] = groups[id]; 
+        }
+        
+        let isChildOf = [];
         Object.keys(groups).forEach(g => {
-            if (groups[g].includes(id)) isChild = true;
+            if (groups[g].includes(id)) isChildOf.push(g);
         });
         
-        if (groups[id]) {
-            // Zeige nur Kinder an, die auch im Skript existieren (optional, aber übersichtlicher)
-            // groupNodes[id] = groups[id].filter(c => uniqueIds.includes(c));
-            groupNodes[id] = groups[id]; // Wir zeigen alle Kinder der Gruppe
-        } else if (!isChild) {
+        if (isChildOf.length > 0) {
+            isChildOf.forEach(g => {
+                if (!groupNodes[g]) {
+                    groupNodes[g] = groups[g];
+                }
+            });
+        } else if (!groups[id]) {
             standalone.push(id);
         }
     });

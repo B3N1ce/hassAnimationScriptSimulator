@@ -2,13 +2,16 @@
 
 import { initEntityManager, updateLampEntities, resetLamps, setColorCurve, renderVariables } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
-import { startSimulation, stopSimulation } from './simulator.js';
+import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation } from './simulator.js';
 
 let isPlaying = false;
+let isPausedState = false;
 let editor;
 let colorPicker;
 
 const toggleBtn = document.getElementById('toggle-btn');
+const pauseBtn = document.getElementById('pause-btn');
+const stopBtn = document.getElementById('stop-btn');
 const errorBox = document.getElementById('error-msg');
 const room = document.getElementById('room');
 const btnToggleEntities = document.getElementById('btn-toggle-entities');
@@ -55,8 +58,61 @@ function init() {
         }
     });
 
-    // 6. Toggle Play/Stop
-    toggleBtn.addEventListener('click', togglePlayState);
+    // 6. Toggle Play/Stop/Pause
+    function setUIRunning(running, paused = false) {
+        isPlaying = running;
+        isPausedState = paused;
+        editor.setOption('readOnly', running);
+        
+        const wrapper = editor.getWrapperElement();
+        if (running) {
+            wrapper.classList.add('disabled-dim');
+            toggleBtn.style.display = 'none';
+            pauseBtn.style.display = 'block';
+            stopBtn.style.display = 'block';
+            pauseBtn.innerHTML = paused ? '▶ Weiter' : '⏸ Pause';
+        } else {
+            wrapper.classList.remove('disabled-dim');
+            toggleBtn.style.display = 'block';
+            pauseBtn.style.display = 'none';
+            stopBtn.style.display = 'none';
+        }
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        if (isPlaying) return;
+        
+        const doc = validateAndSync();
+        if (!doc) return;
+
+        resetLamps();
+        setUIRunning(true, false);
+
+        startSimulation(doc, () => {
+            setUIRunning(false, false);
+            resetLamps();
+        }, (err) => {
+            showError("Skript Fehler: " + err.message);
+            setUIRunning(false, false);
+            resetLamps();
+        });
+    });
+
+    pauseBtn.addEventListener('click', () => {
+        if (isPausedState) {
+            resumeSimulation();
+            setUIRunning(true, false);
+        } else {
+            pauseSimulation();
+            setUIRunning(true, true);
+        }
+    });
+
+    stopBtn.addEventListener('click', () => {
+        stopSimulation();
+        resetLamps();
+        setUIRunning(false, false);
+    });
     
     // 7. Entity Browser Toggle
     btnToggleEntities.addEventListener('click', () => {
@@ -112,9 +168,21 @@ function validateAndSync() {
     const code = editor.getValue();
     updateLampEntities(code, room);
     
+    // Wenn das Editor-Fenster komplett leer ist, verstecke Fehler und zeige nichts an.
+    if (!code.trim()) {
+        renderVariables({});
+        showError(null);
+        if (!isPlaying) {
+            toggleBtn.disabled = false;
+            toggleBtn.classList.remove('btn-disabled');
+        }
+        return null;
+    }
+
     try {
         const doc = jsyaml.load(code);
-        renderVariables(doc.variables || {});
+        const vars = (doc && typeof doc === 'object') ? doc.variables : {};
+        renderVariables(vars || {});
         showError(null);
         if (!isPlaying) {
             toggleBtn.disabled = false;
@@ -140,39 +208,7 @@ function showError(msg) {
     }
 }
 
-function togglePlayState() {
-    if (!isPlaying) {
-        const doc = validateAndSync();
-        if (!doc) return;
-        
-        isPlaying = true;
-        toggleBtn.innerText = "◼ Stoppen";
-        toggleBtn.className = "btn-stop";
-        editor.setOption("readOnly", "nocursor"); // Editor sperren
-        
-        startSimulation(doc, 
-            () => { // onComplete
-                resetPlayState();
-            },
-            (err) => { // onError
-                resetPlayState();
-                showError("Laufzeitfehler:\n" + err.message);
-            }
-        );
-    } else {
-        stopSimulation();
-        resetPlayState();
-        resetLamps();
-    }
-}
 
-function resetPlayState() {
-    isPlaying = false;
-    toggleBtn.innerText = "▶ Animation Starten";
-    toggleBtn.className = "btn-start";
-    toggleBtn.disabled = false;
-    editor.setOption("readOnly", false);
-}
 
 // App starten, sobald DOM bereit
 if (document.readyState === 'loading') {

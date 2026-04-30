@@ -19,8 +19,11 @@
 
 <div id="sidebar">
     <div id="toolbar">
-        <div id="error-msg"></div>
-        <button id="toggle-btn" class="btn-start">▶ Animation Starten</button>
+        <div id="toolbar-actions" style="display: flex;">
+            <button id="toggle-btn" class="btn-start" style="flex: 1;">▶ Starten</button>
+            <button id="pause-btn" class="btn-start btn-pause" style="display: none; flex: 1;">⏸ Pause</button>
+            <button id="stop-btn" class="btn-start btn-stop" style="display: none; flex: 1;">⏹ Stopp</button>
+        </div>
         
         <div id="color-tool">
             <div class="color-tabs">
@@ -59,6 +62,7 @@
         </div>
     </div>
     <textarea id="code-editor"></textarea>
+    <div id="error-msg" style="margin-bottom: 0; border-radius: 0; border-left: none; border-right: none;"></div>
     <div id="sidebar-footer" style="padding: 10px; background: #1e1e24; display: flex; gap: 10px; border-top: 1px solid #444; flex-shrink: 0;">
         <button id="btn-copy-code" class="btn-secondary" style="flex: 1;">📋 Kopieren</button>
         <button id="btn-save-code" class="btn-secondary" style="flex: 1;">💾 Speichern (.yaml)</button>
@@ -83,7 +87,7 @@
     <div id="room"></div>
     
     <!-- Entity Browser Overlay -->
-    <div id="entity-browser">
+    <div id="entity-browser" class="open">
         <div class="browser-header">
             <span class="browser-title">Umgebung</span>
             <button class="close-btn" id="btn-close-entities">&times;</button>

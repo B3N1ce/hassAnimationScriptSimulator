@@ -3,13 +3,24 @@ import { setLampColor, getGroups } from './entityManager.js';
 import { calculateRgbFromInputs } from './colorPicker.js';
 
 let playSessionId = 0;
+let isPaused = false;
 
 export function stopSimulation() {
-    playSessionId++; 
+    playSessionId++;
+    isPaused = false;
+}
+
+export function pauseSimulation() {
+    isPaused = true;
+}
+
+export function resumeSimulation() {
+    isPaused = false;
 }
 
 export function startSimulation(doc, onComplete, onError) {
     playSessionId++;
+    isPaused = false;
     const sid = playSessionId;
     
     const steps = doc.sequence || (Array.isArray(doc) ? doc : [doc]);
@@ -48,11 +59,28 @@ function checkCondition(conds, vars) {
     return true;
 }
 
+async function pausableDelay(ms, sid) {
+    let elapsed = 0;
+    const interval = 50;
+    while (elapsed < ms) {
+        if (sid !== playSessionId) return;
+        if (!isPaused) {
+            elapsed += interval;
+        }
+        await new Promise(r => setTimeout(r, interval));
+    }
+}
+
 async function executeSteps(steps, sid, vars = {}) {
     if (!steps || sid !== playSessionId) return;
     const list = Array.isArray(steps) ? steps : [steps];
 
     for (const s of list) {
+        if (sid !== playSessionId) return;
+        
+        while (isPaused && sid === playSessionId) {
+            await new Promise(r => setTimeout(r, 100));
+        }
         if (sid !== playSessionId) return;
 
         try {
@@ -99,6 +127,11 @@ async function executeSteps(steps, sid, vars = {}) {
                 let count = 0;
                 
                 while (sid === playSessionId) {
+                    while (isPaused && sid === playSessionId) {
+                        await new Promise(r => setTimeout(r, 100));
+                    }
+                    if (sid !== playSessionId) return;
+
                     // While Loop
                     if (r.while) {
                         if (!checkCondition(r.while, vars)) break;
@@ -130,8 +163,13 @@ async function executeSteps(steps, sid, vars = {}) {
                     await new Promise(res => setTimeout(res, 10)); 
                 }
             }
+            
+            // 6. Wait Template (Mock)
+            else if (s.wait_template) {
+                await pausableDelay(1000, sid);
+            }
 
-            // 6. Delay
+            // 7. Delay
             else if (s.delay) {
                 let ms = 0;
                 if (typeof s.delay === 'object') {
@@ -150,12 +188,7 @@ async function executeSteps(steps, sid, vars = {}) {
                     }
                 }
                 
-                // Sleep with interrupt checks
-                const end = Date.now() + ms;
-                while(Date.now() < end) {
-                    if (sid !== playSessionId) return;
-                    await new Promise(r => setTimeout(r, Math.min(50, end - Date.now())));
-                }
+                await pausableDelay(ms, sid);
             }
 
             // 7. Actions / Services
