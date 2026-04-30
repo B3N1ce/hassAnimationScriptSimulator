@@ -1,6 +1,5 @@
-// js/simulator.js
 import { resolveTemplate } from './templateEngine.js';
-import { setLampColor } from './entityManager.js';
+import { setLampColor, getGroups } from './entityManager.js';
 import { calculateRgbFromInputs } from './colorPicker.js';
 
 let playSessionId = 0;
@@ -169,19 +168,36 @@ async function executeSteps(steps, sid, vars = {}) {
                 const transition = Math.max(0, parseFloat(resolveTemplate(data.transition || 0, vars)) || 0);
                 
                 const isOff = actionName.includes('turn_off');
-                const { rgbString, brightness } = calculateRgbFromInputs(data, vars, resolveTemplate);
+                const { rgbArray, brightness } = calculateRgbFromInputs(data, vars, resolveTemplate);
+                
+                const groups = getGroups();
+                let expandedIds = [];
 
                 ids.forEach(id => {
                     // Resolve Template on Entity IDs
                     const resolvedId = resolveTemplate(id, vars);
                     
+                    const processId = (rId) => {
+                        rId = rId.trim();
+                        if (groups[rId]) {
+                            expandedIds.push(...groups[rId]); // Add all children of the group
+                        } else {
+                            expandedIds.push(rId);
+                        }
+                    };
+                    
                     if (Array.isArray(resolvedId)) {
-                        resolvedId.forEach(rId => setLampColor(rId, rgbString, transition, brightness, isOff));
+                        resolvedId.forEach(processId);
                     } else if (typeof resolvedId === 'string' && resolvedId.includes(',')) {
-                        resolvedId.split(',').forEach(rId => setLampColor(rId.trim(), rgbString, transition, brightness, isOff));
+                        resolvedId.split(',').forEach(processId);
                     } else {
-                        setLampColor(resolvedId, rgbString, transition, brightness, isOff);
+                        processId(resolvedId);
                     }
+                });
+
+                // Apply colors to all expanded (resolved) entities
+                expandedIds.forEach(id => {
+                    setLampColor(id, rgbArray, transition, brightness, isOff);
                 });
             }
         } catch (err) {

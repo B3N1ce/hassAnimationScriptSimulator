@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, setColorCurve, renderVariables } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation } from './simulator.js';
 
@@ -14,6 +14,9 @@ const room = document.getElementById('room');
 const btnToggleEntities = document.getElementById('btn-toggle-entities');
 const btnCloseEntities = document.getElementById('btn-close-entities');
 const entityBrowser = document.getElementById('entity-browser');
+const selColorCurve = document.getElementById('sel-color-curve');
+const btnCopyCode = document.getElementById('btn-copy-code');
+const btnSaveCode = document.getElementById('btn-save-code');
 
 function init() {
     // 1. Init CodeMirror
@@ -63,6 +66,44 @@ function init() {
         entityBrowser.classList.remove('open');
     });
 
+    // 8. Color Curve Selector
+    selColorCurve.addEventListener('change', (e) => {
+        setColorCurve(e.target.value);
+        if (!isPlaying) {
+            validateAndSync();
+        }
+    });
+
+    // 9. Copy & Save
+    btnCopyCode.addEventListener('click', () => {
+        navigator.clipboard.writeText(editor.getValue()).then(() => {
+            const orig = btnCopyCode.innerText;
+            btnCopyCode.innerText = "✅ Kopiert!";
+            setTimeout(() => btnCopyCode.innerText = orig, 2000);
+        });
+    });
+
+    btnSaveCode.addEventListener('click', () => {
+        const code = editor.getValue();
+        let filename = "animation.yaml";
+        try {
+            const doc = jsyaml.load(code);
+            if (doc && doc.alias) {
+                filename = doc.alias.replace(/[^a-z0-9_]/gi, '_').toLowerCase() + ".yaml";
+            }
+        } catch(e) {}
+        
+        const blob = new Blob([code], { type: "text/yaml" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
     // Initiale Synchronisation
     validateAndSync();
 }
@@ -73,6 +114,7 @@ function validateAndSync() {
     
     try {
         const doc = jsyaml.load(code);
+        renderVariables(doc.variables || {});
         showError(null);
         if (!isPlaying) {
             toggleBtn.disabled = false;

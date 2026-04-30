@@ -286,6 +286,7 @@ export function calculateRgbFromInputs(data, vars, resolveTemplate) {
     
     return {
         rgbString: `rgb(${Math.round(rgb[0])}, ${Math.round(rgb[1])}, ${Math.round(rgb[2])})`,
+        rgbArray: [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2])],
         brightness: b
     };
 }

@@ -69,14 +69,40 @@ export function resolveTemplate(val, vars = {}) {
         return `range(${p1}, ${p2}) | random`; 
     });
 
+    // NEU: Wenn das Template exakt ein Ausdruck ist (z.B. "{{ farbliste }}")
+    // Nutzen wir den "dump" filter, um Arrays/Objekte als JSON-String zu erhalten 
+    // und stellen so den ursprünglichen Typen wieder her.
+    const exactMatch = templateString.match(/^\{\{\s*(.*?)\s*\}\}$/);
+    if (exactMatch) {
+        try {
+            // Wichtig: In Klammern setzen, damit Operatoren (+, -) vor dem | dump Filter ausgeführt werden!
+            // Sonst wird aus "1 | int + 1 | dump" -> 1 + "1" -> "11" -> 11 Sekunden Delay
+            let dumped = env.renderString(`{{ (${exactMatch[1]}) | dump | safe }}`, vars);
+            if (dumped && dumped.trim() !== '') {
+                let parsed = JSON.parse(dumped);
+                // Wenn es kein String ist (also Array, Object, Number, Boolean), direkt zurückgeben
+                if (typeof parsed !== 'string') {
+                    return parsed;
+                } else {
+                    // Bei Strings geben wir den String in die normale Evaluierung (für true/false/float fallback)
+                    templateString = parsed;
+                }
+            }
+        } catch (e) {
+            // Ignorieren und Fallback auf normalen Render
+        }
+    }
+
     try {
         let rendered = env.renderString(templateString, vars);
         
-        rendered = rendered.trim();
-        if (rendered.toLowerCase() === 'true') return true;
-        if (rendered.toLowerCase() === 'false') return false;
-        // Float conversion if it's purely a number
-        if (!isNaN(rendered) && rendered !== "") return parseFloat(rendered);
+        if (typeof rendered === 'string') {
+            rendered = rendered.trim();
+            if (rendered.toLowerCase() === 'true') return true;
+            if (rendered.toLowerCase() === 'false') return false;
+            // Float conversion if it's purely a number
+            if (!isNaN(rendered) && rendered !== "") return parseFloat(rendered);
+        }
         
         return rendered;
     } catch (e) {

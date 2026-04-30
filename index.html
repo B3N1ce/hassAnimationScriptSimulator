@@ -59,13 +59,25 @@
         </div>
     </div>
     <textarea id="code-editor"></textarea>
+    <div id="sidebar-footer" style="padding: 10px; background: #1e1e24; display: flex; gap: 10px; border-top: 1px solid #444; flex-shrink: 0;">
+        <button id="btn-copy-code" class="btn-secondary" style="flex: 1;">📋 Kopieren</button>
+        <button id="btn-save-code" class="btn-secondary" style="flex: 1;">💾 Speichern (.yaml)</button>
+    </div>
 </div>
 
 <div id="resizer"></div>
 
 <div id="preview-side">
     <div id="preview-toolbar">
-        <span style="font-size: 12px; color: #888;">Live Preview</span>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <span style="font-size: 12px; color: #888;">Live Preview</span>
+            <select id="sel-color-curve" style="background: #1e1e24; color: #fff; border: 1px solid #444; padding: 2px 5px; font-size: 11px; border-radius: 3px;">
+                <option value="linear">LED-Kurve: Linear</option>
+                <option value="gamma22">LED-Kurve: Gamma 2.2 (Standard)</option>
+                <option value="gamma28">LED-Kurve: Gamma 2.8 (Real LED)</option>
+                <option value="cie">LED-Kurve: CIE L* (Perceptual)</option>
+            </select>
+        </div>
         <button id="btn-toggle-entities" class="btn-secondary">Entitäten Browser</button>
     </div>
     <div id="room"></div>
@@ -73,11 +85,16 @@
     <!-- Entity Browser Overlay -->
     <div id="entity-browser">
         <div class="browser-header">
-            <span class="browser-title">Entitäten</span>
+            <span class="browser-title">Umgebung</span>
             <button class="close-btn" id="btn-close-entities">&times;</button>
         </div>
+        <div class="browser-section-title">Lichter & Gruppen</div>
         <div class="entity-list" id="entity-list">
             <!-- Entitäten werden hier generiert -->
+        </div>
+        <div class="browser-section-title" style="margin-top: auto;">Variablen</div>
+        <div class="entity-list" id="variable-list" style="max-height: 40%; min-height: 150px; background: #1a1a1a;">
+            <!-- Variablen werden hier generiert -->
         </div>
     </div>
 </div>
