@@ -2,38 +2,18 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>HA Aurora Studio v11 - Safety Brake</title>
+    <title>HA Aurora Studio v12 - Modular</title>
+    <!-- CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/yaml/yaml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
-    <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', system-ui; background: #121212; color: #ececec; overflow: hidden; }
-        #sidebar { width: 480px; min-width: 300px; display: flex; flex-direction: column; background: #282a36; z-index: 10; border-right: 1px solid #444; }
-        #resizer { width: 6px; cursor: col-resize; background: #333; z-index: 20; }
-        #resizer:hover { background: #50fa7b; }
-        #toolbar { padding: 15px; background: #1e1e24; display: flex; flex-direction: column; gap: 10px; }
-        #error-msg { background: #ff555522; color: #ff5555; padding: 8px; border-radius: 4px; font-size: 11px; display: none; border: 1px solid #ff5555; white-space: pre-wrap; font-family: monospace; }
-        #toggle-btn { width: 100%; padding: 14px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; text-transform: uppercase; }
-        .btn-start { background: #50fa7b; color: #282a36; }
-        .btn-stop { background: #ff5555; color: white; }
-        .btn-disabled { background: #444 !important; color: #888 !important; cursor: not-allowed !important; opacity: 0.6; }
-        #color-tool { background: #343746; padding: 12px; border-radius: 8px; border: 1px solid #444; }
-        .color-inputs { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
-        .input-group { display: flex; gap: 5px; align-items: center; }
-        input[type="text"], input[type="number"] { background: #1e1e24; border: 1px solid #555; color: #fff; padding: 4px; border-radius: 3px; font-family: monospace; font-size: 11px; width: 100%; }
-        input[type="color"] { border: none; width: 40px; height: 40px; cursor: pointer; background: none; }
-        label { font-size: 10px; color: #aaa; min-width: 25px; }
-        .snippets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .code-snippet { background: #282a36; padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: #bd93f9; cursor: pointer; border: 1px solid #444; text-align: center; }
-        .CodeMirror { flex-grow: 1; font-size: 13px; }
-        #preview-side { flex-grow: 1; position: relative; background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%); user-select: none; }
-        #room { width: 100%; height: 100%; position: relative; }
-        .lamp { position: absolute; width: 65px; height: 65px; background: #222; border-radius: 50%; border: 2px solid #444; cursor: move; display: flex; align-items: center; justify-content: center; z-index: 10; transform: translate(-50%, -50%); transition: background-color 0s, box-shadow 0s; }
-        .lamp-label { position: absolute; bottom: -25px; font-size: 11px; color: #888; font-weight: bold; pointer-events: none; text-align: center; width: 120px; }
-    </style>
+    <!-- Nunjucks for Jinja2 parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.2.4/nunjucks.min.js"></script>
 </head>
 <body>
 
@@ -41,314 +21,69 @@
     <div id="toolbar">
         <div id="error-msg"></div>
         <button id="toggle-btn" class="btn-start">▶ Animation Starten</button>
+        
         <div id="color-tool">
+            <div class="color-tabs">
+                <div class="color-tab active" data-mode="rgb">RGB</div>
+                <div class="color-tab" data-mode="xy">XY</div>
+                <div class="color-tab" data-mode="hs">HS</div>
+            </div>
             <div class="color-inputs">
-                <input type="color" id="picker" value="#00ffcc">
+                <input type="color" id="picker-color" value="#00ffcc">
                 <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <div class="input-group"><label>RGB</label><input type="number" id="in-r"><input type="number" id="in-g"><input type="number" id="in-b"></div>
-                    <div class="input-group"><label>XY</label><input type="text" id="in-x"><input type="text" id="in-y"></div>
+                    <div class="input-group" id="group-rgb">
+                        <label>RGB</label>
+                        <input type="number" id="in-r" min="0" max="255" value="0">
+                        <input type="number" id="in-g" min="0" max="255" value="255">
+                        <input type="number" id="in-b" min="0" max="255" value="204">
+                    </div>
+                    <div class="input-group" id="group-xy" style="display:none;">
+                        <label>XY</label>
+                        <input type="number" id="in-x" step="0.001" value="0.171">
+                        <input type="number" id="in-y" step="0.001" value="0.342">
+                    </div>
+                    <div class="input-group" id="group-hs" style="display:none;">
+                        <label>HS</label>
+                        <input type="number" id="in-h" min="0" max="360" value="168">
+                        <input type="number" id="in-s" min="0" max="100" value="100">
+                    </div>
                 </div>
             </div>
             <div class="snippets-grid">
-                <div class="code-snippet" id="s-rgb">rgb_color: [...]</div>
-                <div class="code-snippet" id="s-xy">xy_color: [...]</div>
-                <div class="code-snippet" id="s-bri">brightness_pct: 100</div>
-                <div class="code-snippet" id="s-hex">hex: "#..."</div>
+                <div class="code-snippet" id="btn-insert-color">In Editor einfügen</div>
+            </div>
+            <div class="color-favorites" id="favorites-container">
+                <button class="favorite-add" id="btn-add-favorite" title="Aktuelle Farbe speichern">+</button>
+                <!-- Favoriten werden hier eingefügt -->
             </div>
         </div>
     </div>
     <textarea id="code-editor"></textarea>
 </div>
+
 <div id="resizer"></div>
-<div id="preview-side"><div id="room"></div></div>
 
-<script>
-    let lamps = {};
-    let isPlaying = false;
-    let playSessionId = 0;
+<div id="preview-side">
+    <div id="preview-toolbar">
+        <span style="font-size: 12px; color: #888;">Live Preview</span>
+        <button id="btn-toggle-entities" class="btn-secondary">Entitäten Browser</button>
+    </div>
+    <div id="room"></div>
+    
+    <!-- Entity Browser Overlay -->
+    <div id="entity-browser">
+        <div class="browser-header">
+            <span class="browser-title">Entitäten</span>
+            <button class="close-btn" id="btn-close-entities">&times;</button>
+        </div>
+        <div class="entity-list" id="entity-list">
+            <!-- Entitäten werden hier generiert -->
+        </div>
+    </div>
+</div>
 
-    // CodeMirror Initialisierung
-    const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
-        mode: 'yaml', theme: 'dracula', lineNumbers: true
-    });
+<!-- Main Application Module -->
+<script type="module" src="js/app.js"></script>
 
-    const toggleBtn = document.getElementById('toggle-btn');
-    const errorBox = document.getElementById('error-msg');
-
-    // --- NEU: FARB-TOOL LOGIK (War im HTML, aber ohne Funktion) ---
-    const picker = document.getElementById('picker');
-    const inR = document.getElementById('in-r'), inG = document.getElementById('in-g'), inB = document.getElementById('in-b');
-    const inX = document.getElementById('in-x'), inY = document.getElementById('in-y');
-
-    picker.oninput = () => {
-        const hex = picker.value;
-        const r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
-        inR.value = r; inG.value = g; inB.value = b;
-        const [x, y] = rgbToXy(r, g, b);
-        inX.value = x.toFixed(3); inY.value = y.toFixed(3);
-    };
-
-    document.querySelectorAll('.code-snippet').forEach(s => {
-        s.onclick = () => {
-            let text = "";
-            if(s.id === 's-rgb') text = `rgb_color: [${inR.value}, ${inG.value}, ${inB.value}]`;
-            if(s.id === 's-xy') text = `xy_color: [${inX.value}, ${inY.value}]`;
-            if(s.id === 's-bri') text = `brightness_pct: 100`;
-            if(s.id === 's-hex') text = `hex: "${picker.value}"`;
-            editor.replaceSelection(text);
-        };
-    });
-
-    // Hilfsfunktion für XY Umrechnung
-    function rgbToXy(r, g, b) {
-        r /= 255; g /= 255; b /= 255;
-        r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-        g = (g > 0.04045) ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-        b = (b > 0.04045) ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-        let X = r * 0.4124 + g * 0.3576 + b * 0.1805;
-        let Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
-        let Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
-        return [X / (X + Y + Z) || 0, Y / (X + Y + Z) || 0];
-    }
-
-    function xyToRgbValues(x, y, bri = 1) {
-        // Safety Guard: Verhindere Division durch Null oder ungültige Koordinaten
-        x = Math.max(0.001, Math.min(0.999, parseFloat(x)));
-        y = Math.max(0.001, Math.min(0.999, parseFloat(y)));
-
-        let z = 1.0 - x - y;
-        let Y = Math.max(0.01, bri); // Mindesthelligkeit von 1%, damit es nicht schwarz wird
-        let X = (Y / y) * x;
-        let Z = (Y / y) * z;
-
-        let r = X * 1.656492 - Y * 0.354851 - Z * 0.255038;
-        let g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
-        let b = X * 0.051713 - Y * 0.121364 + Z * 1.011530;
-
-        // Gamma-Korrektur und Clamp auf 0-255
-        const comp = (c) => {
-            c = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1/2.4) - 0.055;
-            return Math.round(Math.max(0, Math.min(1, c)) * 255);
-        };
-
-        let finalR = comp(r);
-        let finalG = comp(g);
-        let finalB = comp(b);
-
-        // Ultrawichtiger Fix: Falls das Ergebnis (0,0,0) ist, obwohl die Lampe an sein soll,
-        // geben wir ein dunkles Grau zurück, anstatt die Lampe "verschwinden" zu lassen.
-        if (finalR + finalG + finalB === 0 && bri > 0) return [50, 50, 50];
-
-        return [finalR, finalG, finalB];
-    }
-
-    // --- VERBESSERTER TEMPLATE PARSER (Kombiniert alles) ---
-    function resolveTemplate(val, vars = {}) {
-        if (Array.isArray(val)) return val.map(v => resolveTemplate(v, vars));
-        if (typeof val !== 'string') return val;
-
-        let processed = val
-            .replace(/range\((\d+),\s*(\d+)\)\s*\|\s*random/g, 'Math.floor(Math.random() * ($2 - $1) + $1)')
-            .replace(/\|\s*int/g, '')
-            .replace(/\|\s*round\((\d+)\)/g, '.toFixed($1)');
-
-        // Support für Listen-Random: [1, 2, 3] | random
-        if (processed.includes('| random') && processed.includes('[')) {
-            processed = processed.replace(/\[(.*?)\]\s*\|\s*random/g, (match, p1) => {
-                const items = p1.split(',').map(s => s.trim());
-                return items[Math.floor(Math.random() * items.length)];
-            });
-        }
-
-        // Komplexer Logik-Block {% ... %}
-        if (processed.includes('{%')) {
-            let jsLogic = processed
-                .replace(/{%\s*set\s+(\w+)\s*=\s*(.*?)\s*%}/g, 'let $1 = $2;')
-                .replace(/{%\s*if\s+(.*?)\s*%}/g, 'if ($1) {')
-                .replace(/{%\s*else\s*%}/g, '} else {')
-                .replace(/{%\s*endif\s*%}/g, '}')
-                .replace(/{{(.*?)}}/g, 'res = $1;');
-            try {
-                const func = new Function(...Object.keys(vars), `let res = ""; ${jsLogic}; return res;`);
-                return func(...Object.values(vars));
-            } catch (e) { return 0; }
-        }
-
-        // Einfaches Template {{ ... }}
-        if (processed.includes('{{')) {
-            return processed.replace(/\{\{(.*?)\}\}/g, (_, m) => {
-                try {
-                    const func = new Function(...Object.keys(vars), `return ${m.trim()}`);
-                    return func(...Object.values(vars));
-                } catch (e) { return 0; }
-            });
-        }
-        return isNaN(processed) || processed.trim() === "" ? processed : parseFloat(processed);
-    }
-
-    async function execute(steps, sid, vars = {}) {
-        if (!steps || sid !== playSessionId) return;
-        const list = Array.isArray(steps) ? steps : (steps.sequence || [steps]);
-
-        for (const s of list) {
-            if (sid !== playSessionId) return;
-
-            try {
-                // 1. Variablen verarbeiten
-                if (s.variables) {
-                    for (let [k, v] of Object.entries(s.variables)) {
-                        vars[k] = resolveTemplate(v, vars);
-                    }
-                }
-
-                // 2. Parallel-Ausführung
-                if (s.parallel) {
-                    await Promise.all(s.parallel.map(b => execute(b.sequence || b, sid, {...vars})));
-                }
-
-                // 3. Repeat-Logik (While / For_Each)
-                else if (s.repeat) {
-                    const r = s.repeat;
-                    while (sid === playSessionId) {
-                        let condition = true;
-                        if (r.while) {
-                            const rawCond = Array.isArray(r.while) ? (r.while[0].value_template || "false") : r.while;
-                            const res = resolveTemplate(rawCond, vars);
-                            condition = (res === true || res === "true" || res === "True");
-                        }
-                        if (!condition) break;
-
-                        if (r.for_each) {
-                            const items = resolveTemplate(r.for_each, vars);
-                            if (Array.isArray(items)) {
-                                for (const item of items) {
-                                    if (sid !== playSessionId) return;
-                                    await execute(r.sequence, sid, { ...vars, repeat: { item: item } });
-                                }
-                            }
-                            break;
-                        } else {
-                            await execute(r.sequence, sid, vars);
-                        }
-                        await new Promise(res => setTimeout(res, 50));
-                    }
-                }
-
-                // 4. Delay
-                else if (s.delay) {
-                    let sec = resolveTemplate(s.delay.seconds || s.delay, vars);
-                    await new Promise(r => setTimeout(r, Math.max(0.01, parseFloat(sec) || 0) * 1000));
-                }
-
-                // 5. Lampen-Aktionen (Turn on/off)
-                else if (s.action || s.service) {
-                    const data = s.data || {};
-                    const target = s.target?.entity_id || s.entity_id || [];
-                    const ids = Array.isArray(target) ? target : [target];
-
-                    const t = Math.max(0, parseFloat(resolveTemplate(data.transition || 0, vars)) || 0);
-                    const b = Math.max(0, Math.min(100, parseFloat(resolveTemplate(data.brightness_pct || 100, vars)) || 100));
-
-                    let col = "rgb(255,255,255)"; // Standard: Weiß
-
-                    if (data.xy_color) {
-                        let xy = resolveTemplate(data.xy_color, vars);
-                        if (typeof xy === 'string') xy = xy.split(',').map(n => parseFloat(n.trim()));
-                        if (Array.isArray(xy) && xy.length >= 2) {
-                            const rgb = xyToRgbValues(xy[0], xy[1], b / 100);
-                            col = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-                        }
-                    } else if (data.rgb_color) {
-                        let rgb = resolveTemplate(data.rgb_color, vars);
-                        if (typeof rgb === 'string') rgb = rgb.split(',').map(n => parseInt(n.trim()));
-                        if (Array.isArray(rgb) && rgb.length >= 3) {
-                            col = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-                        }
-                    }
-
-                    ids.forEach(id => {
-                        if (lamps[id]) {
-                            const isOff = (s.action || s.service).includes('off');
-                            lamps[id].style.transition = `all ${t}s linear`;
-                            lamps[id].style.backgroundColor = isOff ? '#222' : col;
-                            lamps[id].style.boxShadow = isOff ? 'none' : `0 0 ${20 + b / 2}px ${b / 5}px ${col}`;
-                        }
-                    });
-                }
-            } catch (err) {
-                console.error("Fehler im Skript-Schritt:", err, s);
-            }
-        }
-    }
-
-    function updateLampEntities(code) {
-        const foundIds = code.match(/light\.[a-z0-9_]+/g) || [];
-        const uniqueIds = [...new Set(foundIds)];
-        Object.keys(lamps).forEach(id => { if (!uniqueIds.includes(id)) { lamps[id].remove(); delete lamps[id]; } });
-        uniqueIds.forEach((id, index) => {
-            if (!lamps[id]) {
-                const el = document.createElement('div'); el.className = 'lamp';
-                el.style.left = (40 + (index * 100)) + 'px'; el.style.top = '50px';
-                el.innerHTML = `<div class="lamp-label">${id.replace('light.','')}</div>`;
-                document.getElementById('room').appendChild(el);
-                lamps[id] = el;
-                el.onmousedown = (e) => {
-                    let ox = e.clientX - el.offsetLeft, oy = e.clientY - el.offsetTop;
-                    el.style.transition = 'none';
-                    const move = (ev) => { el.style.left = (ev.clientX - ox) + "px"; el.style.top = (ev.clientY - oy) + "px"; };
-                    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
-                    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
-                };
-            }
-        });
-    }
-
-    function validateAndSync() {
-        const code = editor.getValue();
-        updateLampEntities(code);
-        try {
-            const doc = jsyaml.load(code);
-            errorBox.style.display = 'none';
-            toggleBtn.disabled = false;
-            return doc;
-        } catch (e) {
-            errorBox.innerText = "YAML Fehler:\n" + e.message;
-            errorBox.style.display = 'block';
-            toggleBtn.disabled = true;
-            return null;
-        }
-    }
-
-    toggleBtn.onclick = () => {
-        if (!isPlaying) {
-            const doc = validateAndSync();
-            if (!doc) return;
-            isPlaying = true; playSessionId++;
-            toggleBtn.innerText = "◼ Stoppen";
-            toggleBtn.className = "btn-stop";
-            execute(doc.sequence || (Array.isArray(doc) ? doc : [doc]), playSessionId, doc.variables || {});
-        } else {
-            isPlaying = false; playSessionId++;
-            toggleBtn.innerText = "▶ Animation Starten";
-            toggleBtn.className = "btn-start";
-            Object.values(lamps).forEach(l => {
-                l.style.backgroundColor = '#222';
-                l.style.boxShadow = 'none';
-            });
-        }
-    };
-
-    const resizer = document.getElementById('resizer');
-    resizer.onmousedown = () => {
-        document.onmousemove = (e) => {
-            document.getElementById('sidebar').style.width = e.clientX + 'px';
-            editor.refresh();
-        };
-        document.onmouseup = () => document.onmousemove = null;
-    };
-
-    editor.on('change', validateAndSync);
-    validateAndSync();
-</script>
 </body>
 </html>

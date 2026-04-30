@@ -1,0 +1,48 @@
+alias: Badezimmer Dynamischer Farbwechsel
+variables:
+  farbliste:
+    - - 255
+      - 0
+      - 0
+    - - 255
+      - 255
+      - 0
+    - - 0
+      - 255
+      - 0
+    - - 0
+      - 255
+      - 255
+    - - 0
+      - 0
+      - 255
+    - - 255
+      - 0
+      - 255
+  transitiontime: 40
+mode: restart
+sequence:
+  - action: light.turn_on
+    target:
+      entity_id: light.grp_badezimmer_indirekt_01
+    data:
+      rgb_color: "{{ farbliste[0] }}"
+      brightness_pct: 100
+      transition: 1
+  - delay: "00:00:02"
+  - repeat:
+      while:
+        - condition: template
+          value_template: "{{ true }}"
+      sequence:
+        - repeat:
+            for_each: "{{ farbliste }}"
+            sequence:
+              - action: light.turn_on
+                target:
+                  entity_id: light.grp_badezimmer_indirekt_01
+                data:
+                  rgb_color: "{{ repeat.item }}"
+                  transition: "{{ transitiontime | int }}"
+              - delay:
+                  seconds: "{{ transitiontime | int + 1 }}"

@@ -1,0 +1,77 @@
+alias: Badezimmer Eis Effekt
+variables:
+  farbe_dunkel_xy:
+    - 0.18
+    - 0.12
+  farbe_hell_xy:
+    - 0.228
+    - 0.226
+  helligkeit_fest: 100
+  base_transition: 10
+  puffer: 1
+mode: restart
+sequence:
+  - action: light.turn_on
+    target:
+      entity_id: light.grp_badezimmer_indirekt_01
+    data:
+      xy_color: "{{ farbe_dunkel_xy }}"
+      brightness_pct: "{{ helligkeit_fest }}"
+      transition: 2
+  - delay: "{{ 2 + puffer }}"
+  - parallel:
+      - repeat:
+          while: "{{ true }}"
+          sequence:
+            - action: light.turn_on
+              target:
+                entity_id: light.badezimmer_indirekt_01
+              data:
+                xy_color: "{{ farbe_hell_xy }}"
+                transition: "{{ base_transition }}"
+            - delay: "{{ base_transition + puffer }}"
+            - action: light.turn_on
+              target:
+                entity_id: light.badezimmer_indirekt_01
+              data:
+                xy_color: "{{ farbe_dunkel_xy }}"
+                transition: "{{ base_transition + 1 }}"
+            - delay: "{{ base_transition + 1 + puffer }}"
+      - repeat:
+          while: "{{ true }}"
+          sequence:
+            - delay: 1.5
+            - action: light.turn_on
+              target:
+                entity_id: light.badezimmer_indirekt_02
+              data:
+                xy_color: "{{ farbe_hell_xy }}"
+                transition: "{{ base_transition + 2 }}"
+            - delay: "{{ base_transition + 2 + puffer }}"
+            - action: light.turn_on
+              target:
+                entity_id: light.badezimmer_indirekt_02
+              data:
+                xy_color: "{{ farbe_dunkel_xy }}"
+                transition: "{{ base_transition - 1 }}"
+            - delay: "{{ base_transition - 1 + puffer }}"
+      - repeat:
+          while:
+            - condition: template
+              value_template: "{{ true }}"
+          sequence:
+            - delay: 3
+            - action: light.turn_on
+              target:
+                entity_id: light.badezimmer_indirekt_03
+              data:
+                xy_color: "{{ farbe_hell_xy }}"
+                transition: "{{ base_transition + 4 }}"
+            - delay: "{{ base_transition + 4 + puffer }}"
+            - action: light.turn_on
+              target:
+                entity_id: light.badezimmer_indirekt_03
+              data:
+                xy_color: "{{ farbe_dunkel_xy }}"
+                transition: "{{ base_transition + 2 }}"
+            - delay: "{{ base_transition + 2 + puffer }}"

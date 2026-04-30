@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html lang="en" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html lang="en" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html lang="en" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html lang="en" class=" idc0_343 zcqgs"><!--<![endif]--><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Scripts - Home Assistant</title>
+    <meta name="author" content="Home Assistant">
+    <meta name="description" content="Instructions on how to setup scripts within Home Assistant.">
+    
+    <meta name="viewport" content="width=device-width">
+    <link rel="canonical" href="https://www.home-assistant.io/integrations/script/">
+
+    
+
+
+
+
+<meta property="fb:app_id" content="338291289691179">
+<meta property="og:title" content="Scripts">
+<meta property="og:site_name" content="Home Assistant">
+<meta property="og:url" content="https://www.home-assistant.io/integrations/script/">
+<meta property="og:type" content="article">
+<meta property="og:description" content="Instructions on how to setup scripts within Home Assistant.">
+<meta property="og:image" content="https://assets.openhomefoundation.org/opengraph?url=https%3A%2F%2Fwww.home-assistant.io%2Fintegrations%2Fscript%2F">
+
+
+
+<meta property="og:image:installs" content="99%">
+
+
+<meta property="og:image:codeowners" content="@home-assistant/core">
+
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@home_assistant">
+
+<meta name="twitter:title" content="Scripts">
+<meta name="twitter:description" content="Instructions on how to setup scripts within Home Assistant.">
+<meta name="twitter:image" content="https://assets.openhomefoundation.org/opengraph?url=https%3A%2F%2Fwww.home-assistant.io%2Fintegrations%2Fscript%2F">
+
+
+
+<link rel="me" href="https://fosstodon.org/@homeassistant">
+
+    
+
+    <link href="Scripts%20-%20Home%20Assistant_files/style.min.css" rel="stylesheet">
+    <link href="Scripts%20-%20Home%20Assistant_files/prism.css" rel="stylesheet">
+    <link href="Scripts%20-%20Home%20Assistant_files/screen.css" media="screen, projection, print" rel="stylesheet">
+    <link href="https://www.home-assistant.io/atom.xml" rel="alternate" title="Home Assistant" type="application/atom+xml">
+    <link rel="shortcut icon" href="https://www.home-assistant.io/images/favicon.ico">
+    <link rel="icon" type="image/png" href="https://www.home-assistant.io/images/favicon-192x192.png" sizes="192x192">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="Scripts%20-%20Home%20Assistant_files/css2.css" rel="stylesheet">
+    <script src="Scripts%20-%20Home%20Assistant_files/iconify-icon.min.js" integrity="sha384-GPb5RlngihS9H0z1D137JsvzmeZ7tCpWEF4t5YDoTZyMsPP8S7h7vFDh4XhheU83" crossorigin="anonymous"></script>
+  <link rel="preconnect" href="https://i.ytimg.com/" crossorigin="true"><script src="Scripts%20-%20Home%20Assistant_files/clipboard.min.js"></script><link rel="preconnect" href="https://s.ytimg.com/" crossorigin="true"><link rel="preconnect" href="https://www.youtube.com/" crossorigin="true"><link rel="preconnect" href="https://www.google.com/" crossorigin="true"><link rel="preconnect" href="https://googleads.g.doubleclick.net/" crossorigin="true"><link rel="preconnect" href="https://static.doubleclick.net/" crossorigin="true"></head>
+
+  <body class=" integration-page  ">
+    <header class="site-header ">
+      
+
+
+
+<div class="grid-wrapper">
+  <div class="grid">
+    <div class="grid__item three-tenths lap-two-sixths palm-one-whole ha-title">
+      <a href="https://www.home-assistant.io/" class="site-title">
+        <div class="logo"></div>
+      </a>
+      <a class="release-date" href="https://www.home-assistant.io/blog/2026/04/01/release-20264/" title="Latest version 2026.4.4 released April 24, 2026">
+        2026.4.4
+      </a>
+    </div>
+
+    <div class="grid__item seven-tenths lap-four-sixths palm-one-whole">
+      <nav>
+        <input type="checkbox" id="toggle">
+        <label for="toggle" class="toggle" data-open="Main Menu" data-close="⨉"></label>
+        <ul class="menu pull-right">
+          <li><a href="https://www.home-assistant.io/installation/">Getting started</a></li>
+          <li>
+            <a href="https://www.home-assistant.io/docs/">Documentation <iconify-icon inline="" icon="mdi:chevron-down" title="Chevron down"></iconify-icon></a>
+            <ul>
+              <li><a href="https://www.home-assistant.io/installation/"><iconify-icon inline="" icon="simple-icons:homeassistant" title="Homeassistant"></iconify-icon> Installation</a></li>
+              <li><a href="https://www.home-assistant.io/docs/automation/"><iconify-icon inline="" icon="mdi:robot-happy" title="Robot happy"></iconify-icon> Automations</a></li>
+              <li><a href="https://www.home-assistant.io/dashboards/"><iconify-icon inline="" icon="mdi:gauge" title="Gauge"></iconify-icon> Dashboards</a></li>
+              <li><a href="https://www.home-assistant.io/voice_control/"><iconify-icon inline="" icon="mdi:comment-processing-outline" title="Comment processing outline"></iconify-icon> Voice assistants</a></li>
+              <li><a href="https://www.home-assistant.io/docs/organizing/"><iconify-icon inline="" icon="mdi:view-grid" title="View grid"></iconify-icon> Device organization</a></li>
+              <li><a href="https://www.home-assistant.io/docs/energy/"><iconify-icon inline="" icon="mdi:solar-power-variant" title="Solar power variant"></iconify-icon> Energy management</a></li>
+              <li><a href="https://www.home-assistant.io/docs/templating/"><iconify-icon inline="" icon="mdi:code-braces" title="Code braces"></iconify-icon> Templating</a></li>
+              <li><a href="https://www.home-assistant.io/docs/configuration/"><iconify-icon inline="" icon="mdi:cog" title="Cog"></iconify-icon> Advanced configuration</a></li>
+            </ul>
+          </li>
+          <li>
+            <a href="#">Our hardware <iconify-icon inline="" icon="mdi:chevron-down" title="Chevron down"></iconify-icon></a>
+            <ul>
+              <li><a href="https://www.home-assistant.io/green/">Home Assistant Green</a></li>
+              <li><a href="https://www.home-assistant.io/connect/zbt-2/">Connect ZBT-2</a></li>
+              <li><a href="https://www.home-assistant.io/connect/zwa-2/">Connect ZWA-2</a></li>
+              <li><a href="https://www.home-assistant.io/voice-pe/">Voice Preview Edition</a></li>
+            </ul>
+          </li>
+          <li><a class="active" href="https://www.home-assistant.io/integrations/">Integrations</a></li>
+          <li><a href="https://www.home-assistant.io/blog/">Blog</a></li>
+          <li><a href="https://www.home-assistant.io/help/">Need help?</a></li>
+          <li>
+            <div class="docsearch" id="docsearch"><button type="button" aria-label="Search (Ctrl+K)" class="DocSearch DocSearch-Button"><span class="DocSearch-Button-Container"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" class="DocSearch-Search-Icon"><path d="M14.386 14.386l4.0877 4.0877-4.0877-4.0877c-2.9418 2.9419-7.7115 2.9419-10.6533 0-2.9419-2.9418-2.9419-7.7115 0-10.6533 2.9418-2.9419 7.7115-2.9419 10.6533 0 2.9419 2.9418 2.9419 7.7115 0 10.6533z" stroke="currentColor" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"></path></svg><span class="DocSearch-Button-Placeholder">Search</span></span><span class="DocSearch-Button-Keys"><kbd class="DocSearch-Button-Key"><svg width="15" height="15" class="DocSearch-Control-Key-Icon"><path d="M4.505 4.496h2M5.505 5.496v5M8.216 4.496l.055 5.993M10 7.5c.333.333.5.667.5 1v2M12.326 4.5v5.996M8.384 4.496c1.674 0 2.116 0 2.116 1.5s-.442 1.5-2.116 1.5M3.205 9.303c-.09.448-.277 1.21-1.241 1.203C1 10.5.5 9.513.5 8V7c0-1.57.5-2.5 1.464-2.494.964.006 1.134.598 1.24 1.342M12.553 10.5h1.953" stroke-width="1.2" stroke="currentColor" fill="none" stroke-linecap="square"></path></svg></kbd><kbd class="DocSearch-Button-Key">K</kbd></span></button></div>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+    </header>
+
+    <div class="page-content">
+
+      
+
+      <div class="grid-wrapper">
+        <div class="grid grid-center">
+
+          <aside id="toc-bar" class="grid__item desk-wide-one-sixth">
+                
+                <section class="aside-module grid__item one-whole">
+                  <div class="section">
+                    <label for="toc-toggle"><span class="title epsilon"><iconify-icon inline="" icon="mdi:toc" title="Toc"></iconify-icon> On this page</span> <input type="checkbox" id="toc-toggle"> <span class="toc-current">Configuration</span></label>
+                    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#configuration" aria-current="true">Configuration</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#script-modes">Script modes</a></li>
+<li class="toc-entry toc-h3"><a href="#passing-variables-to-scripts">Passing variables to scripts</a></li>
+<li class="toc-entry toc-h3"><a href="#waiting-for-a-script-to-complete">Waiting for a script to complete</a></li>
+<li class="toc-entry toc-h3"><a href="#full-configuration">Full configuration</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#video-tutorial">Video tutorial</a></li>
+</ul>
+                  </div>
+                </section>
+              </aside>
+
+          
+          
+
+          
+          <div class="grid__item two-thirds desk-wide-seven-twelfths lap-one-whole palm-one-whole">
+          
+
+            
+              <article class="page">
+  
+  <header>
+    
+    
+      <div class="breadcrumbs">
+        <a href="https://www.home-assistant.io/">Home</a>
+        
+          
+            
+            ▸ <a href="https://www.home-assistant.io/integrations/">Integrations</a>
+          
+        
+          
+        
+      </div>
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://www.home-assistant.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Integrations",
+            "item": "https://www.home-assistant.io/integrations/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Scripts",
+            "item": "https://www.home-assistant.io/integrations/script/"
+          }
+        ]
+      }
+      </script>
+    
+    <h1 class="title indent">
+      
+        Scripts
+      
+    </h1>
+  </header>
+  
+    
+    
+    
+  
+  
+  <p>The <strong>Scripts</strong> <span class="terminology">integration<span class="terminology-tooltip">Integrations connect and integrate Home Assistant with your devices, services, and more.<a class="terminology-link" href="https://www.home-assistant.io/getting-started/concepts-terminology/#integrations"> [Learn more]</a></span></span>
+ allows you to specify a sequence of actions for Home Assistant to 
+execute. They run when you turn the script on. The script integration 
+creates an entity for each script so you can control it via actions.</p>
+<p>You can create scripts via YAML configuration or via <a href="https://my.home-assistant.io/redirect/scripts" class="my" target="_blank">the UI</a>.</p>
+<p><a href="https://my.home-assistant.io/redirect/scripts" class="my badge" target="_blank"><img src="Scripts%20-%20Home%20Assistant_files/scripts.svg"></a></p>
+<h2>Configuration <a class="title-link" name="configuration" href="#configuration"></a>
+</h2>
+<p>You specify the sequence of actions using the <a href="https://www.home-assistant.io/getting-started/scripts/">Home Assistant Script Syntax</a>.</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><div class="code-toolbar"><pre class="highlight language-yaml"><code data-lang="yaml" class=" language-yaml"><span class="token comment"># Example configuration.yaml entry</span>
+<span class="token key atrule">script</span><span class="token punctuation">:</span>
+  <span class="token key atrule">message_temperature</span><span class="token punctuation">:</span>
+    <span class="token key atrule">sequence</span><span class="token punctuation">:</span>
+      <span class="token comment"># This is Home Assistant Script Syntax</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">action</span><span class="token punctuation">:</span> notify.notify
+        <span class="token key atrule">data</span><span class="token punctuation">:</span>
+          <span class="token key atrule">message</span><span class="token punctuation">:</span> <span class="token string">"Current temperature is <span class="token jinja2 language-jinja2"><span class="token delimiter punctuation">{{</span> <span class="token function tf-linked" data-tf-url="/template-functions/states/" data-tf-desc="Returns the state value of an entity, or lets you iterate over all entity states.">states</span><span class="token punctuation">(</span><span class="token string">'sensor.temperature'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">}}</span></span>"</span></code></pre><div class="toolbar"><div class="toolbar-item"><span>YAML</span></div><div class="toolbar-item"><button>Copy</button></div></div></div></div></div>
+<div class="alert alert-important">
+  <p class="alert-title"><iconify-icon inline="" icon="mdi:message-alert-outline"></iconify-icon> Important</p>
+  <div class="alert-content">
+<p>Script names (such as <code>message_temperature</code> in the example above) cannot contain capital letters or dashes (<code>-</code>). Use underscores (<code>_</code>) to separate words for better readability.</p>
+  </div>
+</div>
+<div class="config-vars">
+  <h4>
+    Configuration Variables <a class="title-link" name="script-configuration-variables" href="#script-configuration-variables"></a>
+  </h4>
+  <div class="configuration-link">
+    <a href="https://www.home-assistant.io/docs/configuration/" target="_blank">Looking for your configuration file?</a>
+  </div>
+  <div class="">
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> alias </span><span class="config-vars-type">string</span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default"></span>)</span><a name="alias" class="title-link" href="#alias"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>Friendly name for the script.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> icon </span><span class="config-vars-type">string</span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default"></span>)</span><a name="icon" class="title-link" href="#icon"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>Icon for the script.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> description </span><span class="config-vars-type">string</span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default"></span>)</span><a name="description" class="title-link" href="#description"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>A description of the script, displayed in the <strong>Actions</strong> tab under <strong>Developer tools</strong>.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> variables </span><span class="config-vars-type">map</span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default">, default: {}</span>)</span><a name="variables" class="title-link" href="#variables"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>Variables that are available inside your templates.</p>
+</span></div>
+<div class="nested"><div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> PARAMETER_NAME </span><span class="config-vars-type">any</span><a name="parameter_name" class="title-link" href="#parameter_name"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>The value of the variable. Any YAML is valid. Templates can also be used to pass a value to the variable.</p>
+</span></div>
+</div></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> fields </span><span class="config-vars-type">map</span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default">, default: {}</span>)</span><a name="fields" class="title-link" href="#fields"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>Information about the script field parameters; see the <a href="#passing-variables-to-scripts">Passing variables to scripts</a> section below.</p>
+</span></div>
+<div class="nested"><div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> FIELD_NAME </span><span class="config-vars-type">map</span><a name="field_name" class="title-link" href="#field_name"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>A parameter field used by this script. All sub-options are only used for creating a representation of this script in the UI.</p>
+</span></div>
+<div class="nested">
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> name </span><span class="config-vars-type">string</span><a name="name" class="title-link" href="#name"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>The name of this script parameter field.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> description </span><span class="config-vars-type">string</span><a name="description" class="title-link" href="#description"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>A description of this script parameter.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> advanced </span><span class="config-vars-type">boolean</span><a name="advanced" class="title-link" href="#advanced"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>Marks this field as an advanced parameter. The field is only shown in the UI when you have advanced mode enabled.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> required </span><span class="config-vars-type">boolean</span><a name="required" class="title-link" href="#required"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>Marks this field as required. This is a UI-only feature.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> example </span><span class="config-vars-type">string</span><a name="example" class="title-link" href="#example"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>An example value. This is only shown in the table of options available in the <strong>Actions</strong> tab of the <strong>Developer tools</strong>.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> default </span><span class="config-vars-type">any</span><a name="default" class="title-link" href="#default"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>The default value for this field, as shown in the UI.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> selector </span><span class="config-vars-type"><a href="https://www.home-assistant.io/docs/blueprint/selectors/">selector</a></span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default"></span>)</span><a name="selector" class="title-link" href="#selector"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>The <a href="https://www.home-assistant.io/docs/blueprint/selectors/">selector</a> to use for this input. A selector defines how the input is displayed in the frontend UI.</p>
+</span></div>
+</div>
+</div>
+</div></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> mode </span><span class="config-vars-type">string</span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default">, default: single</span>)</span><a name="mode" class="title-link" href="#mode"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>Controls what happens when the script is invoked while it is still running from one or more previous invocations. See <a href="#script-modes">Script modes</a>.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> max </span><span class="config-vars-type">integer</span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default">, default: 10</span>)</span><a name="max" class="title-link" href="#max"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>Controls the maximum number of runs executing or queued up to run at a time. Only valid with modes <code>queued</code> and <code>parallel</code>.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> max_exceeded </span><span class="config-vars-type">string</span><span class="config-vars-required"> (<span class="false">Optional</span><span class="default">, default: warning</span>)</span><a name="max_exceeded" class="title-link" href="#max_exceeded"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>When <code>max</code> is exceeded (which is effectively 1 for <code>single</code>
+ mode), Home Assistant emits a log message to indicate this has 
+happened. This option controls the severity level of that log message. 
+See <a href="https://www.home-assistant.io/integrations/logger/#log-levels">log levels</a> for a list of valid options. You can also set this to <code>silent</code> to suppress the message.</p>
+</span></div>
+</div>
+<div class="config-vars-item">
+<div class="config-vars-label">
+<span class="config-vars-label-name"> sequence </span><span class="config-vars-type">list</span><span class="config-vars-required"> <span class="true">Required</span><span class="default"></span></span><a name="sequence" class="title-link" href="#sequence"></a>
+</div>
+<div class="config-vars-description-and-children"><span class="config-vars-description"><p>The sequence of actions the script performs.</p>
+</span></div>
+</div>
+</div>
+</div>
+<h3>Script modes <a class="title-link" name="script-modes" href="#script-modes"></a>
+</h3>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>single</code></td>
+<td>Do not start a new run. Issue a warning.</td>
+</tr>
+<tr>
+<td><code>restart</code></td>
+<td>Start a new run after first stopping previous run.</td>
+</tr>
+<tr>
+<td><code>queued</code></td>
+<td>Start a new run after all previous runs complete. Runs are guaranteed to execute in the order they were queued.</td>
+</tr>
+<tr>
+<td><code>parallel</code></td>
+<td>Start a new, independent run in parallel with previous runs.</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Scripts%20-%20Home%20Assistant_files/script_modes.jpg" alt="Diagram showing how the four script modes (single, restart, queued, parallel) behave when a script is invoked while already running"></p>
+<h3>Passing variables to scripts <a class="title-link" name="passing-variables-to-scripts" href="#passing-variables-to-scripts"></a>
+</h3>
+<p>As part of the action, you can pass variables to a script so they become available within templates in that script.</p>
+<p>To configure a script to accept variables using the UI, add the variables as fields in the script editor.</p>
+<ol>
+<li>In the script editor, in the three dots <iconify-icon inline="" icon="mdi:dots-vertical" title="Dots vertical"></iconify-icon> menu, select <strong>Add fields</strong>.</li>
+<li>A new <strong>Fields</strong> section appears between the basic information and the <strong>Sequence</strong> section.</li>
+<li>Enter a name and choose the type and options for each field.</li>
+<li>Depending on the field type, fields set up here are shown in other UI editors, such as in an automation that calls the script.</li>
+<li>To use the field data, reference it as a template using the <strong>Field key name</strong> you set when adding the field.</li>
+</ol>
+<p>Use templates to access the variables in the script:</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><div class="code-toolbar"><pre class="highlight language-yaml"><code data-lang="yaml" class=" language-yaml"><span class="token comment"># Example configuration.yaml entry</span>
+<span class="token key atrule">script</span><span class="token punctuation">:</span>
+  <span class="token key atrule">notify_pushover</span><span class="token punctuation">:</span>
+    <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"Send a pushover notification"</span>
+    <span class="token key atrule">fields</span><span class="token punctuation">:</span>
+      <span class="token key atrule">title</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"The title of the notification"</span>
+        <span class="token key atrule">example</span><span class="token punctuation">:</span> <span class="token string">"State change"</span>
+      <span class="token key atrule">message</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"The message content"</span>
+        <span class="token key atrule">example</span><span class="token punctuation">:</span> <span class="token string">"The light is on!"</span>
+    <span class="token key atrule">sequence</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">condition</span><span class="token punctuation">:</span> state
+        <span class="token key atrule">entity_id</span><span class="token punctuation">:</span> switch.pushover_notifications
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> <span class="token string">"on"</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">action</span><span class="token punctuation">:</span> notify.pushover
+        <span class="token key atrule">data</span><span class="token punctuation">:</span>
+          <span class="token key atrule">title</span><span class="token punctuation">:</span> <span class="token string">"<span class="token jinja2 language-jinja2"><span class="token delimiter punctuation">{{</span> <span class="token variable">title</span> <span class="token delimiter punctuation">}}</span></span>"</span>
+          <span class="token key atrule">message</span><span class="token punctuation">:</span> <span class="token string">"<span class="token jinja2 language-jinja2"><span class="token delimiter punctuation">{{</span> <span class="token variable">message</span> <span class="token delimiter punctuation">}}</span></span>"</span></code></pre><div class="toolbar"><div class="toolbar-item"><span>YAML</span></div><div class="toolbar-item"><button>Copy</button></div></div></div></div></div>
+<p>Aside from the automation editor UI, you can pass variables to 
+scripts within the action data. You can do this by calling the script 
+directly or by calling the generic <code>script.turn_on</code> action. The difference is described in <a href="#waiting-for-a-script-to-complete">Waiting for a script to complete</a>.
+ All action data is available as variables in templates, even if not 
+specified as fields in the script. This example shows how to call the 
+script directly:</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><div class="code-toolbar"><pre class="highlight language-yaml"><code data-lang="yaml" class=" language-yaml"><span class="token comment"># Example configuration.yaml entry</span>
+<span class="token key atrule">automation</span><span class="token punctuation">:</span>
+  <span class="token key atrule">triggers</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">trigger</span><span class="token punctuation">:</span> state
+      <span class="token key atrule">entity_id</span><span class="token punctuation">:</span> light.bedroom
+      <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token string">"off"</span>
+      <span class="token key atrule">to</span><span class="token punctuation">:</span> <span class="token string">"on"</span>
+  <span class="token key atrule">actions</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">action</span><span class="token punctuation">:</span> script.notify_pushover
+      <span class="token key atrule">data</span><span class="token punctuation">:</span>
+        <span class="token key atrule">title</span><span class="token punctuation">:</span> <span class="token string">"State change"</span>
+        <span class="token key atrule">message</span><span class="token punctuation">:</span> <span class="token string">"The light is on!"</span></code></pre><div class="toolbar"><div class="toolbar-item"><span>YAML</span></div><div class="toolbar-item"><button>Copy</button></div></div></div></div></div>
+<p>This example shows how to use the <code>script.turn_on</code> action:</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><div class="code-toolbar"><pre class="highlight language-yaml"><code data-lang="yaml" class=" language-yaml"><span class="token comment"># Example configuration.yaml entry</span>
+<span class="token key atrule">automation</span><span class="token punctuation">:</span>
+  <span class="token key atrule">triggers</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">trigger</span><span class="token punctuation">:</span> state
+      <span class="token key atrule">entity_id</span><span class="token punctuation">:</span> light.bedroom
+      <span class="token key atrule">from</span><span class="token punctuation">:</span> <span class="token string">"off"</span>
+      <span class="token key atrule">to</span><span class="token punctuation">:</span> <span class="token string">"on"</span>
+  <span class="token key atrule">actions</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">action</span><span class="token punctuation">:</span> script.turn_on
+      <span class="token key atrule">target</span><span class="token punctuation">:</span>
+        <span class="token key atrule">entity_id</span><span class="token punctuation">:</span> script.notify_pushover
+      <span class="token key atrule">data</span><span class="token punctuation">:</span>
+        <span class="token key atrule">variables</span><span class="token punctuation">:</span>
+          <span class="token key atrule">title</span><span class="token punctuation">:</span> <span class="token string">"State change"</span>
+          <span class="token key atrule">message</span><span class="token punctuation">:</span> <span class="token string">"The light is on!"</span></code></pre><div class="toolbar"><div class="toolbar-item"><span>YAML</span></div><div class="toolbar-item"><button>Copy</button></div></div></div></div></div>
+<div class="alert alert-note">
+  <p class="alert-title"><iconify-icon inline="" icon="mdi:information-outline"></iconify-icon> Note</p>
+  <div class="alert-content">
+<p>Templates may use the following script variables:</p>
+<ul>
+<li>
+<p>Variables provided from the configuration as fields.</p>
+</li>
+<li>
+<p>Variables passed as data when the script is started from an action.</p>
+</li>
+<li>
+<p>The <code>this</code> variable, which holds the current script’s state as a dictionary.</p>
+</li>
+</ul>
+</div>
+
+
+</div>
+<h3>Waiting for a script to complete <a class="title-link" name="waiting-for-a-script-to-complete" href="#waiting-for-a-script-to-complete"></a>
+</h3>
+<p>When calling a script “directly” (for example, <code>script.NAME</code>), the calling script will wait for the called script to finish.
+If any errors occur that cause the called script to abort, the calling script will be aborted as well.</p>
+<p>When calling a script (or multiple scripts) via the <code>script.turn_on</code> action, the calling script does <em>not</em> wait. It starts the scripts, in the order listed, and continues as soon as the last script is started.
+Any errors that occur in the called scripts that cause them to abort will <em>not</em> affect the calling script.</p>
+<p><img src="Scripts%20-%20Home%20Assistant_files/script_wait.jpg" alt="Diagram showing the difference between calling a script directly and via script.turn_on, and how the calling script waits or continues"></p>
+<p>Here’s an example of the calling script not waiting. It performs some
+ other operations while the called script runs in the background, then 
+waits for the called script to complete via a <code>wait_template</code>.
+You can also use this technique for the calling script to wait for the called script, but <em>not</em> be aborted if the called script aborts due to errors.</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><div class="code-toolbar"><pre class="highlight language-yaml"><code data-lang="yaml" class=" language-yaml"><span class="token key atrule">script</span><span class="token punctuation">:</span>
+  <span class="token key atrule">script_1</span><span class="token punctuation">:</span>
+    <span class="token key atrule">sequence</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">action</span><span class="token punctuation">:</span> script.turn_on
+        <span class="token key atrule">target</span><span class="token punctuation">:</span>
+          <span class="token key atrule">entity_id</span><span class="token punctuation">:</span> script.script_2
+      <span class="token comment"># Perform some other steps here while second script runs...</span>
+      <span class="token comment"># Now wait for called script to complete.</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">wait_template</span><span class="token punctuation">:</span> <span class="token string">"<span class="token jinja2 language-jinja2"><span class="token delimiter punctuation">{{</span> <span class="token function tf-linked" data-tf-url="/template-functions/is_state/" data-tf-desc="Tests if an entity is in a specific state.">is_state</span><span class="token punctuation">(</span><span class="token string">'script.script_2'</span><span class="token punctuation">,</span> <span class="token string">'off'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">}}</span></span>"</span>
+      <span class="token comment"># Now do some other things...</span>
+  <span class="token key atrule">script_2</span><span class="token punctuation">:</span>
+    <span class="token key atrule">sequence</span><span class="token punctuation">:</span>
+      <span class="token comment"># Do some things at the same time as the first script...</span></code></pre><div class="toolbar"><div class="toolbar-item"><span>YAML</span></div><div class="toolbar-item"><button>Copy</button></div></div></div></div></div>
+<h3>Full configuration <a class="title-link" name="full-configuration" href="#full-configuration"></a>
+</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><div class="code-toolbar"><pre class="highlight language-yaml"><code data-lang="yaml" class=" language-yaml"><span class="token key atrule">script</span><span class="token punctuation">:</span>
+  <span class="token key atrule">wakeup</span><span class="token punctuation">:</span>
+    <span class="token key atrule">alias</span><span class="token punctuation">:</span> <span class="token string">"Wake Up"</span>
+    <span class="token key atrule">icon</span><span class="token punctuation">:</span> <span class="token string">"mdi:party-popper"</span>
+    <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"Turns on the bedroom lights and then the living room lights after a delay"</span>
+    <span class="token key atrule">variables</span><span class="token punctuation">:</span>
+      <span class="token key atrule">turn_on_entity</span><span class="token punctuation">:</span> group.living_room
+    <span class="token key atrule">fields</span><span class="token punctuation">:</span>
+      <span class="token key atrule">minutes</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> Minutes
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"The amount of time to wait before turning on the living room lights"</span>
+        <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+          <span class="token key atrule">number</span><span class="token punctuation">:</span>
+            <span class="token key atrule">min</span><span class="token punctuation">:</span> <span class="token number">0</span>
+            <span class="token key atrule">max</span><span class="token punctuation">:</span> <span class="token number">60</span>
+            <span class="token key atrule">step</span><span class="token punctuation">:</span> <span class="token number">1</span>
+            <span class="token key atrule">unit_of_measurement</span><span class="token punctuation">:</span> minutes
+            <span class="token key atrule">mode</span><span class="token punctuation">:</span> slider
+    <span class="token comment"># If called again while still running (probably in delay step), start over.</span>
+    <span class="token key atrule">mode</span><span class="token punctuation">:</span> restart
+    <span class="token key atrule">sequence</span><span class="token punctuation">:</span>
+      <span class="token comment"># This is Home Assistant Script Syntax</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">event</span><span class="token punctuation">:</span> LOGBOOK_ENTRY
+        <span class="token key atrule">event_data</span><span class="token punctuation">:</span>
+          <span class="token key atrule">name</span><span class="token punctuation">:</span> Paulus
+          <span class="token key atrule">message</span><span class="token punctuation">:</span> is waking up
+          <span class="token key atrule">entity_id</span><span class="token punctuation">:</span> device_tracker.paulus
+          <span class="token key atrule">domain</span><span class="token punctuation">:</span> light
+      <span class="token punctuation">-</span> <span class="token key atrule">alias</span><span class="token punctuation">:</span> <span class="token string">"Bedroom lights on"</span>
+        <span class="token key atrule">action</span><span class="token punctuation">:</span> <span class="tf-linked doc-linked" data-tf-url="/actions/light.turn_on/" data-tf-desc="Turn a light on. Optionally set brightness, color, color temperature, an effect, or a transition.">light.turn_on</span>
+        <span class="token key atrule">target</span><span class="token punctuation">:</span>
+          <span class="token key atrule">entity_id</span><span class="token punctuation">:</span> group.bedroom
+        <span class="token key atrule">data</span><span class="token punctuation">:</span>
+          <span class="token key atrule"><span class="tf-linked tf-param doc-field-linked" data-tf-url="/actions/light.turn_on/#brightness" data-tf-desc="Number indicating brightness, where 0 turns the light off, 1 is the minimum brightness, and 255 is the maximum brightness.">brightness</span></span><span class="token punctuation">:</span> <span class="token number">100</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">delay</span><span class="token punctuation">:</span>
+          <span class="token comment"># Supports seconds, milliseconds, minutes, and hours</span>
+          <span class="token key atrule">minutes</span><span class="token punctuation">:</span> <span class="token string">"<span class="token jinja2 language-jinja2"><span class="token delimiter punctuation">{{</span> <span class="token variable">minutes</span> <span class="token delimiter punctuation">}}</span></span>"</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">alias</span><span class="token punctuation">:</span> <span class="token string">"Living room lights on"</span>
+        <span class="token key atrule">action</span><span class="token punctuation">:</span> <span class="tf-linked doc-linked" data-tf-url="/actions/light.turn_on/" data-tf-desc="Turn a light on. Optionally set brightness, color, color temperature, an effect, or a transition.">light.turn_on</span>
+        <span class="token key atrule">target</span><span class="token punctuation">:</span>
+          <span class="token key atrule">entity_id</span><span class="token punctuation">:</span> <span class="token string">"<span class="token jinja2 language-jinja2"><span class="token delimiter punctuation">{{</span> <span class="token variable">turn_on_entity</span> <span class="token delimiter punctuation">}}</span></span>"</span></code></pre><div class="toolbar"><div class="toolbar-item"><span>YAML</span></div><div class="toolbar-item"><button>Copy</button></div></div></div></div></div>
+<h2>Video tutorial <a class="title-link" name="video-tutorial" href="#video-tutorial"></a>
+</h2>
+<p>This video tutorial explains how scripts work, how to use fields in scripts, and how to use response variables in scripts.</p>
+<p><lite-youtube videoid="vD_xckjQxRk" videotitle="Mastering Scripts in Home Assistant: A Comprehensive Guide" posterquality="maxresdefault" title="Play: Mastering Scripts in Home Assistant: A Comprehensive Guide"></lite-youtube></p>
+
+
+  
+
+
+  
+<div class="material-card text feedback">
+  <h4>
+<iconify-icon inline="" icon="mdi:feedback" title="Feedback"></iconify-icon> <b> Help us improve our documentation</b><a href="#feedback_section" class="title-link" name="feedback_section"></a>
+</h4>
+  Suggest an edit to this page, or provide/view feedback for this page.
+  <div class="links">
+    <ul aria-label="Page feedback options">
+    <li><a href="https://github.com/home-assistant/home-assistant.io/tree/current/source/_integrations/script.markdown" target="_blank" title="Edit this page" rel="external nofollow"><iconify-icon inline="" icon="mdi:edit"></iconify-icon> Edit</a></li>
+    
+    <li><a href="https://github.com/home-assistant/home-assistant.io/issues/new?template=feedback.yml&amp;url=https%3A%2F%2Fwww.home-assistant.io%2Fintegrations%2Fscript%2F&amp;version=2026.4.4&amp;labels=current,integration%3A%20script" target="_blank" title="Provide feedback on this page" rel="external nofollow"><iconify-icon inline="" icon="mdi:comment-edit-outline"></iconify-icon> Provide feedback</a></li>
+    <li><a href="https://github.com/home-assistant/home-assistant.io/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22integration%3A+script%22" target="_blank" title="View pending feedback for this page" rel="external nofollow"><iconify-icon inline="" icon="mdi:comment-text-multiple-outline"></iconify-icon> View pending feedback</a></li>
+    
+  </ul>
+  </div>
+</div>
+
+
+</article>
+
+            
+          </div>
+
+
+          
+          
+          
+          
+            
+              <aside id="integration-sidebar" class="grid__item one-third desk-wide-one-quarter lap-one-whole palm-one-whole">
+              
+            <div class="grid">
+  
+
+
+
+
+  
+
+
+<section class="aside-module grid__item one-whole lap-one-half">
+  <div class="brand-logo-container section">
+      <img src="Scripts%20-%20Home%20Assistant_files/logo.png" srcset="Scripts%20-%20Home%20Assistant_files/logo@2x.png 2x"></div>
+
+  <div class="section">The Scripts  system  was introduced in Home Assistant 0.7, and it's used by <a title="Open analytics.home-assistant.io" href="https://analytics.home-assistant.io/integrations" target="_blank" rel="noopener">
+        
+          99%</a> of the active installations.
+        
+      
+    
+  </div>
+  <div class="section">
+    <a href="https://www.home-assistant.io/docs/quality_scale/#-internal">🏠 Internal integration</a><br></div>
+  <div class="section">
+    <a href="https://github.com/home-assistant/core/tree/dev/homeassistant/components/script" target="_blank"><iconify-icon inline="" icon="simple-icons:github" title="Github"></iconify-icon> View source on GitHub</a><br>
+    <a href="https://github.com/home-assistant/core/issues?q=is%3Aissue+label%3A%22integration%3A+script%22" target="_blank"><iconify-icon inline="" icon="mdi:bug" title="Bug"></iconify-icon> View known issues</a><br>
+    <a href="https://github.com/orgs/home-assistant/discussions?discussions_q=label%3A%22integration%3A+script%22" target="_blank"><iconify-icon inline="" icon="mdi:lightbulb-question" title="Lightbulb question"></iconify-icon> View feature requests</a>
+  </div></section>
+
+<section class="aside-module grid__item one-whole lap-one-half">
+  <div class="section">
+    <h2 class="h1 title epsilon"><iconify-icon inline="" icon="mdi:person-heart" title="Person heart"></iconify-icon> Integration owners</h2>
+    
+        
+        
+
+          
+          <div class="section">
+            This integration is being maintained by the Home Assistant project.
+          </div>
+        
+    
+  </div>
+</section>
+
+
+
+
+<section id="category-module" class="aside-module grid__item one-whole lap-one-half">
+      <div class="section">
+        <h2 class="h1 title epsilon"><iconify-icon inline="" icon="mdi:category" title="Category"></iconify-icon> Categories</h2>
+        <ul class="divided"><li>
+            <a href="https://www.home-assistant.io/integrations/#automation">Automation</a>
+          </li></ul>
+      </div>
+    </section><section id="toc-module" class="aside-module grid__item one-whole lap-one-half">
+        <div class="section">
+          <h2 class="h1 title epsilon"><iconify-icon inline="" icon="mdi:toc" title="Toc"></iconify-icon> On this page</h2>
+          <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#configuration" aria-current="true">Configuration</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#script-modes">Script modes</a></li>
+<li class="toc-entry toc-h3"><a href="#passing-variables-to-scripts">Passing variables to scripts</a></li>
+<li class="toc-entry toc-h3"><a href="#waiting-for-a-script-to-complete">Waiting for a script to complete</a></li>
+<li class="toc-entry toc-h3"><a href="#full-configuration">Full configuration</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#video-tutorial">Video tutorial</a></li>
+</ul>
+        </div>
+      </section>
+</div>
+
+          </aside>
+          
+        </div>
+      </div>
+
+      
+        <button id="back-to-top-button" type="button" aria-label="Back to top" aria-describedby="back-to-top-tooltip" class="">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <g id="back-to-top">
+              <circle id="background" cx="20" cy="20" r="20" fill="#18BCF2"></circle>
+              <path id="arrow" d="M20 18.8L15.4 23.4L14 22L20 16L26 22L24.6 23.4L20 18.8Z" fill="white"></path>
+              <circle id="depth" cx="20" cy="20.0098" r="17" transform="rotate(-90 20 20.0098)" stroke="white" stroke-width="2" style="stroke-dasharray: 106.829px; stroke-dashoffset: 106.829px;"></circle>
+            </g>
+          </svg>
+
+          <div id="back-to-top-tooltip" class="back-to-top-btn-tooltip">Back to top</div>
+        </button>
+      
+
+      <footer>
+        <div class="grid-wrapper">
+  <div class="grid">
+    <div class="grid__item">
+      <div class="skyline grid">
+        <div class="skyline grid__item one-whole">
+          <div class="footer-skyline">
+          </div>
+        </div>
+      </div>
+      <div class="footer-nav grid">
+        <div class="company grid__item one-quarter lap-one-half palm-one-whole">
+          <div class="title">
+            <img src="Scripts%20-%20Home%20Assistant_files/footer-logo-text.svg" height="72" alt="Home Assistant">
+          </div>
+          <p>
+            Home Assistant is a project from the <a href="https://www.openhomefoundation.org/">Open Home Foundation</a>.
+          </p>
+        </div>
+
+        <div class="grid__item one-quarter lap-one-half palm-one-whole">
+          <h3>Join us and contribute!</h3>
+          <ul>
+            <li><a class="external-link" href="https://github.com/home-assistant/">GitHub repo</a></li>
+            <li><a class="external-link" href="https://developers.home-assistant.io/">Developers Portal</a></li>
+            <li><a class="external-link" href="https://design.home-assistant.io/">Design Portal</a></li>
+            <li><a class="external-link" href="https://data.home-assistant.io/">Data Science Portal</a></li>
+            <li><a class="external-link" href="https://community.home-assistant.io/">Community Forum</a></li>
+            <li><a class="external-link" href="https://creators.home-assistant.io/">Creator Network</a></li>
+            <li><a class="external-link" href="https://works-with.home-assistant.io/">Works With Home Assistant</a></li>
+            <li><a href="https://www.home-assistant.io/community">Our community</a></li>
+            <li><a href="https://www.home-assistant.io/help/reporting_issues/">Reporting issues</a></li>
+          </ul>
+          <h3>System status</h3>
+          <ul>
+            <li>
+              <a class="external-link" href="https://alerts.home-assistant.io/">Integration Alerts</a>
+            </li>
+            <li><a href="https://www.home-assistant.io/security/">Security Alerts</a></li>
+            <li>
+              <a class="external-link" href="https://status.home-assistant.io/">System Status</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="grid__item one-quarter lap-one-half palm-one-whole">
+          <h3>Companion apps</h3>
+          <ul>
+            <li><a class="external-link" href="https://apps.apple.com/app/id1099568401">iOS and Apple devices</a></li>
+            <li><a class="external-link" href="https://play.google.com/store/apps/details?id=io.homeassistant.companion.android">Android and Wear OS</a></li>
+            <li><a class="external-link" href="https://companion.home-assistant.io/">...and more!</a></li>
+          </ul>
+
+          <h3>Support us</h3>
+          <ul>
+            <li><a href="https://store.openhomefoundation.org/" target="_blank">Merch store</a></li>
+            <li><a href="https://www.home-assistant.io/cloud/">Home Assistant Cloud</a></li>
+          </ul>
+
+          <h3>Governance</h3>
+          <ul>
+            <li><a href="https://www.home-assistant.io/privacy/">Privacy Notices</a></li>
+            <li><a href="https://www.home-assistant.io/developers/cla/">Contributor License Agreement</a></li>
+            <li><a href="https://www.home-assistant.io/tos/">Terms of Service</a></li>
+            <li><a href="https://www.home-assistant.io/code_of_conduct/">Code of Conduct</a></li>
+            <li><a href="https://www.home-assistant.io/developers/credits/">Credits</a></li>
+            <li><a href="https://www.home-assistant.io/developers/license/">License</a></li>
+          </ul>
+        </div>
+
+        <div class="socials grid__item one-quarter lap-one-half palm-one-whole">
+
+          <h3>Follow us</h3>
+          <p><a class="external-link" href="https://newsletter.openhomefoundation.org/#/portal">Sign up for our newsletter</a></p>
+          <ul class="icons">
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://youtube.com/@home_assistant" title="YouTube" target="_blank"><iconify-icon icon="simple-icons:youtube"></iconify-icon></a>
+            </li>
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://reddit.com/r/homeassistant" title="Reddit" target="_blank"><iconify-icon icon="simple-icons:reddit"></iconify-icon></a>
+            </li>
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://github.com/home-assistant" title="GitHub" target="_blank"><iconify-icon icon="simple-icons:github"></iconify-icon></a>
+            </li>
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://fosstodon.org/@homeassistant" title="Mastodon" target="_blank"><iconify-icon icon="simple-icons:mastodon"></iconify-icon></a>
+            </li>
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://bsky.app/profile/home-assistant.io" title="Bluesky" target="_blank"><iconify-icon icon="simple-icons:bluesky"></iconify-icon></a>
+            </li>
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://x.com/home_assistant" title="X (formerly Twitter)" target="_blank"><iconify-icon icon="simple-icons:x"></iconify-icon></a>
+            </li>
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://www.facebook.com/homeassistantio" title="Facebook" target="_blank"><iconify-icon icon="simple-icons:facebook"></iconify-icon></a>
+            </li>
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://www.instagram.com/homeassistant/" title="Instagram" target="_blank"><iconify-icon icon="simple-icons:instagram"></iconify-icon></a>
+            </li>
+            
+            <li>
+              <a rel="me noopener noreferrer" href="https://www.linkedin.com/company/home-assistant" title="LinkedIn" target="_blank"><iconify-icon icon="simple-icons:linkedin"></iconify-icon></a>
+            </li>
+            
+          </ul>
+
+          <div class="web-notice">
+            <p>
+              For partnership inquiries please check out <a href="https://works-with.home-assistant.io/">Works With Home Assistant</a>. For media, <a href="mailto:media@openhomefoundation.org">email our team</a>. For other questions, you can <a href="mailto:hello@home-assistant.io">contact support</a> (No technical support!)
+            </p>
+            <p>
+              Website powered by <a href="https://jekyllrb.com/">Jekyll</a><br>
+              Originally based on the <a href="https://github.com/coogie/oscailte">Oscailte theme</a>
+            </p>
+            <a href="https://www.netlify.com/">
+              <img src="Scripts%20-%20Home%20Assistant_files/netlify.svg" alt="Deploys by Netlify Badge">
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      </footer>
+
+    </div>
+    <script type="module" src="Scripts%20-%20Home%20Assistant_files/lite-youtube.js" integrity="sha384-7o3d1sg8jSS1LMKzzIEucWtWFI1X4lFCC5gu2ylAgH3KmHcJgjTqp6LWfIvbbmf9" crossorigin="anonymous"></script>
+
+<script src="Scripts%20-%20Home%20Assistant_files/terminology_tooltip.js" type="text/javascript" defer="defer"></script>
+
+<script src="Scripts%20-%20Home%20Assistant_files/prism.js" type="text/javascript" defer="defer"></script>
+<script src="Scripts%20-%20Home%20Assistant_files/prism-signature.js" type="text/javascript" defer="defer"></script>
+<script src="Scripts%20-%20Home%20Assistant_files/prism-jinja2.js" type="text/javascript" defer="defer"></script>
+<script type="text/javascript">
+window.__templateFunctions = {"abs":{"d":"Returns the absolute value of a number.","u":"/template-functions/abs/","p":{"value":"The number to get the absolute value of. Negative values become positive, positive values remain unchanged."}},"acos":{"d":"Returns the arc cosine (inverse cosine) of a value, in radians.","u":"/template-functions/acos/","p":{"value":"The value to calculate the arc cosine of. Must be numeric and between -1 and 1.","default":"Value to return if the calculation fails (for example, if the input is out of range or not numeric)."}},"add":{"d":"Adds a specified amount to a numeric value, with an optional default if conversion fails.","u":"/template-functions/add/","p":{"value":"The value to convert to a float and add to. Must be a number or a string that can be converted to a float.","amount":"The amount to add to the value. Can be negative to subtract.","default":"Value to return if the conversion fails. If not provided, an error is raised on invalid input."}},"apply":{"d":"Calls a function with a value, letting you pass any function into places where a filter is expected.","u":"/template-functions/apply/","p":{"value":"The value to pass as the first argument to the function (for example, a number from a sensor, or an item from a list).","fn":"The function to call.","args":"Additional positional arguments to pass to the function after the value.","kwargs":"Additional keyword arguments to pass to the function, written as `name=value` pairs."}},"area_devices":{"d":"Returns a list of device IDs associated with a given area.","u":"/template-functions/area_devices/","p":{"area_name_or_id":"The name or ID of the area. You can find area IDs in {% my areas title=\"**Settings** > **Areas, labels & zones**\" %}."}},"area_entities":{"d":"Returns a list of entity IDs associated with a given area.","u":"/template-functions/area_entities/","p":{"area_name_or_id":"The name or ID of the area. You can find area IDs in {% my areas title=\"**Settings** > **Areas, labels & zones**\" %}."}},"area_id":{"d":"Returns the area ID for a given area name, entity ID, or device ID.","u":"/template-functions/area_id/","p":{"lookup_value":"The area name, entity ID, or device ID to look up."}},"area_name":{"d":"Returns the friendly name of an area from its ID, entity ID, or device ID.","u":"/template-functions/area_name/","p":{"lookup_value":"The area ID, entity ID, or device ID to look up."}},"areas":{"d":"Returns a list of all area IDs in your Home Assistant instance.","u":"/template-functions/areas/"},"as_datetime":{"d":"Converts a string or timestamp to a datetime object.","u":"/template-functions/as_datetime/","p":{"value":"The value to convert to a datetime. Can be an ISO 8601 formatted string or a numeric UNIX timestamp.","default":"Value to return if the conversion fails. If not provided, an error is raised on invalid input."}},"as_function":{"d":"Turns a template macro into a reusable function you can pass to map, select, and reject.","u":"/template-functions/as_function/","p":{"macro":"A template macro that takes a `returns` argument."}},"as_local":{"d":"Converts a datetime object to your local time zone.","u":"/template-functions/as_local/","p":{"value":"The datetime object to convert to the local time zone."}},"as_timedelta":{"d":"Parses an ISO 8601 duration string into a timedelta object.","u":"/template-functions/as_timedelta/","p":{"value":"An ISO 8601 duration string to parse."}},"as_timestamp":{"d":"Converts a datetime object or string to a UNIX timestamp.","u":"/template-functions/as_timestamp/","p":{"value":"The datetime object or date/time string to convert.","default":"Value to return if the conversion fails. If not provided, an error is raised on invalid input."}},"asin":{"d":"Returns the arc sine (inverse sine) of a value, in radians.","u":"/template-functions/asin/","p":{"value":"The value to calculate the arc sine of. Must be numeric and between -1 and 1.","default":"Value to return if the calculation fails (for example, if the input is out of range or not numeric)."}},"atan":{"d":"Returns the arc tangent (inverse tangent) of a value, in radians.","u":"/template-functions/atan/","p":{"value":"The value to calculate the arc tangent of. Must be numeric.","default":"Value to return if the calculation fails (for example, if the input is not numeric)."}},"atan2":{"d":"Returns the four-quadrant arc tangent of y/x, in radians.","u":"/template-functions/atan2/","p":{"y":"The y-coordinate (vertical component). Must be numeric.","x":"The x-coordinate (horizontal component). Must be numeric.","default":"Value to return if the calculation fails (for example, if either input is not numeric)."}},"attr":{"d":"Reads an attribute from an object when the attribute name comes from a variable.","u":"/template-functions/attr/","p":{"value":"The object to read from. Most often a state object like `states.sensor.temperature`.","name":"The attribute to read, as text."}},"average":{"d":"Calculates the arithmetic mean of a list of values.","u":"/template-functions/average/","p":{"values":"The values to average. Can be a list or multiple separate arguments. All values must be numeric.","default":"Value to return if the calculation fails (for example, if the list is empty or contains non-numeric values)."}},"base64_decode":{"d":"Decodes a base64-encoded string.","u":"/template-functions/base64_decode/","p":{"value":"The base64-encoded string to decode.","encoding":"The character encoding to use when converting the decoded bytes to a string."}},"base64_encode":{"d":"Encodes a string or bytes to a base64 string.","u":"/template-functions/base64_encode/","p":{"value":"The string or bytes value to encode. Strings are first converted to UTF-8 bytes before encoding."}},"batch":{"d":"Splits a list into smaller batches of a specified size.","u":"/template-functions/batch/","p":{"value":"The list to split into batches.","linecount":"The number of items per batch.","fill_with":"A value to use for padding the last batch if it has fewer items than the batch size."}},"bitwise_and":{"d":"Performs a bitwise AND operation on two values.","u":"/template-functions/bitwise_and/","p":{"first_value":"The first integer value for the AND operation.","second_value":"The second integer value for the AND operation."}},"bitwise_or":{"d":"Performs a bitwise OR operation on two values.","u":"/template-functions/bitwise_or/","p":{"first_value":"The first integer value for the OR operation.","second_value":"The second integer value for the OR operation."}},"bitwise_xor":{"d":"Performs a bitwise XOR (exclusive OR) operation on two values.","u":"/template-functions/bitwise_xor/","p":{"first_value":"The first integer value for the XOR operation.","second_value":"The second integer value for the XOR operation."}},"bool":{"d":"Converts a value to a boolean (true/false), with an optional default if conversion fails.","u":"/template-functions/bool/","p":{"value":"The value to convert to a boolean.","default":"Value to return if the conversion fails. If not provided, an error is raised on unrecognized input."}},"boolean":{"d":"Tests whether a value is a boolean type.","u":"/template-functions/boolean_test/","p":{"value":"The value to test. Returns `true` if the value is of boolean type (`true` or `false`)."}},"callable":{"d":"Tests whether a value is callable (a function or method).","u":"/template-functions/callable/","p":{"value":"The value to test. Returns `true` if the value can be called as a function."}},"capitalize":{"d":"Capitalizes the first character of a string and lowercases the rest.","u":"/template-functions/capitalize/","p":{"value":"The string to capitalize. The first character is uppercased and the rest are lowercased."}},"center":{"d":"Centers a string in a field of a given width, padding with spaces.","u":"/template-functions/center/","p":{"value":"The string to center within the field.","width":"The total width of the field. The string is padded with spaces on both sides to fill this width. Defaults to `80`."}},"clamp":{"d":"Constrains a value between a minimum and maximum bound.","u":"/template-functions/clamp/","p":{"value":"The value to constrain. Must be numeric.","min_value":"The minimum allowed value (inclusive lower bound). Must be numeric.","max_value":"The maximum allowed value (inclusive upper bound). Must be numeric."}},"closest":{"d":"Finds the entity closest to a given location, home, or another entity.","u":"/template-functions/closest/","p":{"args":"Can be called in several ways."}},"combine":{"d":"Merges multiple dictionaries into one.","u":"/template-functions/combine/","p":{"args":"One or more dictionaries to merge. When keys overlap, later dictionaries take precedence.","recursive":"If `true`, nested dictionaries are merged recursively instead of being replaced. Defaults to `false`."}},"config_entry_attr":{"d":"Gets a specific attribute from a config entry.","u":"/template-functions/config_entry_attr/","p":{"config_entry_id":"The config entry ID to look up. You can get this from [`config_entry_id`](/template-functions/config_entry_id/).","attr_name":"The attribute to retrieve."}},"config_entry_id":{"d":"Gets the config entry ID from an entity ID.","u":"/template-functions/config_entry_id/","p":{"entity_id":"The entity ID to look up."}},"contains":{"d":"Tests if a value contains another value. Works with strings, lists, and dictionaries.","u":"/template-functions/contains/","p":{"value":"The value to search in.","item":"The value to search for within the first value."}},"cos":{"d":"Returns the cosine of a value given in radians.","u":"/template-functions/cos/","p":{"value":"The angle in radians to calculate the cosine of. Must be numeric.","default":"Value to return if the calculation fails (for example, if the input is not numeric)."}},"cycler":{"d":"Creates an object that cycles through a list of values. Useful for alternating between values in a loop.","u":"/template-functions/cycler/","p":{"items":"Two or more values to cycle through."}},"default":{"d":"Provides a default value if a variable is undefined or none.","u":"/template-functions/default/","p":{"default_value":"The value to return if the input is undefined (or falsy, when `boolean` is `true`). Defaults to an empty string.","boolean":"If `true`, the filter also replaces falsy values (`false`, `0`, `none`, empty strings, and empty collections) with the default."}},"defined":{"d":"Tests whether a variable is defined (not undefined).","u":"/template-functions/defined/","p":{"value":"The variable to test. Returns `true` if the variable is defined in the current context."}},"device_attr":{"d":"Returns the value of a specific attribute from a device.","u":"/template-functions/device_attr/","p":{"device_or_entity_id":"The device ID or entity ID to look up.","attr_name":"The name of the device attribute to retrieve."}},"device_entities":{"d":"Returns a list of entity IDs associated with a given device.","u":"/template-functions/device_entities/","p":{"device_id":"The ID of the device."}},"device_id":{"d":"Returns the device ID for a given entity ID or device name.","u":"/template-functions/device_id/","p":{"entity_id_or_device_name":"The entity ID or the name of the device."}},"device_name":{"d":"Returns the name of a device from a device ID or entity ID.","u":"/template-functions/device_name/","p":{"device_id_or_entity_id":"The device ID or entity ID to look up."}},"dict":{"d":"Creates a dictionary from keyword arguments.","u":"/template-functions/dict/","p":{"kwargs":"Any number of keyword arguments."}},"dictsort":{"d":"Sorts a dictionary by its keys or values, returning a list of key/value pairs.","u":"/template-functions/dictsort/","p":{"value":"The dictionary to sort.","case_sensitive":"Whether the sort should be case-sensitive.","by":"Whether to sort by `key` or `value`. Defaults to `key`.","reverse":"If `true`, sorts in descending order. Defaults to `false`."}},"difference":{"d":"Returns items in the first list but not in the second (set difference).","u":"/template-functions/difference/","p":{"value":"The first list (the base set). Must be a list or collection.","other":"The second list (items to remove). Must be a list or collection."}},"distance":{"d":"Calculates the distance in kilometers between two points or from home.","u":"/template-functions/distance/","p":{"args":"One or two locations."}},"divisibleby":{"d":"Tests whether a number is divisible by another number.","u":"/template-functions/divisibleby/","p":{"value":"The number to test.","num":"The divisor. The test checks if `value` divided by `num` has zero remainder."}},"e":{"d":"The mathematical constant e (Euler's number), approximately 2.71828.","u":"/template-functions/e/"},"entity_name":{"d":"Gets the friendly name of an entity from its entity ID.","u":"/template-functions/entity_name/","p":{"entity_id":"The entity ID to look up. Returns the friendly name as a string, or `None` if the entity does not exist."}},"eq":{"d":"Tests if two values are equal. Also known as equalto or ==.","u":"/template-functions/eq/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"equalto":{"d":"Tests if two values are equal. Also known as equalto or ==.","u":"/template-functions/eq/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"escape":{"d":"Escapes HTML special characters in a string so they display as literal text.","u":"/template-functions/escape/","p":{"value":"The string to escape. Characters `&`, `<`, `>`, `\"`, and `'` are replaced with their HTML entity equivalents."}},"even":{"d":"Tests whether a number is even.","u":"/template-functions/even/","p":{"value":"The integer to test. Returns `true` if the value is divisible by 2."}},"expand":{"d":"Expands groups and zones into a sorted list of individual entity state objects.","u":"/template-functions/expand/","p":{"args":"One or more entity IDs, state objects, groups, or lists of these."}},"false":{"d":"Tests whether a value is false.","u":"/template-functions/false_test/","p":{"value":"The value to test. Returns `true` only if the value is the boolean `false`."}},"filesizeformat":{"d":"Formats a byte count as a human-readable file size string like 1.2 MB.","u":"/template-functions/filesizeformat/","p":{"value":"The number of bytes to format as a human-readable file size.","binary":"If `true`, uses binary units (KiB, MiB, GiB) where 1 KiB = 1024 bytes."}},"first":{"d":"Returns the first item of a list or the first character of a string.","u":"/template-functions/first/","p":{"value":"The list or string to get the first item from. Must be a non-empty sequence."}},"flatten":{"d":"Flattens nested lists into a single flat list.","u":"/template-functions/flatten/","p":{"value":"The nested list to flatten. Must be a list or collection.","levels":"The number of levels of nesting to flatten."}},"float":{"d":"Tests whether a value is a floating-point number type.","u":"/template-functions/float_test/","p":{"value":"The value to test. Returns `true` if the value is of float type."}},"floor_areas":{"d":"Returns a list of area IDs that belong to a given floor.","u":"/template-functions/floor_areas/","p":{"floor_id_or_name":"The name or ID of the floor. You can find floor IDs in {% my areas title=\"**Settings** > **Areas, labels & zones**\" %}."}},"floor_entities":{"d":"Returns a list of entity IDs for all entities on a given floor.","u":"/template-functions/floor_entities/","p":{"floor_id_or_name":"The name or ID of the floor. You can find floor IDs in {% my areas title=\"**Settings** > **Areas, labels & zones**\" %}."}},"floor_id":{"d":"Returns the floor ID for a given floor name, area name, device ID, or entity ID.","u":"/template-functions/floor_id/","p":{"lookup_value":"The floor name, area name, entity ID, or device ID to look up."}},"floor_name":{"d":"Returns the friendly name of a floor from its ID, area name, device ID, or entity ID.","u":"/template-functions/floor_name/","p":{"lookup_value":"The floor ID, area name, entity ID, or device ID to look up."}},"floors":{"d":"Returns a list of all floor IDs in your Home Assistant instance.","u":"/template-functions/floors/"},"forceescape":{"d":"Escapes HTML special characters, even on strings already marked as safe.","u":"/template-functions/forceescape/","p":{"value":"The string to escape."}},"format":{"d":"Formats a string using printf-style placeholders like %s, %d, and %f.","u":"/template-functions/format/","p":{"value":"The format string containing printf-style placeholders such as `%s` (string), `%d` (integer), or `%f` (float).","args":"The values to insert into the placeholders, in order."}},"from_hex":{"d":"Decodes a hexadecimal string into bytes.","u":"/template-functions/from_hex/","p":{"value":"The hexadecimal string to decode. Must contain an even number of hex characters (0-9, a-f, A-F)."}},"from_json":{"d":"Parses a JSON string into a Python object.","u":"/template-functions/from_json/","p":{"default":"Value to return if the JSON string is invalid or cannot be parsed. If not provided, an error is raised on invalid input."}},"ge":{"d":"Tests if a value is greater than or equal to another. Also known as >=.","u":"/template-functions/ge/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"groupby":{"d":"Groups a list of items by a common attribute, producing a list of (grouper, list) pairs.","u":"/template-functions/groupby/","p":{"value":"The list of items to group.","attribute":"The attribute to group by. Supports dotted notation for nested attributes (for example, `attributes.device_class`).","default":"The default value to use for items that do not have the specified attribute."}},"gt":{"d":"Tests if a value is greater than another. Also known as greaterthan or >.","u":"/template-functions/gt/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"greaterthan":{"d":"Tests if a value is greater than another. Also known as greaterthan or >.","u":"/template-functions/gt/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"has_value":{"d":"Tests if an entity exists and has a valid state (not unavailable or unknown).","u":"/template-functions/has_value/","p":{"entity_id":"The entity ID to check. Returns `true` if the entity exists and its state is not `unavailable` or `unknown`."}},"iif":{"d":"Shorthand for basic if/else logic in a single expression.","u":"/template-functions/iif/","p":{"condition":"The value to evaluate as a boolean. Truthy values return `if_true`, falsy values return `if_false`.","if_true":"Value to return when the condition is truthy.","if_false":"Value to return when the condition is falsy.","if_none":"Value to return when the condition is `None`. If not provided, `None` is treated as falsy and `if_false` is returned."}},"in":{"d":"Tests whether a value is contained in a sequence.","u":"/template-functions/in_test/","p":{"value":"The value to search for in the sequence.","seq":"The sequence (list, tuple, or string) to search in."}},"indent":{"d":"Indents text by a given number of spaces, with options for the first line and blank lines.","u":"/template-functions/indent/","p":{"value":"The string to indent.","width":"The number of spaces to add to the beginning of each indented line. Defaults to `4`.","first":"Whether to indent the first line as well. Defaults to `false`.","blank":"Whether to indent blank lines. Defaults to `false`."}},"int":{"d":"Converts a value to an integer, with an optional default if conversion fails.","u":"/template-functions/int/","p":{"value":"The value to convert to an integer.","default":"Value to return if the conversion fails.","base":"The numeric base to use for conversion."}},"integer":{"d":"Tests whether a value is an integer type.","u":"/template-functions/integer_test/","p":{"value":"The value to test. Returns `true` if the value is of integer type."}},"integration_entities":{"d":"Returns a list of entity IDs tied to an integration or config entry.","u":"/template-functions/integration_entities/","p":{"entry_name":"The integration domain name (for example, `hue`) or config entry title (for example, `Living Room Hue Bridge`)."}},"intersect":{"d":"Returns items common to both lists (set intersection).","u":"/template-functions/intersect/","p":{"value":"The first list to compare. Must be a list or collection.","other":"The second list to compare against. Must be a list or collection."}},"is_defined":{"d":"Forces a template error if the value is undefined, ensuring variables exist before use.","u":"/template-functions/is_defined/","p":{"value":"The value to check."}},"is_device_attr":{"d":"Tests if a specific attribute of a device has a given value.","u":"/template-functions/is_device_attr/","p":{"device_or_entity_id":"The device ID or entity ID to check.","attr_name":"The name of the device attribute to test.","attr_value":"The value to compare the attribute against."}},"is_hidden_entity":{"d":"Tests if an entity is hidden in the entity registry.","u":"/template-functions/is_hidden_entity/","p":{"entity_id":"The entity ID to check."}},"is_number":{"d":"Tests whether a value can be converted to a finite number.","u":"/template-functions/is_number/","p":{"value":"The value to test."}},"is_state":{"d":"Tests if an entity is in a specific state.","u":"/template-functions/is_state/","p":{"entity_id":"The entity ID to check.","state":"The state value to compare against. Can be a single string or a list of strings to match against any of them."}},"is_state_attr":{"d":"Tests if a specific attribute of an entity has a given value.","u":"/template-functions/is_state_attr/","p":{"entity_id":"The entity ID to check.","attribute":"The name of the attribute to test.","value":"The value to compare the attribute against."}},"issue":{"d":"Returns a specific repair issue by domain and issue ID, or None if it does not exist.","u":"/template-functions/issue/","p":{"domain":"The integration domain that created the issue (for example, `hue`, `zwave`, or `mqtt`).","issue_id":"The unique identifier for the specific issue within the domain."}},"issues":{"d":"Returns all active repair issues currently open in Home Assistant.","u":"/template-functions/issues/"},"items":{"d":"Returns the key/value pairs from a dictionary as a list of tuples.","u":"/template-functions/items/","p":{"value":"The dictionary to extract key/value pairs from."}},"iterable":{"d":"Tests whether a value is iterable.","u":"/template-functions/iterable/","p":{"value":"The value to test. Returns `true` if the value can be iterated over."}},"join":{"d":"Joins a list of values into a single string with a separator between each element.","u":"/template-functions/join/","p":{"value":"The list of values to join into a string. Each element is converted to a string before joining.","separator":"The string to place between each element. Defaults to an empty string (no separator).","attribute":"If the list contains objects, join by this attribute instead of the object itself."}},"joiner":{"d":"Creates a helper that joins loop iterations with a separator, returning an empty string on the first call.","u":"/template-functions/joiner/","p":{"separator":"The string to insert between items. Defaults to `\", \"`."}},"label_areas":{"d":"Returns a list of area IDs that have a specific label assigned.","u":"/template-functions/label_areas/","p":{"label_id_or_name":"The label name or ID to look up."}},"label_description":{"d":"Returns the description of a label from its ID.","u":"/template-functions/label_description/","p":{"lookup_value":"The label ID to look up."}},"label_devices":{"d":"Returns a list of device IDs that have a specific label assigned.","u":"/template-functions/label_devices/","p":{"label_id_or_name":"The label name or ID to look up."}},"label_entities":{"d":"Returns a list of entity IDs that have a specific label assigned.","u":"/template-functions/label_entities/","p":{"label_id_or_name":"The label name or ID to look up."}},"label_id":{"d":"Returns the label ID for a given label name.","u":"/template-functions/label_id/","p":{"lookup_value":"The name of the label to look up."}},"label_name":{"d":"Returns the friendly name of a label from its ID.","u":"/template-functions/label_name/","p":{"lookup_value":"The label ID to look up. Returns the friendly name of the label, or `None` if no label with that ID exists."}},"labels":{"d":"Returns a list of all label IDs, or the labels assigned to a specific entity, device, or area.","u":"/template-functions/labels/","p":{"lookup_value":"An entity ID, device ID, or area ID to look up."}},"last":{"d":"Returns the last item of a list or the last character of a string.","u":"/template-functions/last/","p":{"value":"The list or string to get the last item from. Must be a non-empty sequence."}},"le":{"d":"Tests if a value is less than or equal to another. Also known as <=.","u":"/template-functions/le/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"length":{"d":"Returns the number of items in a list, characters in a string, or keys in a dictionary. Also available as count.","u":"/template-functions/length/","p":{"value":"The list, string, or dictionary to measure. Any object that supports `len()` is accepted."}},"count":{"d":"Returns the number of items in a list, characters in a string, or keys in a dictionary. Also available as count.","u":"/template-functions/length/","p":{"value":"The list, string, or dictionary to measure. Any object that supports `len()` is accepted."}},"lipsum":{"d":"Generates lorem ipsum placeholder text. Useful for testing and prototyping templates.","u":"/template-functions/lipsum/","p":{"n":"The number of paragraphs to generate. Defaults to `5`.","html":"If `true`, wraps each paragraph in `<p>` tags.","min":"The minimum number of words per sentence. Defaults to `20`.","max":"The maximum number of words per sentence. Defaults to `100`."}},"list":{"d":"Converts a value to a list.","u":"/template-functions/list/","p":{"value":"The value to convert to a list."}},"log":{"d":"Returns the logarithm of a value with an optional base (default is natural logarithm).","u":"/template-functions/log/","p":{"value":"The value to calculate the logarithm of. Must be a positive number.","base":"The base of the logarithm.","default":"Value to return if the calculation fails (for example, if the input is not a positive number)."}},"lower":{"d":"Converts all characters in a string to lowercase.","u":"/template-functions/lower/","p":{"value":"The string to convert to lowercase."}},"lt":{"d":"Tests if a value is less than another. Also known as lessthan or <.","u":"/template-functions/lt/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"lessthan":{"d":"Tests if a value is less than another. Also known as lessthan or <.","u":"/template-functions/lt/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"map":{"d":"Applies a filter to each item or extracts an attribute from each item in a list.","u":"/template-functions/map/","p":{"value":"The list of items to transform.","args":"When extracting attributes, omit this.","attribute":"The name of the attribute to extract from each item.","default":"A default value to use when an item does not have the specified attribute. Only used with `attribute=`."}},"mapping":{"d":"Tests whether a value is a mapping (dictionary).","u":"/template-functions/mapping/","p":{"value":"The value to test. Returns `true` if the value is a mapping (dictionary) type."}},"match":{"d":"Template test that checks if a string matches a regular expression at the beginning.","u":"/template-functions/match/","p":{"value":"The string to test against the regex pattern.","find":"The regular expression pattern to match at the beginning of the string.","ignorecase":"Set to `true` to make the match case-insensitive."}},"max":{"d":"Returns the largest value from a list of values.","u":"/template-functions/max/","p":{"values":"The values to find the maximum of. Can be a list or multiple separate arguments."}},"md5":{"d":"Calculates the MD5 hash of a string.","u":"/template-functions/md5/","p":{"value":"The string to hash. The string is encoded to UTF-8 before hashing."}},"median":{"d":"Calculates the statistical median (middle value) of a list of values.","u":"/template-functions/median/","p":{"values":"The values to find the median of. Can be a list or multiple separate arguments. All values must be numeric.","default":"Value to return if the calculation fails (for example, if the list is empty or contains non-numeric values)."}},"merge_response":{"d":"Merges action response dictionaries into a flat list.","u":"/template-functions/merge_response/","p":{"value":"The action response dictionary to merge."}},"min":{"d":"Returns the smallest value from a list of values.","u":"/template-functions/min/","p":{"values":"The values to find the minimum of. Can be a list or multiple separate arguments."}},"multiply":{"d":"Multiplies a numeric value by a specified amount, with an optional default if conversion fails.","u":"/template-functions/multiply/","p":{"value":"The value to convert to a float and multiply. Must be a number or a string that can be converted to a float.","amount":"The amount to multiply the value by.","default":"Value to return if the conversion fails. If not provided, an error is raised on invalid input."}},"namespace":{"d":"Creates a mutable namespace object for storing variables across loop scopes in templates.","u":"/template-functions/namespace/","p":{"kwargs":"Any number of keyword arguments that become attributes on the namespace object."}},"ne":{"d":"Tests if two values are not equal. Also known as !=.","u":"/template-functions/ne/","p":{"value":"The value to test. This is the left-hand side of the comparison.","other":"The value to compare against."}},"none":{"d":"Tests whether a value is None.","u":"/template-functions/none/","p":{"value":"The value to test. Returns `true` if the value is `None`."}},"now":{"d":"Returns the current date and time in your local time zone.","u":"/template-functions/now/"},"number":{"d":"Tests whether a value is a number (integer or float).","u":"/template-functions/number_test/","p":{"value":"The value to test. Returns `true` if the value is an integer or float."}},"odd":{"d":"Tests whether a number is odd.","u":"/template-functions/odd/","p":{"value":"The integer to test. Returns `true` if the value is not divisible by 2."}},"ord":{"d":"Returns the Unicode code point for a single character.","u":"/template-functions/ord/","p":{"character":"A single character to convert to its Unicode code point. Must be a string of length 1."}},"ordinal":{"d":"Converts a number to its ordinal string representation (1st, 2nd, 3rd, and so on).","u":"/template-functions/ordinal/","p":{"value":"The number to convert to an ordinal string. Can be an integer or a string representation of a number."}},"pack":{"d":"Packs a value into bytes using a Python struct format string.","u":"/template-functions/pack/","p":{"value":"The value to pack into bytes. The type must match what the format string expects (for example, an integer for `>H`).","format_string":"A Python struct format string that describes the byte layout."}},"pi":{"d":"The mathematical constant pi, approximately 3.14159.","u":"/template-functions/pi/"},"pprint":{"d":"Pretty-prints a value in a readable format, useful for debugging templates.","u":"/template-functions/pprint/","p":{"value":"The value to pretty-print. Works with any data type including dictionaries, lists, strings, and numbers.","verbose":"If `true`, includes additional type information in the output. Defaults to `false`."}},"random":{"d":"Chooses a random value from a list. Returns a different value each time the template is evaluated.","u":"/template-functions/random/","p":{"values":"The list of values to randomly choose from. Must contain at least one item."}},"range":{"d":"Generates a sequence of numbers, like Python's range(). Commonly used for looping a specific number of times.","u":"/template-functions/range/","p":{"start":"The starting number of the sequence. Defaults to `0` when only a stop value is given.","stop":"The end of the sequence. The stop value is not included in the output.","step":"The increment between each number in the sequence. Defaults to `1`. Can be negative to count downward."}},"regex_findall":{"d":"Finds all occurrences of a regular expression pattern in a string and returns them as a list.","u":"/template-functions/regex_findall/","p":{"value":"The string to search within for all matches of the regex pattern.","find":"The regular expression pattern to search for. All non-overlapping matches are returned.","ignorecase":"Set to `true` to make the search case-insensitive."}},"regex_findall_index":{"d":"Finds all occurrences of a regex pattern and returns the match at a specific index.","u":"/template-functions/regex_findall_index/","p":{"value":"The string to search within for matches of the regex pattern.","find":"The regular expression pattern to search for.","index":"The position of the match to return, starting from 0 for the first match. Defaults to 0 (the first match).","ignorecase":"Set to `true` to make the search case-insensitive."}},"regex_match":{"d":"Tests if a string matches a regular expression pattern at the beginning.","u":"/template-functions/regex_match/","p":{"value":"The string to test against the regex pattern.","find":"The regular expression pattern to match at the beginning of the string.","ignorecase":"Set to `true` to make the match case-insensitive."}},"regex_replace":{"d":"Replaces all occurrences of a regular expression pattern in a string.","u":"/template-functions/regex_replace/","p":{"value":"The string in which to perform the replacement.","find":"The regular expression pattern to search for. All matches will be replaced.","replace":"The string to replace each match with. Can be empty to remove matches entirely.","ignorecase":"Set to `true` to make the pattern matching case-insensitive."}},"regex_search":{"d":"Searches for a regular expression pattern anywhere in a string.","u":"/template-functions/regex_search/","p":{"value":"The string to search within for the regex pattern.","find":"The regular expression pattern to search for anywhere in the string.","ignorecase":"Set to `true` to make the search case-insensitive."}},"reject":{"d":"Filters a list, removing items that pass a given test. The opposite of select.","u":"/template-functions/reject/","p":{"value":"The list of items to filter.","args":"The test name as a string, optionally followed by arguments for the test."}},"rejectattr":{"d":"Filters a list, removing items where a specified attribute passes a test. The opposite of selectattr.","u":"/template-functions/rejectattr/","p":{"value":"The list of objects to filter.","attribute":"The attribute to test on each item.","args":"The test name and optional arguments."}},"relative_time":{"d":"Returns a human-readable string describing how long ago a datetime was.","u":"/template-functions/relative_time/","p":{"value":"A datetime object representing a point in the past."}},"remap":{"d":"Remaps a value from one numeric range to another, with optional stepping and edge handling.","u":"/template-functions/remap/","p":{"value":"The value to remap. Must be numeric.","in_min":"The minimum of the input range. Must be numeric.","in_max":"The maximum of the input range. Must be numeric.","out_min":"The minimum of the output range. Must be numeric.","out_max":"The maximum of the output range. Must be numeric.","steps":"If greater than 0, quantizes the output into the specified number of discrete steps.","edges":"Controls how input values outside the input range are handled."}},"replace":{"d":"Replaces all occurrences of a substring with another string.","u":"/template-functions/replace/","p":{"value":"The string in which to perform the replacement.","old":"The substring to search for.","new":"The string to replace each occurrence with.","count":"The maximum number of replacements to make. If not provided, all occurrences are replaced."}},"reverse":{"d":"Reverses the order of items in a list or characters in a string.","u":"/template-functions/reverse/","p":{"value":"The list or string to reverse."}},"round":{"d":"Rounds a numeric value to a specified number of decimal places using various rounding methods.","u":"/template-functions/round/","p":{"value":"The value to round. Must be a number or a string that can be converted to a float.","precision":"The number of decimal places to round to. Defaults to `0`, which returns an integer.","method":"The rounding method to use. One of `common`, `ceil`, `floor`, or `half`. Defaults to `common`.","default":"Value to return if the conversion fails. If not provided, an error is raised on invalid input."}},"safe":{"d":"Marks a string as safe HTML so it will not be escaped when rendered.","u":"/template-functions/safe/","p":{"value":"The string to mark as safe. It will not be escaped when rendered in an HTML context."}},"sameas":{"d":"Tests whether a value is the same object as another (identity check).","u":"/template-functions/sameas/","p":{"value":"The value to test. This is the left-hand side of the identity check.","other":"The object to compare against. The test checks if both refer to the same object."}},"search":{"d":"Template test that checks if a string contains a regular expression pattern anywhere.","u":"/template-functions/search/","p":{"value":"The string to search within for the regex pattern.","find":"The regular expression pattern to search for anywhere in the string.","ignorecase":"Set to `true` to make the search case-insensitive."}},"select":{"d":"Filters a list, keeping only items that pass a given test.","u":"/template-functions/select/","p":{"value":"The list of items to filter.","args":"The test name as a string, optionally followed by arguments for the test."}},"selectattr":{"d":"Filters a list, keeping only items where a specified attribute passes a test.","u":"/template-functions/selectattr/","p":{"value":"The list of objects to filter.","attribute":"The attribute to test on each item.","args":"The test name and optional arguments."}},"sequence":{"d":"Tests whether a value is a sequence (list, tuple, or string).","u":"/template-functions/sequence/","p":{"value":"The value to test. Returns `true` if the value is a sequence (list, tuple, or string)."}},"set":{"d":"Converts an iterable to a set, removing duplicate values.","u":"/template-functions/set/","p":{"value":"The collection to convert to a set. Duplicate values are removed."}},"sha1":{"d":"Calculates the SHA1 hash of a string.","u":"/template-functions/sha1/","p":{"value":"The string to hash. The string is encoded to UTF-8 before hashing."}},"sha256":{"d":"Calculates the SHA256 hash of a string.","u":"/template-functions/sha256/","p":{"value":"The string to hash. The string is encoded to UTF-8 before hashing."}},"sha512":{"d":"Calculates the SHA512 hash of a string.","u":"/template-functions/sha512/","p":{"value":"The string to hash. The string is encoded to UTF-8 before hashing."}},"shuffle":{"d":"Randomly shuffles the items in a list.","u":"/template-functions/shuffle/","p":{"value":"The list of items to shuffle. Can be provided as a list or as multiple separate arguments.","seed":"An optional seed value for reproducible shuffling. When the same seed is used, the same order is produced every time."}},"sin":{"d":"Returns the sine of a value given in radians.","u":"/template-functions/sin/","p":{"value":"The angle in radians to calculate the sine of. Must be numeric.","default":"Value to return if the calculation fails (for example, if the input is not numeric)."}},"slice":{"d":"Slices a list into a specified number of sub-lists of roughly equal size.","u":"/template-functions/slice/","p":{"value":"The list to slice into sub-lists.","slices":"The number of sub-lists to create.","fill_with":"A value to use for padding the shorter sub-lists so they all have the same length."}},"slugify":{"d":"Converts a string to a slug format with an optional separator character.","u":"/template-functions/slugify/","p":{"value":"The string to convert into a slug.","separator":"The character to use between words. Defaults to an underscore (`_`)."}},"sort":{"d":"Sorts the items in a list, with optional attribute-based and reverse sorting.","u":"/template-functions/sort/","p":{"value":"The list to sort.","reverse":"If `true`, sorts in descending order. Defaults to `false`.","case_sensitive":"If `true`, uppercase letters sort before lowercase. Defaults to `false`, which treats uppercase and lowercase as equal.","attribute":"Sort by this attribute of each item instead of the item itself."}},"sqrt":{"d":"Returns the square root of a value.","u":"/template-functions/sqrt/","p":{"value":"The value to calculate the square root of. Must be a non-negative number.","default":"Value to return if the calculation fails (for example, if the input is negative or not numeric)."}},"state_attr":{"d":"Returns the value of a specific attribute from an entity's state.","u":"/template-functions/state_attr/","p":{"entity_id":"The entity ID to get the attribute from.","attribute":"The name of the attribute to retrieve. Returns `None` if the entity or attribute does not exist."}},"state_attr_translated":{"d":"Returns the translated value of a specific attribute from an entity's state.","u":"/template-functions/state_attr_translated/","p":{"entity_id":"The entity ID to get the translated attribute from.","attribute":"The name of the attribute to retrieve."}},"state_translated":{"d":"Returns the translated state value of an entity in your configured language.","u":"/template-functions/state_translated/","p":{"entity_id":"The entity ID to get the translated state from."}},"states":{"d":"Returns the state value of an entity, or lets you iterate over all entity states.","u":"/template-functions/states/","p":{"entity_id":"The entity ID to get the state from. Returns the state as a string, or `unknown` if the entity does not exist.","rounded":"When `true`, numeric states are rounded according to the entity's display precision (the same rounding shown in the UI).","with_unit":"When `true`, appends the entity's unit of measurement to the state."}},"statistical_mode":{"d":"Returns the most commonly occurring value in a list of values.","u":"/template-functions/statistical_mode/","p":{"values":"The values to find the mode of. Can be a list or multiple separate arguments.","default":"Value to return if the calculation fails (for example, if the list is empty)."}},"string":{"d":"Tests whether a value is a string type.","u":"/template-functions/string_test/","p":{"value":"The value to test. Returns `true` if the value is of string type."}},"striptags":{"d":"Removes all HTML/XML tags from a string, leaving only the text content.","u":"/template-functions/striptags/","p":{"value":"The string from which to remove all HTML/XML tags. Whitespace is normalized in the result."}},"strptime":{"d":"Parses a time string with a specified format into a datetime object.","u":"/template-functions/strptime/","p":{"string":"The date/time string to parse.","format":"The format string describing the structure of the date/time string.","default":"Value to return if the string cannot be parsed with the given format."}},"sum":{"d":"Sums all values in a list, with optional attribute extraction and start value.","u":"/template-functions/sum/","p":{"value":"The list of values to sum. Items should be numeric.","attribute":"If provided, this attribute is extracted from each item and summed.","start":"A starting value for the sum. Defaults to `0`."}},"symmetric_difference":{"d":"Returns items in either list but not in both.","u":"/template-functions/symmetric_difference/","p":{"value":"The first list. Must be a list or collection.","other":"The second list. Must be a list or collection."}},"tan":{"d":"Returns the tangent of a value given in radians.","u":"/template-functions/tan/","p":{"value":"The angle in radians to calculate the tangent of. Must be numeric.","default":"Value to return if the calculation fails (for example, if the input is not numeric)."}},"tau":{"d":"The mathematical constant tau (2 * pi), approximately 6.28318.","u":"/template-functions/tau/"},"time_since":{"d":"Returns a human-readable string describing how much time has passed since a datetime.","u":"/template-functions/time_since/","p":{"value":"A datetime object representing a point in the past.","precision":"The number of time components to include in the output, from 1 to 6."}},"time_until":{"d":"Returns a human-readable string describing how much time remains until a datetime.","u":"/template-functions/time_until/","p":{"value":"A datetime object representing a point in the future.","precision":"The number of time components to include in the output, from 1 to 6."}},"timedelta":{"d":"Creates a timedelta object from numeric time components.","u":"/template-functions/timedelta/","p":{"days":"Number of days.","seconds":"Number of seconds.","microseconds":"Number of microseconds.","milliseconds":"Number of milliseconds.","minutes":"Number of minutes.","hours":"Number of hours.","weeks":"Number of weeks."}},"timestamp_custom":{"d":"Formats a UNIX timestamp as a string using a custom format.","u":"/template-functions/timestamp_custom/","p":{"format_string":"The format string describing the desired output.","local_time":"Whether to convert the timestamp to the local time zone before formatting. Set to `false` to format in UTC.","default":"Value to return if the formatting fails. If not provided, an error is raised on invalid input."}},"timestamp_local":{"d":"Formats a UNIX timestamp as a local datetime string.","u":"/template-functions/timestamp_local/","p":{"default":"Value to return if the formatting fails. If not provided, an error is raised on invalid input."}},"timestamp_utc":{"d":"Formats a UNIX timestamp as a UTC datetime string.","u":"/template-functions/timestamp_utc/","p":{"default":"Value to return if the formatting fails. If not provided, an error is raised on invalid input."}},"title":{"d":"Converts a string to title case, capitalizing the first letter of each word.","u":"/template-functions/title/","p":{"value":"The string to convert to title case. The first letter of each word is capitalized."}},"to_json":{"d":"Serializes a value to a JSON string.","u":"/template-functions/to_json/","p":{"ensure_ascii":"If `true`, all non-ASCII characters are escaped in the output.","pretty_print":"If `true`, the output is formatted with indentation for readability. Useful for debugging or displaying structured data.","sort_keys":"If `true`, dictionary keys are sorted alphabetically in the output."}},"today_at":{"d":"Returns today's date combined with a specific time.","u":"/template-functions/today_at/","p":{"time_str":"A time string in \"HH:MM\" or \"HH:MM:SS\" format. If not provided, defaults to midnight (\"00:00\")."}},"tojson":{"d":"Serializes a value to a JSON-formatted string.","u":"/template-functions/tojson/","p":{"indent":"Number of spaces to use for indentation when pretty-printing."}},"trim":{"d":"Strips leading and trailing whitespace (or specified characters) from a string.","u":"/template-functions/trim/","p":{"value":"The string to strip. Leading and trailing whitespace (or specified characters) will be removed.","chars":"A string of characters to strip from both ends. If not provided, whitespace is stripped."}},"true":{"d":"Tests whether a value is true.","u":"/template-functions/true_test/","p":{"value":"The value to test. Returns `true` only if the value is the boolean `true`."}},"truncate":{"d":"Truncates a string to a given length, appending an ellipsis if it was shortened.","u":"/template-functions/truncate/","p":{"value":"The string to truncate.","length":"The maximum length of the output string, including the end marker. Defaults to `255`.","killwords":"If `true`, words may be cut in half at the exact length.","end":"The string to append when the text is truncated. Defaults to `...`.","leeway":"If the string is only this many characters longer than the length, it is not truncated. Defaults to `5`."}},"tuple":{"d":"Converts an iterable to a tuple.","u":"/template-functions/tuple/","p":{"value":"The collection to convert to a tuple. Can be a list, set, or any other collection."}},"typeof":{"d":"Returns the type name of a value as a string.","u":"/template-functions/typeof/","p":{"value":"The value whose type name to return. Returns the Python class name as a string."}},"undefined":{"d":"Tests whether a variable is undefined.","u":"/template-functions/undefined/","p":{"value":"The variable to test. Returns `true` if the variable is not defined in the current context."}},"union":{"d":"Returns all unique items from both lists (set union).","u":"/template-functions/union/","p":{"value":"The first list. Must be a list or collection.","other":"The second list. Must be a list or collection."}},"unique":{"d":"Removes duplicate values from a list, keeping only unique items.","u":"/template-functions/unique/","p":{"value":"The list to remove duplicates from.","case_sensitive":"If `true`, \"On\" and \"on\" are treated as different values. Defaults to `false`.","attribute":"Deduplicate based on this attribute of each item. Only the first item with each unique attribute value is kept."}},"unpack":{"d":"Unpacks bytes into a value using a Python struct format string.","u":"/template-functions/unpack/","p":{"value":"The bytes object to unpack. Must contain enough bytes for the specified format string.","format_string":"A Python struct format string that describes how to interpret the bytes.","offset":"The number of bytes to skip from the beginning of the data before unpacking. Defaults to `0` (start at the beginning)."}},"upper":{"d":"Converts all characters in a string to uppercase.","u":"/template-functions/upper/","p":{"value":"The string to convert to uppercase."}},"urlencode":{"d":"URL-encodes a dictionary of values for use in HTTP requests.","u":"/template-functions/urlencode/","p":{"value":"A dictionary of key-value pairs to encode into a URL query string format."}},"urlize":{"d":"Converts plain text URLs into HTML links.","u":"/template-functions/urlize/","p":{"value":"The string in which to find and convert URLs into HTML links.","trim_url_limit":"If set, the displayed URL text is shortened to this many characters. The link itself is not affected.","nofollow":"If `true`, adds `rel=\"nofollow\"` to the generated links. Defaults to `false`.","target":"Sets the `target` attribute on the generated links (for example, `_blank` to open in a new tab).","rel":"Sets a custom `rel` attribute on the generated links."}},"utcnow":{"d":"Returns the current date and time in UTC.","u":"/template-functions/utcnow/"},"version":{"d":"Converts a string into a version object that supports comparison operators.","u":"/template-functions/version/","p":{"value":"The version string to parse. Supports common formats like `1.2.3`, `2024.1.0`, or `1.0-beta`."}},"wordcount":{"d":"Counts the number of words in a string.","u":"/template-functions/wordcount/","p":{"value":"The string in which to count the words. Words are split on whitespace."}},"wordwrap":{"d":"Wraps text at a given line width by inserting line breaks.","u":"/template-functions/wordwrap/","p":{"value":"The string to wrap.","width":"The maximum number of characters per line. Defaults to `79`.","break_long_words":"If `true`, words longer than the width will be broken.","break_on_hyphens":"If `true`, wrapping can occur at hyphens in compound words. Defaults to `true`.","wrapstring":"The string to use for line breaks. Defaults to a newline character."}},"wrap":{"d":"Wraps a value cyclically within a range.","u":"/template-functions/wrap/","p":{"value":"The value to wrap. Must be numeric.","min_value":"The minimum of the range (inclusive). Must be numeric.","max_value":"The maximum of the range (exclusive). Must be numeric and greater than min_value."}},"xmlattr":{"d":"Converts a dictionary into an XML/HTML attribute string.","u":"/template-functions/xmlattr/","p":{"value":"A dictionary of attribute names and values to convert into an HTML/XML attribute string.","autospace":"If `true`, a leading space is added before the first attribute."}},"zip":{"d":"Zips multiple iterables together into a list of tuples, pairing elements by position.","u":"/template-functions/zip/","p":{"iterables":"Two or more iterables to zip together. Each iterable contributes one element per tuple in the result."}}};
+window.__actions = {"light.toggle":{"d":"Flip a light between on and off. If it's off, it turns on. If it's on, it turns off.","u":"/actions/light.toggle/","t":"Toggle a light","p":{"transition":"Duration, in seconds, it takes to reach the next state. Use this to fade smoothly instead of switching instantly.","brightness":"Number indicating brightness when the light turns on, where 0 is off, 1 is the minimum, and 255 is the maximum.","brightness_pct":"Percentage of full brightness when the light turns on, where 0 is off, 1 is the minimum, and 100 is the maximum.","color_name":"A human-readable color name to apply when the light turns on, for example `warm_white`, `tomato`, or `cornflowerblue`.","color_temp_kelvin":"Color temperature in Kelvin to apply when the light turns on. Lower values are warmer (more yellow), higher values are cooler (more blue).","rgb_color":"The color in RGB format to apply when the light turns on. A list of three integers between 0 and 255 representing red, green, and blue.","hs_color":"Color in hue/sat format to apply when the light turns on. A list of two integers, where hue is 0 to 360 and saturation is 0 to 100.","xy_color":"Color in XY format to apply when the light turns on. A list of two decimal numbers between 0 and 1.","effect":"Light effect to apply when the light turns on. Available effects depend on the specific light.","flash":"Tell the light to flash briefly. Accepts either `short` or `long`.","profile":"Name of a light profile to apply when the light turns on."}},"light.turn_off":{"d":"Turn a light off. Optionally fade it out with a transition, or have it flash briefly before it goes dark.","u":"/actions/light.turn_off/","t":"Turn off a light","p":{"transition":"Duration, in seconds, it takes to fade the light out. Use this to dim down smoothly instead of switching off instantly.","flash":"Tell the light to flash briefly before turning off. Accepts either `short` or `long`."}},"light.turn_on":{"d":"Turn a light on. Optionally set brightness, color, color temperature, an effect, or a transition.","u":"/actions/light.turn_on/","t":"Turn on a light","p":{"transition":"Duration, in seconds, it takes to get to the next state. Use this to fade smoothly instead of switching instantly.","brightness":"Number indicating brightness, where 0 turns the light off, 1 is the minimum brightness, and 255 is the maximum brightness.","brightness_pct":"Number indicating the percentage of full brightness, where 0 turns the light off, 1 is the minimum brightness, and 100 is the maximum brightness.","color_name":"A human-readable color name, for example `warm_white`, `tomato`, or `cornflowerblue`.","color_temp_kelvin":"Color temperature in Kelvin. Lower values are warmer (more yellow), higher values are cooler (more blue).","rgb_color":"The color in RGB format. A list of three integers between 0 and 255 representing the values of red, green, and blue.","hs_color":"Color in hue/sat format. A list of two integers, where hue is 0 to 360 and saturation is 0 to 100.","xy_color":"Color in XY format. A list of two decimal numbers between 0 and 1.","effect":"Light effect to apply. Available effects depend on the specific light.","flash":"Tell the light to flash briefly. Accepts either `short` or `long`.","profile":"Name of a light profile to apply."}}};
+window.__triggers = {"air_quality.co2_changed":{"d":"Triggers after one or more carbon dioxide levels change.","u":"/triggers/air_quality.co2_changed/","t":"Carbon dioxide level changed","p":{"threshold":"The minimum amount the carbon dioxide level must change before the trigger fires."}},"air_quality.co2_crossed_threshold":{"d":"Triggers after one or more carbon dioxide levels cross a threshold.","u":"/triggers/air_quality.co2_crossed_threshold/","t":"Carbon dioxide level crossed threshold","p":{"threshold":"The carbon dioxide level (in ppm) the reading has to cross for the trigger to fire.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.co_changed":{"d":"Triggers after one or more carbon monoxide levels change.","u":"/triggers/air_quality.co_changed/","t":"Carbon monoxide level changed","p":{"threshold":"The minimum amount the carbon monoxide level must change before the trigger fires."}},"air_quality.co_cleared":{"d":"Triggers after one or more carbon monoxide sensors stop detecting carbon monoxide.","u":"/triggers/air_quality.co_cleared/","t":"Carbon monoxide cleared","p":{"behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"Duration the state must hold before firing. Accepts a duration string like `00:05:00` for five minutes."}},"air_quality.co_crossed_threshold":{"d":"Triggers after one or more carbon monoxide levels cross a threshold.","u":"/triggers/air_quality.co_crossed_threshold/","t":"Carbon monoxide level crossed threshold","p":{"threshold":"The carbon monoxide level (in ppm) the reading has to cross for the trigger to fire.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.co_detected":{"d":"Triggers after one or more carbon monoxide sensors start detecting carbon monoxide.","u":"/triggers/air_quality.co_detected/","t":"Carbon monoxide detected","p":{"behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"Duration the state must hold before firing. Accepts a duration string like `00:05:00` for five minutes."}},"air_quality.gas_cleared":{"d":"Triggers after one or more gas sensors stop detecting gas.","u":"/triggers/air_quality.gas_cleared/","t":"Gas cleared","p":{"behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"Duration the state must hold before firing. Accepts a duration string like `00:05:00` for five minutes."}},"air_quality.gas_detected":{"d":"Triggers after one or more gas sensors start detecting gas.","u":"/triggers/air_quality.gas_detected/","t":"Gas detected","p":{"behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"Duration the state must hold before firing. Accepts a duration string like `00:05:00` for five minutes."}},"air_quality.n2o_changed":{"d":"Triggers after one or more nitrous oxide levels change.","u":"/triggers/air_quality.n2o_changed/","t":"Nitrous oxide level changed","p":{"threshold":"The minimum amount the nitrous oxide level must change before the trigger fires."}},"air_quality.n2o_crossed_threshold":{"d":"Triggers after one or more nitrous oxide levels cross a threshold.","u":"/triggers/air_quality.n2o_crossed_threshold/","t":"Nitrous oxide level crossed threshold","p":{"threshold":"The nitrous oxide concentration the reading has to cross for the trigger to fire.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.no2_changed":{"d":"Triggers after one or more nitrogen dioxide levels change.","u":"/triggers/air_quality.no2_changed/","t":"Nitrogen dioxide level changed","p":{"threshold":"The minimum amount the nitrogen dioxide level must change before the trigger fires."}},"air_quality.no2_crossed_threshold":{"d":"Triggers after one or more nitrogen dioxide levels cross a threshold.","u":"/triggers/air_quality.no2_crossed_threshold/","t":"Nitrogen dioxide level crossed threshold","p":{"threshold":"The nitrogen dioxide concentration the reading has to cross for the trigger to fire.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.no_changed":{"d":"Triggers after one or more nitrogen monoxide levels change.","u":"/triggers/air_quality.no_changed/","t":"Nitrogen monoxide level changed","p":{"threshold":"The minimum amount the nitrogen monoxide level must change before the trigger fires."}},"air_quality.no_crossed_threshold":{"d":"Triggers after one or more nitrogen monoxide levels cross a threshold.","u":"/triggers/air_quality.no_crossed_threshold/","t":"Nitrogen monoxide level crossed threshold","p":{"threshold":"The nitrogen monoxide concentration the reading has to cross for the trigger to fire.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.ozone_changed":{"d":"Triggers after one or more ozone levels change.","u":"/triggers/air_quality.ozone_changed/","t":"Ozone level changed","p":{"threshold":"The minimum amount the ozone level must change before the trigger fires. Accepts a number, or a reference to an `input_number`, `number`, or `sensor` entity."}},"air_quality.ozone_crossed_threshold":{"d":"Triggers after one or more ozone levels cross a threshold.","u":"/triggers/air_quality.ozone_crossed_threshold/","t":"Ozone level crossed threshold","p":{"threshold":"The ozone concentration the reading has to cross for the trigger to fire. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.pm10_changed":{"d":"Triggers after one or more PM10 levels change.","u":"/triggers/air_quality.pm10_changed/","t":"PM10 level changed","p":{"threshold":"The minimum amount the PM10 level must change before the trigger fires. Accepts a number, or a reference to an `input_number`, `number`, or `sensor` entity."}},"air_quality.pm10_crossed_threshold":{"d":"Triggers after one or more PM10 levels cross a threshold.","u":"/triggers/air_quality.pm10_crossed_threshold/","t":"PM10 level crossed threshold","p":{"threshold":"The PM10 concentration the reading has to cross for the trigger to fire. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.pm1_changed":{"d":"Triggers after one or more PM1 levels change.","u":"/triggers/air_quality.pm1_changed/","t":"PM1 level changed","p":{"threshold":"The minimum amount the PM1 level must change before the trigger fires. Accepts a number, or a reference to an `input_number`, `number`, or `sensor` entity."}},"air_quality.pm1_crossed_threshold":{"d":"Triggers after one or more PM1 levels cross a threshold.","u":"/triggers/air_quality.pm1_crossed_threshold/","t":"PM1 level crossed threshold","p":{"threshold":"The PM1 concentration the reading has to cross for the trigger to fire. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.pm25_changed":{"d":"Triggers after one or more PM2.5 levels change.","u":"/triggers/air_quality.pm25_changed/","t":"PM2.5 level changed","p":{"threshold":"The minimum amount the PM2.5 level must change before the trigger fires. Accepts a number, or a reference to an `input_number`, `number`, or `sensor` entity."}},"air_quality.pm25_crossed_threshold":{"d":"Triggers after one or more PM2.5 levels cross a threshold.","u":"/triggers/air_quality.pm25_crossed_threshold/","t":"PM2.5 level crossed threshold","p":{"threshold":"The PM2.5 concentration the reading has to cross for the trigger to fire. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.pm4_changed":{"d":"Triggers after one or more PM4 levels change.","u":"/triggers/air_quality.pm4_changed/","t":"PM4 level changed","p":{"threshold":"The minimum amount the PM4 level must change before the trigger fires. Accepts a number, or a reference to an `input_number`, `number`, or `sensor` entity."}},"air_quality.pm4_crossed_threshold":{"d":"Triggers after one or more PM4 levels cross a threshold.","u":"/triggers/air_quality.pm4_crossed_threshold/","t":"PM4 level crossed threshold","p":{"threshold":"The PM4 concentration the reading has to cross for the trigger to fire. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.smoke_cleared":{"d":"Triggers after one or more smoke sensors stop detecting smoke.","u":"/triggers/air_quality.smoke_cleared/","t":"Smoke cleared","p":{"behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"Duration the state must hold before firing. Accepts a duration string like `00:05:00` for five minutes."}},"air_quality.smoke_detected":{"d":"Triggers after one or more smoke sensors start detecting smoke.","u":"/triggers/air_quality.smoke_detected/","t":"Smoke detected","p":{"behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"Duration the state must hold before firing. Accepts a duration string like `00:05:00` for five minutes."}},"air_quality.so2_changed":{"d":"Triggers after one or more sulphur dioxide levels change.","u":"/triggers/air_quality.so2_changed/","t":"Sulphur dioxide level changed","p":{"threshold":"The minimum amount the sulphur dioxide level must change before the trigger fires."}},"air_quality.so2_crossed_threshold":{"d":"Triggers after one or more sulphur dioxide levels cross a threshold.","u":"/triggers/air_quality.so2_crossed_threshold/","t":"Sulphur dioxide level crossed threshold","p":{"threshold":"The sulphur dioxide concentration the reading has to cross for the trigger to fire.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.voc_changed":{"d":"Triggers after one or more volatile organic compound levels change.","u":"/triggers/air_quality.voc_changed/","t":"Volatile organic compounds level changed","p":{"threshold":"The minimum amount the volatile organic compounds level must change before the trigger fires."}},"air_quality.voc_crossed_threshold":{"d":"Triggers after one or more volatile organic compounds levels cross a threshold.","u":"/triggers/air_quality.voc_crossed_threshold/","t":"Volatile organic compounds level crossed threshold","p":{"threshold":"The VOC concentration the reading has to cross for the trigger to fire. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"air_quality.voc_ratio_changed":{"d":"Triggers after one or more volatile organic compound ratios change.","u":"/triggers/air_quality.voc_ratio_changed/","t":"Volatile organic compounds ratio changed","p":{"threshold":"The minimum amount the volatile organic compounds ratio must change before the trigger fires."}},"air_quality.voc_ratio_crossed_threshold":{"d":"Triggers after one or more volatile organic compounds ratios cross a threshold.","u":"/triggers/air_quality.voc_ratio_crossed_threshold/","t":"Volatile organic compounds ratio crossed threshold","p":{"threshold":"The VOC ratio the reading has to cross for the trigger to fire. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`.","for":"How long the reading must remain past the threshold before the trigger fires. Accepts a duration string in `HH:MM:SS` format."}},"light.brightness_changed":{"d":"Triggers after the brightness of one or more lights changes.","u":"/triggers/light.brightness_changed/","t":"Light brightness changed","p":{"threshold":"The minimum amount (in percent) the brightness must change before the trigger fires."}},"light.brightness_crossed_threshold":{"d":"Triggers after the brightness of one or more lights crosses a threshold.","u":"/triggers/light.brightness_crossed_threshold/","t":"Light brightness crossed threshold","p":{"threshold":"The brightness percentage the light has to cross for the trigger to fire. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple lights are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`."}},"light.turned_off":{"d":"Triggers after one or more lights turn off.","u":"/triggers/light.turned_off/","t":"Light turned off","p":{"behavior":"When multiple lights are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`."}},"light.turned_on":{"d":"Triggers after one or more lights turn on.","u":"/triggers/light.turned_on/","t":"Light turned on","p":{"behavior":"When multiple lights are targeted, controls when the trigger fires. Accepts `any`, `first`, or `last`."}}};
+window.__conditions = {"air_quality.is_co2_value":{"d":"Tests the carbon dioxide level of one or more entities.","u":"/conditions/air_quality.is_co2_value/","t":"Carbon dioxide value","p":{"threshold":"The carbon dioxide level the sensor has to meet or exceed for the condition to pass.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_co_cleared":{"d":"Tests if one or more carbon monoxide sensors are cleared.","u":"/conditions/air_quality.is_co_cleared/","t":"Carbon monoxide cleared","p":{"behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_co_detected":{"d":"Tests if one or more carbon monoxide sensors are detecting carbon monoxide.","u":"/conditions/air_quality.is_co_detected/","t":"Carbon monoxide detected","p":{"behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_co_value":{"d":"Tests the carbon monoxide level of one or more entities.","u":"/conditions/air_quality.is_co_value/","t":"Carbon monoxide value","p":{"threshold":"The carbon monoxide level the sensor has to meet or exceed for the condition to pass.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_gas_cleared":{"d":"Tests if one or more gas sensors are cleared.","u":"/conditions/air_quality.is_gas_cleared/","t":"Gas cleared","p":{"behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_gas_detected":{"d":"Tests if one or more gas sensors are detecting gas.","u":"/conditions/air_quality.is_gas_detected/","t":"Gas detected","p":{"behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_n2o_value":{"d":"Tests the nitrous oxide level of one or more entities.","u":"/conditions/air_quality.is_n2o_value/","t":"Nitrous oxide value","p":{"threshold":"The nitrous oxide level the sensor has to meet or exceed for the condition to pass.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_no2_value":{"d":"Tests the nitrogen dioxide level of one or more entities.","u":"/conditions/air_quality.is_no2_value/","t":"Nitrogen dioxide value","p":{"threshold":"The nitrogen dioxide level the sensor has to meet or exceed for the condition to pass.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_no_value":{"d":"Tests the nitrogen monoxide level of one or more entities.","u":"/conditions/air_quality.is_no_value/","t":"Nitrogen monoxide value","p":{"threshold":"The nitrogen monoxide level the sensor has to meet or exceed for the condition to pass.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_ozone_value":{"d":"Tests the ozone level of one or more entities.","u":"/conditions/air_quality.is_ozone_value/","t":"Ozone value","p":{"threshold":"The ozone level the sensor has to meet or exceed for the condition to pass. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_pm10_value":{"d":"Tests the PM10 level of one or more entities.","u":"/conditions/air_quality.is_pm10_value/","t":"PM10 value","p":{"threshold":"The PM10 level the sensor has to meet or exceed for the condition to pass. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_pm1_value":{"d":"Tests the PM1 level of one or more entities.","u":"/conditions/air_quality.is_pm1_value/","t":"PM1 value","p":{"threshold":"The PM1 level the sensor has to meet or exceed for the condition to pass. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_pm25_value":{"d":"Tests the PM2.5 level of one or more entities.","u":"/conditions/air_quality.is_pm25_value/","t":"PM2.5 value","p":{"threshold":"The PM2.5 level the sensor has to meet or exceed for the condition to pass. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_pm4_value":{"d":"Tests the PM4 level of one or more entities.","u":"/conditions/air_quality.is_pm4_value/","t":"PM4 value","p":{"threshold":"The PM4 level the sensor has to meet or exceed for the condition to pass. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_smoke_cleared":{"d":"Tests if one or more smoke sensors are cleared.","u":"/conditions/air_quality.is_smoke_cleared/","t":"Smoke cleared","p":{"behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_smoke_detected":{"d":"Tests if one or more smoke sensors are detecting smoke.","u":"/conditions/air_quality.is_smoke_detected/","t":"Smoke detected","p":{"behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_so2_value":{"d":"Tests the sulphur dioxide level of one or more entities.","u":"/conditions/air_quality.is_so2_value/","t":"Sulphur dioxide value","p":{"threshold":"The sulphur dioxide level the sensor has to meet or exceed for the condition to pass.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_voc_ratio_value":{"d":"Tests the volatile organic compounds ratio of one or more entities.","u":"/conditions/air_quality.is_voc_ratio_value/","t":"Volatile organic compounds ratio value","p":{"threshold":"The VOC ratio the sensor has to meet or exceed for the condition to pass. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"air_quality.is_voc_value":{"d":"Tests the volatile organic compounds level of one or more entities.","u":"/conditions/air_quality.is_voc_value/","t":"Volatile organic compounds value","p":{"threshold":"The VOC level the sensor has to meet or exceed for the condition to pass. Accepts a number or a reference to an `input_number`, `number`, or `sensor` entity.","behavior":"When multiple sensors are targeted, controls how results combine. Accepts `all` or `any`."}},"light.is_brightness":{"d":"Tests the brightness of one or more lights.","u":"/conditions/light.is_brightness/","t":"Light brightness","p":{"threshold":"The brightness percentage the light has to meet or exceed for the condition to pass.","behavior":"When multiple lights are targeted, controls how results combine. Accepts `all` or `any`."}},"light.is_off":{"d":"Tests if one or more lights are off.","u":"/conditions/light.is_off/","t":"Light is off","p":{"behavior":"When multiple lights are targeted, controls how results combine. Accepts `all` or `any`."}},"light.is_on":{"d":"Tests if one or more lights are on.","u":"/conditions/light.is_on/","t":"Light is on","p":{"behavior":"When multiple lights are targeted, controls how results combine. Accepts `all` or `any`."}}};
+</script>
+<script src="Scripts%20-%20Home%20Assistant_files/prism-template-links.js" type="text/javascript" defer="defer"></script>
+<script src="Scripts%20-%20Home%20Assistant_files/prism-doc-links.js" type="text/javascript" defer="defer"></script>
+<script src="Scripts%20-%20Home%20Assistant_files/index.min.js" integrity="sha384-f/IEhh8fvOc2ALU79emLlUqAYXyqlA/zYhM+g5GlWMk15QBjTXy05TtmfT1TbtV6" crossorigin="anonymous"></script>
+<script type="text/javascript">
+  docsearch({
+    container: '#docsearch',
+    appId: 'FBHBYS3J0U',
+    indexName: 'home-assistant',
+    apiKey: "fcd41bf156f5ee0e390f8b860e3a2489",
+  });
+  document.querySelector('.site-title').addEventListener('contextmenu', function (ev) {
+    ev.preventDefault();
+    document.location.assign("https://design.home-assistant.io/#brand/logo")
+  });
+</script>
+
+
+
+
+<script type="text/javascript">
+  {
+    const article = document.querySelector("article.post");
+    if (article) {
+      const iframes = article.querySelectorAll("iframe[data-src]");
+      let loaded = false;
+      if (iframes) {
+        document.addEventListener('mousemove', loadLazyFrames, { passive: true, once: true });
+        document.addEventListener('touchmove', loadLazyFrames, { passive: true, once: true });
+        document.addEventListener('scroll', loadLazyFrames, { passive: true, once: true });
+
+        function loadLazyFrames() {
+          if (loaded) return;
+          loaded = true;
+
+          iframes.forEach((iframe) => {
+            const src = iframe.getAttribute("data-src");
+            if (src) {
+              iframe.setAttribute("src", src);
+              iframe.removeAttribute("data-src");
+            }
+          });
+        }
+      }
+    }
+  }
+</script>
+
+
+<script type="text/javascript">
+  {
+    const scrollButton = document.getElementById("back-to-top-button");
+    const depthCircle = document.getElementById("depth");
+    const footer = document.querySelector("footer");
+
+    if (scrollButton && depthCircle && footer) {
+      const circumference = depthCircle.getTotalLength();
+
+      depthCircle.style.strokeDasharray = circumference;
+      depthCircle.style.strokeDashoffset = circumference;
+
+      const handleScroll = () => {
+        const scrollY = window.scrollY;
+
+        const footerTop = footer.offsetTop;
+        const windowHeight = window.innerHeight;
+
+        const scrollStart = 0;
+        const scrollEnd = footerTop - windowHeight;
+        let scrollProgress;
+
+        if (scrollEnd <= scrollStart) {
+          scrollProgress = 1;
+        } else {
+          scrollProgress = Math.min(
+            Math.max((scrollY - scrollStart) / (scrollEnd - scrollStart), 0),
+            1
+          );
+        }
+
+        const footerOffset = -50;
+        const footerIsVisible = scrollY + windowHeight >= footerTop - footerOffset;
+
+        if (scrollY > 100 && !footerIsVisible) {
+          scrollButton.classList.add("visible");
+        } else {
+          scrollButton.classList.remove("visible");
+        }
+
+        const offset = circumference - (scrollProgress * circumference);
+        depthCircle.style.strokeDashoffset = offset;
+      };
+
+      scrollButton.addEventListener("click", () => {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+      });
+
+      window.addEventListener("scroll", handleScroll, { passive: true });
+
+      handleScroll();
+    }
+  }
+</script>
+
+<script type="text/javascript">
+  // Re-scroll to the hash anchor after page layout has settled.
+  // Browsers attempt the initial scroll before fonts, icons, and deferred
+  // scripts finish loading, so the target position is often wrong.
+  if (window.location.hash) {
+    window.addEventListener("load", function () {
+      requestAnimationFrame(function () {
+        var el = document.querySelector(window.location.hash);
+        if (el) el.scrollIntoView();
+      });
+    });
+  }
+</script>
+
+<script type="text/javascript">
+  {
+    const tocCurrent = document.querySelector(".toc-current");
+    const blogTocList = document.querySelector("#toc-module #toc");
+
+    if (tocCurrent || blogTocList) {
+      const headings = Array.from(
+        document.querySelectorAll("article h2, article h3")
+      );
+
+      if (headings.length > 0) {
+        const getHeadingText = (heading) =>
+          heading.childNodes[0].textContent.trim();
+
+        if (tocCurrent) {
+          tocCurrent.textContent = getHeadingText(headings[0]);
+        }
+
+        const siteHeader = document.querySelector(".site-header");
+        const tocBar = document.getElementById("toc-bar");
+
+        const getScrollOffset = () => {
+          if (siteHeader && (window.innerWidth > 1280)) {
+            return siteHeader.offsetHeight + 58;
+          } else if (siteHeader && tocBar) {
+            return siteHeader.offsetHeight + tocBar.offsetHeight + 20;
+          }
+
+          return 140;
+        };
+
+        const updateTocCurrent = () => {
+          const scrollY = window.scrollY + getScrollOffset();
+          let current = headings[0];
+
+          for (const heading of headings) {
+            if (heading.offsetTop <= scrollY) {
+              current = heading;
+            } else {
+              break;
+            }
+          }
+
+          if (tocCurrent) {
+            tocCurrent.textContent = getHeadingText(current);
+          }
+
+          const titleLink = current.querySelector("a.title-link");
+          const slug = titleLink && titleLink.getAttribute("name");
+
+          const tocLists = [
+            document.querySelector("#toc-bar #toc"),
+            blogTocList,
+          ].filter(Boolean);
+
+          for (const tocList of tocLists) {
+            tocList.querySelectorAll("a[aria-current]").forEach((a) => {
+              a.removeAttribute("aria-current");
+            });
+            if (slug) {
+              const activeLink = tocList.querySelector(`a[href="#${slug}"]`);
+              if (activeLink) {
+                activeLink.setAttribute("aria-current", "true");
+              }
+            }
+          }
+        };
+
+        window.addEventListener("scroll", updateTocCurrent, { passive: true });
+        updateTocCurrent();
+      }
+
+      const tocToggle = document.getElementById("toc-toggle");
+      const tocList = document.getElementById("toc");
+      if (tocToggle && tocList) {
+        tocList.addEventListener("click", (e) => {
+          if (e.target.closest("a")) {
+            tocToggle.checked = false;
+          }
+        });
+      }
+    }
+  }
+</script>
+
+
+  <script defer="defer" src="Scripts%20-%20Home%20Assistant_files/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;5cecb750997f42328a45cbfc192e0673&quot;,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
+
+
+<div class="tf-code-tooltip" style="display: none;"></div></body></html>
