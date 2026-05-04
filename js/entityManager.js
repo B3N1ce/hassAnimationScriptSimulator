@@ -179,6 +179,12 @@ export function resetLamps() {
     });
 }
 
+export function snapLampsToTarget() {
+    Object.values(lamps).forEach(l => {
+        l.style.transition = 'background-color 0s linear, box-shadow 0s linear';
+    });
+}
+
 function renderEntityBrowser(uniqueIds) {
     const list = document.getElementById('entity-list');
     if(!list) return;

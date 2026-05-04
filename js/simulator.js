@@ -1,5 +1,5 @@
 import { resolveTemplate } from './templateEngine.js';
-import { setLampColor, getGroups } from './entityManager.js';
+import { setLampColor, getGroups, snapLampsToTarget } from './entityManager.js';
 import { calculateRgbFromInputs } from './colorPicker.js';
 
 let playSessionId = 0;
@@ -12,6 +12,7 @@ export function stopSimulation() {
 
 export function pauseSimulation() {
     isPaused = true;
+    snapLampsToTarget();
 }
 
 export function resumeSimulation() {
