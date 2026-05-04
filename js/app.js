@@ -75,6 +75,16 @@ function init() {
         extraKeys: {"Tab": function(cm){cm.replaceSelection("  ","end");}}
     });
 
+    // Fix: Remove trailing newlines on paste (avoids issues on some mobile devices/HASS copy)
+    editor.on('paste', (cm, e) => {
+        const text = e.clipboardData.getData('text/plain');
+        if (text && text.endsWith('\n')) {
+            e.preventDefault();
+            const trimmed = text.trimEnd();
+            cm.replaceSelection(trimmed);
+        }
+    });
+
     // 2. Init Color Picker
     colorPicker = new ColorPicker(editor);
 

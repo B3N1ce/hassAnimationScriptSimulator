@@ -325,11 +325,15 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
 }
 
 let draggedId = null;
+let touchTimer = null;
+let touchDraggedEl = null;
 
 function setupDragAndDrop() {
     const items = document.querySelectorAll('.entity-item');
+    const lampsList = Object.keys(lamps);
     
     items.forEach(item => {
+        // --- Desktop Mouse Drag ---
         if (item.draggable) {
             item.addEventListener('dragstart', (e) => {
                 draggedId = item.dataset.id;
@@ -343,6 +347,69 @@ function setupDragAndDrop() {
             });
         }
         
+        // --- Mobile Touch Drag (Long Press) ---
+        item.addEventListener('touchstart', (e) => {
+            if (item.dataset.isGroup === 'true') return; // Nur Entities draggbar
+            
+            touchTimer = setTimeout(() => {
+                draggedId = item.dataset.id;
+                touchDraggedEl = item;
+                item.style.opacity = '0.5';
+                if (navigator.vibrate) navigator.vibrate(50); // Feedback
+            }, 500); 
+        }, { passive: true });
+
+        item.addEventListener('touchmove', (e) => {
+            if (draggedId) {
+                // Verhindere Scrollen während des Draggens
+                if (e.cancelable) e.preventDefault();
+                
+                const touch = e.touches[0];
+                const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                const group = target?.closest('.entity-group');
+                if (group && group.dataset.id !== draggedId) {
+                    group.classList.add('drag-over');
+                }
+            } else {
+                clearTimeout(touchTimer);
+            }
+        }, { passive: false });
+
+        item.addEventListener('touchend', (e) => {
+            clearTimeout(touchTimer);
+            if (draggedId && touchDraggedEl) {
+                const touch = e.changedTouches[0];
+                const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                const group = target?.closest('.entity-group');
+                
+                if (group) {
+                    const groupId = group.dataset.id;
+                    const childId = draggedId;
+                    
+                    if (childId && groupId && childId !== groupId) {
+                        // Von alten Gruppen entfernen
+                        Object.keys(groups).forEach(g => {
+                            groups[g] = groups[g].filter(c => c !== childId);
+                        });
+                        
+                        if (!groups[groupId].includes(childId)) {
+                            groups[groupId].push(childId);
+                            saveGroups();
+                            renderEntityBrowser(lampsList);
+                        }
+                    }
+                }
+                
+                touchDraggedEl.style.opacity = '1';
+                draggedId = null;
+                touchDraggedEl = null;
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            }
+        });
+        
+        // --- Drop Zone (Desktop) ---
         if (item.dataset.isGroup === 'true') {
             item.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -368,7 +435,7 @@ function setupDragAndDrop() {
                     if (!groups[groupId].includes(childId)) {
                         groups[groupId].push(childId);
                         saveGroups();
-                        renderEntityBrowser(Object.keys(lamps));
+                        renderEntityBrowser(lampsList);
                     }
                 }
             });

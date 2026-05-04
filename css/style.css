@@ -7,10 +7,13 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh; /* Modern viewport height for mobile */
     font-family: 'Segoe UI', system-ui;
     background: #121212;
     color: #ececec;
     overflow: hidden;
+    position: fixed; /* Verhindert das Scrollen des gesamten Bodys auf Mobilgeräten */
+    width: 100%;
 }
 
 /* Global Header */
@@ -821,12 +824,29 @@ label {
         border-right: none;
     }
 
+    #app-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+        height: 0; /* Zwingt Flexbox den verfügbaren Platz zu nutzen */
+    }
+
+    .panel {
+        display: none;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+    }
+
     .panel.active {
         display: flex;
     }
 
     #mobile-tabs {
         display: flex;
+        flex-shrink: 0;
     }
 
     #global-header {
@@ -834,6 +854,7 @@ label {
         gap: 10px;
         justify-content: center;
         padding: 10px;
+        flex-shrink: 0;
     }
 
     .header-logo {
