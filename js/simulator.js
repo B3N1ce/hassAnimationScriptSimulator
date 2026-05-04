@@ -23,16 +23,16 @@ export function startSimulation(doc, onComplete, onError) {
     playSessionId++;
     isPaused = false;
     const sid = playSessionId;
-    
+
     const steps = doc.sequence || (Array.isArray(doc) ? doc : [doc]);
     let vars = {};
-    
+
     if (doc.variables) {
         for (let [k, v] of Object.entries(doc.variables)) {
             vars[k] = resolveTemplate(v, vars);
         }
     }
-    
+
     executeSteps(steps, sid, vars)
         .then(() => {
             if (sid === playSessionId && onComplete) onComplete();
@@ -46,7 +46,7 @@ export function startSimulation(doc, onComplete, onError) {
 function checkCondition(conds, vars) {
     if (!conds) return true;
     const list = Array.isArray(conds) ? conds : [conds];
-    
+
     for (const c of list) {
         if (c.condition === 'template' || c.value_template) {
             const tmpl = c.value_template || c.template;
@@ -78,7 +78,7 @@ async function executeSteps(steps, sid, vars = {}) {
 
     for (const s of list) {
         if (sid !== playSessionId) return;
-        
+
         while (isPaused && sid === playSessionId) {
             await new Promise(r => setTimeout(r, 100));
         }
@@ -94,9 +94,9 @@ async function executeSteps(steps, sid, vars = {}) {
 
             // 2. Parallel
             if (s.parallel) {
-                await Promise.all(s.parallel.map(b => executeSteps(b.sequence || b, sid, {...vars})));
+                await Promise.all(s.parallel.map(b => executeSteps(b.sequence || b, sid, { ...vars })));
             }
-            
+
             // 3. Choose (If/Elseif)
             else if (s.choose) {
                 const choices = Array.isArray(s.choose) ? s.choose : [s.choose];
@@ -112,7 +112,7 @@ async function executeSteps(steps, sid, vars = {}) {
                     await executeSteps(s.default, sid, vars);
                 }
             }
-            
+
             // 4. If / Then / Else
             else if (s.if) {
                 if (checkCondition(s.if, vars)) {
@@ -126,7 +126,7 @@ async function executeSteps(steps, sid, vars = {}) {
             else if (s.repeat) {
                 const r = s.repeat;
                 let count = 0;
-                
+
                 while (sid === playSessionId) {
                     while (isPaused && sid === playSessionId) {
                         await new Promise(r => setTimeout(r, 100));
@@ -159,12 +159,12 @@ async function executeSteps(steps, sid, vars = {}) {
                     } else {
                         break; // Fallback
                     }
-                    
+
                     // Safety Brake
-                    await new Promise(res => setTimeout(res, 10)); 
+                    await new Promise(res => setTimeout(res, 10));
                 }
             }
-            
+
             // 6. Wait Template (Mock)
             else if (s.wait_template) {
                 await pausableDelay(1000, sid);
@@ -174,21 +174,21 @@ async function executeSteps(steps, sid, vars = {}) {
             else if (s.delay) {
                 let ms = 0;
                 if (typeof s.delay === 'object') {
-                    if(s.delay.hours) ms += parseFloat(resolveTemplate(s.delay.hours, vars)) * 3600000;
-                    if(s.delay.minutes) ms += parseFloat(resolveTemplate(s.delay.minutes, vars)) * 60000;
-                    if(s.delay.seconds) ms += parseFloat(resolveTemplate(s.delay.seconds, vars)) * 1000;
-                    if(s.delay.milliseconds) ms += parseFloat(resolveTemplate(s.delay.milliseconds, vars));
+                    if (s.delay.hours) ms += parseFloat(resolveTemplate(s.delay.hours, vars)) * 3600000;
+                    if (s.delay.minutes) ms += parseFloat(resolveTemplate(s.delay.minutes, vars)) * 60000;
+                    if (s.delay.seconds) ms += parseFloat(resolveTemplate(s.delay.seconds, vars)) * 1000;
+                    if (s.delay.milliseconds) ms += parseFloat(resolveTemplate(s.delay.milliseconds, vars));
                 } else {
                     let secRaw = resolveTemplate(s.delay, vars);
                     // Handle "HH:MM:SS"
-                    if(typeof secRaw === 'string' && secRaw.includes(':')) {
+                    if (typeof secRaw === 'string' && secRaw.includes(':')) {
                         const parts = secRaw.split(':').map(Number);
-                        if(parts.length === 3) ms = (parts[0]*3600 + parts[1]*60 + parts[2]) * 1000;
+                        if (parts.length === 3) ms = (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
                     } else {
                         ms = Math.max(0, parseFloat(secRaw) || 0) * 1000;
                     }
                 }
-                
+
                 await pausableDelay(ms, sid);
             }
 
@@ -200,17 +200,17 @@ async function executeSteps(steps, sid, vars = {}) {
                 const ids = Array.isArray(target) ? target : [target];
 
                 const transition = Math.max(0, parseFloat(resolveTemplate(data.transition || 0, vars)) || 0);
-                
+
                 const isOff = actionName.includes('turn_off');
                 const { rgbArray, brightness } = calculateRgbFromInputs(data, vars, resolveTemplate);
-                
+
                 const groups = getGroups();
                 let expandedIds = [];
 
                 ids.forEach(id => {
                     // Resolve Template on Entity IDs
                     const resolvedId = resolveTemplate(id, vars);
-                    
+
                     const processId = (rId) => {
                         rId = rId.trim();
                         if (groups[rId]) {
@@ -219,7 +219,7 @@ async function executeSteps(steps, sid, vars = {}) {
                             expandedIds.push(rId);
                         }
                     };
-                    
+
                     if (Array.isArray(resolvedId)) {
                         resolvedId.forEach(processId);
                     } else if (typeof resolvedId === 'string' && resolvedId.includes(',')) {

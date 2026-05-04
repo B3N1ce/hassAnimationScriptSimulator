@@ -7,12 +7,14 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    height: 100dvh; /* Modern viewport height for mobile */
+    height: 100dvh;
+    /* Modern viewport height for mobile */
     font-family: 'Segoe UI', system-ui;
     background: #121212;
     color: #ececec;
     overflow: hidden;
-    position: fixed; /* Verhindert das Scrollen des gesamten Bodys auf Mobilgeräten */
+    position: fixed;
+    /* Verhindert das Scrollen des gesamten Bodys auf Mobilgeräten */
     width: 100%;
 }
 
@@ -222,7 +224,8 @@ button {
     background: #1a1a1a;
     height: 100%;
     overflow: hidden;
-    min-width: 0; /* Ermöglicht das Schrumpfen unter die Inhaltsgröße */
+    min-width: 0;
+    /* Ermöglicht das Schrumpfen unter die Inhaltsgröße */
 }
 
 .panel:last-child {
@@ -238,7 +241,8 @@ button {
     padding: 0 15px;
     height: 40px;
     flex-shrink: 0;
-    min-width: 0; /* Verhindert das Rausdrücken des Headers */
+    min-width: 0;
+    /* Verhindert das Rausdrücken des Headers */
 }
 
 .panel-title {
@@ -253,22 +257,401 @@ button {
 
 .panel-tabs {
     display: flex;
+    gap: 2px;
     height: 100%;
 }
 
 .panel-tab {
-    padding: 0 15px;
+    padding: 0 14px;
     display: flex;
     align-items: center;
-    font-size: 12px;
-    color: #aaa;
+    font-size: 11px;
+    color: #666;
     cursor: pointer;
     border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    user-select: none;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.panel-tab:hover {
+    color: #aaa;
 }
 
 .panel-tab.active {
+    color: #bd93f9;
+    border-bottom-color: #bd93f9;
+}
+
+/* Editor View Switching */
+.editor-view {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+}
+
+.editor-view.active {
+    display: block;
+}
+
+/* Node Editor Container */
+#node-container {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow: auto;
+    padding: 30px 20px 80px 20px;
+    background: #141418;
+}
+
+/* Node Graph */
+.node-graph {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    min-width: 300px;
+}
+
+/* Sequence — vertical list of steps */
+.node-sequence {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+}
+
+/* Step wrapper — holds a node + connector */
+.step-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: 100%;
+}
+
+/* Vertical connector between steps */
+.step-connector {
+    width: 2px;
+    height: 20px;
+    background: #44475a;
+    flex-shrink: 0;
+}
+
+/* Node card */
+.node-item {
+    background: #21222c;
+    border: 1px solid #44475a;
+    border-radius: 8px;
+    width: 280px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.node-item:hover {
+    border-color: #6272a4;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.node-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-radius: 7px 7px 0 0;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #f8f8f2;
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+.node-header-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.node-header-icon {
+    font-size: 12px;
+}
+
+.node-header-actions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.node-item:hover .node-header-actions {
+    opacity: 1;
+}
+
+.node-header-actions button {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.node-header-actions button:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+}
+
+.node-body {
+    padding: 10px;
+    font-size: 11px;
+    color: #ccc;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Node type colors */
+.node-type-action .node-header   { background: #6272a4; }
+.node-type-delay .node-header    { background: #e6ac00; color: #1a1a1a; }
+.node-type-parallel .node-header { background: #ff79c6; }
+.node-type-repeat .node-header   { background: #50fa7b; color: #1a1a1a; }
+.node-type-choose .node-header   { background: #8be9fd; color: #1a1a1a; }
+.node-type-if .node-header       { background: #ffb86c; color: #1a1a1a; }
+.node-type-wait .node-header     { background: #bd93f9; }
+.node-type-variables .node-header { background: #44475a; }
+.node-type-header .node-header   { background: #282a36; border-bottom: 1px solid #6272a4; }
+
+/* Node form fields */
+.node-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.node-field-label {
+    font-size: 10px;
+    color: #888;
+    min-width: 55px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.node-input {
+    width: 100%;
+    background: #191a21;
+    border: 1px solid #44475a;
+    color: #8be9fd;
+    font-size: 11px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.node-input:focus {
+    border-color: #bd93f9;
+}
+
+.node-select {
+    width: 100%;
+    background: #191a21;
+    border: 1px solid #44475a;
+    color: #8be9fd;
+    font-size: 11px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+}
+
+.node-select:focus {
+    border-color: #bd93f9;
+}
+
+/* Data fields (key-value pairs) */
+.node-data-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.node-data-row .node-input {
+    flex: 1;
+}
+
+.node-data-row .node-input-key {
+    flex: 0.6;
+    color: #ffb86c;
+}
+
+.node-data-row .btn-remove-field {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.node-data-row .btn-remove-field:hover {
+    color: #ff5555;
+}
+
+.btn-add-field {
+    background: none;
+    border: 1px dashed #44475a;
+    color: #666;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    transition: 0.2s;
+    width: 100%;
+    text-align: center;
+}
+
+.btn-add-field:hover {
+    border-color: #6272a4;
+    color: #aaa;
+}
+
+/* Parallel / Choose branches */
+.node-branches {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    justify-content: center;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.node-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    min-width: 200px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.node-branch-label {
+    font-size: 9px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    padding: 2px 8px;
+    background: #282a36;
+    border-radius: 3px;
+    border: 1px solid #44475a;
+}
+
+/* Add-step button (between steps) */
+.node-add-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #282a36;
+    border: 1px dashed #44475a;
+    color: #666;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 5;
+    line-height: 1;
+}
+
+.node-add-btn:hover {
+    border-color: #50fa7b;
     color: #50fa7b;
-    border-bottom-color: #50fa7b;
+    background: #1a2e1a;
+}
+
+/* Add step dropdown menu */
+.node-add-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #282a36;
+    border: 1px solid #44475a;
+    border-radius: 6px;
+    padding: 4px 0;
+    z-index: 100;
+    min-width: 160px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    display: none;
+}
+
+.node-add-menu.open {
+    display: block;
+}
+
+.node-add-menu-item {
+    padding: 6px 12px;
+    font-size: 11px;
+    color: #ccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.1s;
+}
+
+.node-add-menu-item:hover {
+    background: #44475a;
+    color: #fff;
+}
+
+.node-add-menu-item .menu-icon {
+    width: 18px;
+    text-align: center;
+    font-size: 12px;
+}
+
+/* Empty state */
+.node-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #555;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.node-empty .node-add-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+}
+
+/* Section divider inside nodes */
+.node-section-label {
+    font-size: 9px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-top: 4px;
+    border-top: 1px solid #333;
+    margin-top: 2px;
 }
 
 .panel-content {
@@ -829,7 +1212,8 @@ label {
         flex-direction: column;
         flex: 1;
         overflow: hidden;
-        height: 0; /* Zwingt Flexbox den verfügbaren Platz zu nutzen */
+        height: 0;
+        /* Zwingt Flexbox den verfügbaren Platz zu nutzen */
     }
 
     .panel {

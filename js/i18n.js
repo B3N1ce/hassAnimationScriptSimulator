@@ -42,7 +42,8 @@ const translations = {
         gamma_22: "Gamma 2.2",
         gamma_28: "Gamma 2.8",
         gamma_cie: "CIE L* (Wahrnehmung)",
-        fav_tooltip: "Klicken zum Anwenden, Doppelklick zum Löschen"
+        fav_tooltip: "Klicken zum Anwenden, Doppelklick zum Löschen",
+        node_editor: "Nodes"
     },
     en: {
         title: "Aurora Studio",
@@ -85,7 +86,8 @@ const translations = {
         gamma_22: "Gamma 2.2",
         gamma_28: "Gamma 2.8",
         gamma_cie: "CIE L* (Perceptual)",
-        fav_tooltip: "Click to apply, double-click to delete"
+        fav_tooltip: "Click to apply, double-click to delete",
+        node_editor: "Nodes"
     }
 };
 
@@ -122,11 +124,11 @@ export function applyTranslations() {
     });
 
     // 3. Special cases (placeholders, etc. if needed)
-    
+
     // Update Language Button Label
     const langLabel = document.getElementById('lang-label');
     if (langLabel) langLabel.innerText = currentLang.toUpperCase();
-    
+
     // Trigger update in other modules if needed via event
     document.dispatchEvent(new CustomEvent('languageChanged', { detail: currentLang }));
 }
