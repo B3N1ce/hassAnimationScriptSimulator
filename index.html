@@ -29,6 +29,10 @@
         </div>
         <button id="btn-copy-code" class="btn-header btn-secondary">📋 Kopieren</button>
         <button id="btn-save-code" class="btn-header btn-secondary">💾 Speichern</button>
+        <button id="btn-notifications" class="btn-header btn-secondary" style="position: relative;" title="Benachrichtigungen">
+            🔔 Log
+            <span id="notif-badge" style="display:none; position: absolute; top: -5px; right: -5px; background: #ff5555; color: white; border-radius: 50%; padding: 2px 5px; font-size: 10px; font-weight: bold;">0</span>
+        </button>
     </div>
 </header>
 
@@ -47,6 +51,8 @@
         </div>
     </section>
     
+    <div class="resizer" id="resizer-left"></div>
+    
     <!-- PANEL 2: Preview (Room) -->
     <section id="panel-preview" class="panel">
         <div class="panel-header">
@@ -64,6 +70,8 @@
             <!-- Lamps will be injected here -->
         </div>
     </section>
+    
+    <div class="resizer" id="resizer-right"></div>
     
     <!-- PANEL 3: Inspector -->
     <section id="panel-inspector" class="panel">
@@ -136,6 +144,20 @@
 
 <!-- Toast Container -->
 <div id="toast-container"></div>
+
+<!-- Notification Modal -->
+<div id="notif-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin: 0; font-size: 16px; color: #f8f8f2;">System Log</h3>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="btn-clear-notifs" class="btn-secondary" style="padding: 4px 8px;">Alle löschen</button>
+                <button id="btn-close-notifs" class="close-btn" style="font-size: 20px;">&times;</button>
+            </div>
+        </div>
+        <div id="notif-list" class="modal-body"></div>
+    </div>
+</div>
 
 <!-- Main Application Module -->
 <script type="module" src="js/app.js"></script>

@@ -19,6 +19,49 @@ const btnCopyCode = document.getElementById('btn-copy-code');
 const btnSaveCode = document.getElementById('btn-save-code');
 const toastContainer = document.getElementById('toast-container');
 
+const btnNotifications = document.getElementById('btn-notifications');
+const notifModal = document.getElementById('notif-modal');
+const btnCloseNotifs = document.getElementById('btn-close-notifs');
+const btnClearNotifs = document.getElementById('btn-clear-notifs');
+const notifBadge = document.getElementById('notif-badge');
+const notifList = document.getElementById('notif-list');
+
+let notifications = [];
+
+function updateNotifUI() {
+    if (notifications.length > 0) {
+        notifBadge.style.display = 'block';
+        notifBadge.innerText = notifications.length;
+    } else {
+        notifBadge.style.display = 'none';
+    }
+    
+    notifList.innerHTML = '';
+    if (notifications.length === 0) {
+        notifList.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">Keine Nachrichten</div>';
+        return;
+    }
+    
+    notifications.forEach(n => {
+        const div = document.createElement('div');
+        div.className = `notif-item ${n.type}`;
+        div.innerHTML = `
+            <button class="notif-delete" data-id="${n.id}">&times;</button>
+            <div class="notif-time">${n.time}</div>
+            <div class="notif-text">${n.msg}</div>
+        `;
+        notifList.appendChild(div);
+    });
+    
+    document.querySelectorAll('.notif-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = parseInt(e.target.dataset.id);
+            notifications = notifications.filter(n => n.id !== id);
+            updateNotifUI();
+        });
+    });
+}
+
 function init() {
     // 1. Init CodeMirror
     editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
@@ -38,7 +81,58 @@ function init() {
         colorPicker.setColorFromExternal(bgColor);
     });
 
-    // 4. Mobile Tabs Logic
+    // 4. Desktop Resizer Logic
+    const appContainer = document.getElementById('app-container');
+    const resizerLeft = document.getElementById('resizer-left');
+    const resizerRight = document.getElementById('resizer-right');
+    
+    let isResizingLeft = false;
+    let isResizingRight = false;
+
+    if (resizerLeft) {
+        resizerLeft.addEventListener('mousedown', (e) => {
+            isResizingLeft = true;
+            resizerLeft.classList.add('dragging');
+            e.preventDefault();
+        });
+    }
+    
+    if (resizerRight) {
+        resizerRight.addEventListener('mousedown', (e) => {
+            isResizingRight = true;
+            resizerRight.classList.add('dragging');
+            e.preventDefault();
+        });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizingLeft && !isResizingRight) return;
+        
+        const containerRect = appContainer.getBoundingClientRect();
+        const cols = window.getComputedStyle(appContainer).gridTemplateColumns.split(' ');
+        let leftW = parseFloat(cols[0]);
+        let rightW = parseFloat(cols[4]);
+
+        if (isResizingLeft) {
+            let newLeftW = e.clientX - containerRect.left;
+            newLeftW = Math.max(200, Math.min(newLeftW, containerRect.width - rightW - 100));
+            appContainer.style.gridTemplateColumns = `${newLeftW}px 6px 1fr 6px ${rightW}px`;
+            editor.refresh();
+        } else if (isResizingRight) {
+            let newRightW = containerRect.right - e.clientX;
+            newRightW = Math.max(200, Math.min(newRightW, containerRect.width - leftW - 100));
+            appContainer.style.gridTemplateColumns = `${leftW}px 6px 1fr 6px ${newRightW}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizingLeft) resizerLeft.classList.remove('dragging');
+        if (isResizingRight) resizerRight.classList.remove('dragging');
+        isResizingLeft = false;
+        isResizingRight = false;
+    });
+
+    // 5. Mobile Tabs Logic
     document.querySelectorAll('.mobile-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
@@ -95,7 +189,7 @@ function init() {
             setUIRunning(false, false);
             resetLamps();
         }, (err) => {
-            showError("Skript Fehler: " + err.message);
+            showToast("Skript Fehler:\n" + err.message, 'error');
             setUIRunning(false, false);
             resetLamps();
         });
@@ -170,6 +264,19 @@ function init() {
         URL.revokeObjectURL(url);
     });
 
+    // 10. Notifications Modal
+    btnNotifications.addEventListener('click', () => {
+        notifModal.style.display = 'flex';
+        updateNotifUI();
+    });
+    btnCloseNotifs.addEventListener('click', () => {
+        notifModal.style.display = 'none';
+    });
+    btnClearNotifs.addEventListener('click', () => {
+        notifications = [];
+        updateNotifUI();
+    });
+
     // Initiale Synchronisation
     validateAndSync();
 }
@@ -207,6 +314,12 @@ function validateAndSync() {
 }
 
 function showToast(msg, type = 'success') {
+    // Add to notification log
+    const time = new Date().toLocaleTimeString();
+    notifications.unshift({ id: Date.now() + Math.floor(Math.random()*1000), time, msg, type });
+    if (notifications.length > 10) notifications.pop();
+    updateNotifUI();
+
     const t = document.createElement('div');
     t.className = `toast ${type}`;
     t.innerText = msg;
