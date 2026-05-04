@@ -3,6 +3,7 @@
 import { initEntityManager, updateLampEntities, resetLamps, setColorCurve, renderVariables } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation } from './simulator.js';
+import { t, setLang, getLang, applyTranslations } from './i18n.js';
 
 let isPlaying = false;
 let isPausedState = false;
@@ -40,7 +41,7 @@ function updateNotifUI() {
     
     notifList.innerHTML = '';
     if (notifications.length === 0) {
-        notifList.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">Keine Nachrichten</div>';
+        notifList.innerHTML = `<div style="color: #888; text-align: center; padding: 20px;">${t('no_messages')}</div>`;
         return;
     }
     
@@ -76,6 +77,9 @@ function init() {
 
     // 2. Init Color Picker
     colorPicker = new ColorPicker(editor);
+
+    // Initial apply translations
+    applyTranslations();
 
     // 3. Init Entity Manager
     initEntityManager((entityId, bgColor) => {
@@ -169,7 +173,7 @@ function init() {
             toggleBtn.style.display = 'none';
             pauseBtn.style.display = 'block';
             stopBtn.style.display = 'block';
-            pauseBtn.innerHTML = paused ? '▶ Weiter' : '⏸ Pause';
+            pauseBtn.innerHTML = paused ? t('resume') : t('pause');
         } else {
             wrapper.classList.remove('disabled-dim');
             toggleBtn.style.display = 'block';
@@ -191,7 +195,7 @@ function init() {
             setUIRunning(false, false);
             resetLamps();
         }, (err) => {
-            showToast("Skript Fehler:\n" + err.message, 'error');
+            showToast(t('script_error') + err.message, 'error');
             setUIRunning(false, false);
             resetLamps();
         });
@@ -217,14 +221,14 @@ function init() {
     btnValidate.addEventListener('click', () => {
         const code = editor.getValue();
         if (!code.trim()) {
-            showToast('Bitte Code eingeben.', 'error');
+            showToast(t('enter_code'), 'error');
             return;
         }
         try {
             jsyaml.load(code);
-            showToast('YAML Syntax ist korrekt! ✅', 'success');
+            showToast(t('yaml_correct'), 'success');
         } catch (e) {
-            showToast('YAML Fehler: ' + e.message, 'error');
+            showToast(t('yaml_error') + e.message, 'error');
         }
     });
 
@@ -239,7 +243,7 @@ function init() {
     // 9. Copy & Save
     btnCopyCode.addEventListener('click', () => {
         navigator.clipboard.writeText(editor.getValue()).then(() => {
-            showToast('Code kopiert!', 'success');
+            showToast(t('code_copied'), 'success');
         });
     });
 
@@ -285,6 +289,19 @@ function init() {
     btnClearNotifs.addEventListener('click', () => {
         notifications = [];
         updateNotifUI();
+    });
+
+    // 11. Language Toggle
+    const btnLanguage = document.getElementById('btn-language');
+    if (btnLanguage) {
+        btnLanguage.addEventListener('click', () => {
+            const nextLang = getLang() === 'de' ? 'en' : 'de';
+            setLang(nextLang);
+        });
+    }
+
+    document.addEventListener('languageChanged', () => {
+        validateAndSync();
     });
 
     // Initiale Synchronisation

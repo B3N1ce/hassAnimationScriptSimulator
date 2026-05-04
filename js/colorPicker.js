@@ -1,4 +1,5 @@
 // js/colorPicker.js
+import { t } from './i18n.js';
 
 export class ColorPicker {
     constructor(editorInstance) {
@@ -156,7 +157,7 @@ export class ColorPicker {
             const div = document.createElement('div');
             div.className = 'favorite-color';
             div.style.backgroundColor = hex;
-            div.title = "Klicken zum Anwenden, Doppelklick zum Löschen";
+            div.title = t('fav_tooltip');
             
             div.onclick = () => {
                 const r = parseInt(hex.slice(1,3), 16);

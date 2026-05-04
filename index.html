@@ -26,15 +26,18 @@
     <!-- Global Header -->
     <header id="global-header">
         <div class="header-logo-container">
-            <div class="header-logo">Aurora Studio</div>
-            <div class="header-subheadline">Licht-Animationen entwerfen und simulieren – maßgeschneidert für Home Assistant.</div>
+            <div class="header-logo" data-i18n="title">Aurora Studio</div>
+            <div class="header-subheadline" data-i18n="subheadline">Licht-Animationen entwerfen und simulieren –
+                maßgeschneidert für Home Assistant.</div>
         </div>
         <div class="header-actions">
-            <button id="btn-validate" class="btn-header btn-primary">✔ YAML Prüfen</button>
+            <button id="btn-validate" class="btn-header btn-primary" data-i18n="validate_yaml">✔ YAML Prüfen</button>
             <div class="playback-controls">
-                <button id="toggle-btn" class="btn-start">▶ Starten</button>
-                <button id="pause-btn" class="btn-start btn-pause" style="display: none;">⏸ Pause</button>
-                <button id="stop-btn" class="btn-start btn-stop" style="display: none;">⏹ Stopp</button>
+                <button id="toggle-btn" class="btn-start" data-i18n="start">▶ Starten</button>
+                <button id="pause-btn" class="btn-start btn-pause" style="display: none;" data-i18n="pause">⏸
+                    Pause</button>
+                <button id="stop-btn" class="btn-start btn-stop" style="display: none;" data-i18n="stop">⏹
+                    Stopp</button>
             </div>
             <button id="btn-notifications" class="btn-header-icon" style="position: relative;" title="System Log">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -43,6 +46,16 @@
                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
                 <span id="notif-badge">0</span>
+            </button>
+            <button id="btn-language" class="btn-header-icon" title="Sprache wechseln / Switch Language">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path
+                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+                <span id="lang-label" style="font-size: 10px; margin-left: 4px; font-weight: bold;">DE</span>
             </button>
         </div>
     </header>
@@ -54,17 +67,19 @@
         <section id="panel-editor" class="panel active">
             <div class="panel-header">
                 <div class="panel-tabs">
-                    <div class="panel-tab active">YAML Skript</div>
+                    <div class="panel-tab active" data-i18n="yaml_script">YAML Skript</div>
                 </div>
                 <div class="editor-actions">
-                    <button id="btn-copy-code" class="btn-editor-icon" title="Code kopieren">
+                    <button id="btn-copy-code" class="btn-editor-icon" data-i18n-title="copy_code"
+                        title="Code kopieren">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                         </svg>
                     </button>
-                    <button id="btn-save-code" class="btn-editor-icon" title="Als .yaml speichern">
+                    <button id="btn-save-code" class="btn-editor-icon" data-i18n-title="save_yaml"
+                        title="Als .yaml speichern">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -84,15 +99,16 @@
         <!-- PANEL 2: Preview (Room) -->
         <section id="panel-preview" class="panel">
             <div class="panel-header">
-                <span class="panel-title">Simulation</span>
+                <span class="panel-title" data-i18n="simulation">Simulation</span>
                 <div class="panel-tools">
                     <select id="sel-color-curve" class="dropdown-small">
-                        <option value="linear">Linear (Raw)</option>
-                        <option value="gamma22">Gamma 2.2</option>
-                        <option value="gamma28">Gamma 2.8</option>
-                        <option value="cie">CIE L* (Perceptual)</option>
+                        <option value="linear" data-i18n="gamma_linear">Linear (Raw)</option>
+                        <option value="gamma22" data-i18n="gamma_22">Gamma 2.2</option>
+                        <option value="gamma28" data-i18n="gamma_28">Gamma 2.8</option>
+                        <option value="cie" data-i18n="gamma_cie">CIE L* (Perceptual)</option>
                     </select>
-                    <button id="btn-toggle-labels" class="btn-editor-icon" title="Labels ein/ausblenden">
+                    <button id="btn-toggle-labels" class="btn-editor-icon" data-i18n-title="toggle_labels"
+                        title="Labels ein/ausblenden">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="4 7 4 4 20 4 20 7" />
@@ -112,13 +128,13 @@
         <!-- PANEL 3: Inspector -->
         <section id="panel-inspector" class="panel">
             <div class="panel-header">
-                <span class="panel-title">Inspector</span>
+                <span class="panel-title" data-i18n="inspector">Inspector</span>
             </div>
 
             <div class="panel-content scrollable">
                 <!-- Color Picker -->
                 <div class="inspector-section">
-                    <div class="section-title">Color Picker</div>
+                    <div class="section-title" data-i18n="color_picker">Color Picker</div>
                     <div id="color-tool">
                         <div class="color-tabs">
                             <div class="color-tab active" data-mode="rgb">RGB</div>
@@ -147,10 +163,11 @@
                             </div>
                         </div>
                         <div class="snippets-grid">
-                            <div class="code-snippet" id="btn-insert-color">In Editor einfügen</div>
+                            <div class="code-snippet" id="btn-insert-color" data-i18n="insert_editor">In Editor einfügen
+                            </div>
                         </div>
                         <div class="color-favorites" id="favorites-container">
-                            <button class="favorite-add" id="btn-add-favorite"
+                            <button class="favorite-add" id="btn-add-favorite" data-i18n-title="save_color"
                                 title="Aktuelle Farbe speichern">+</button>
                         </div>
                     </div>
@@ -158,13 +175,13 @@
 
                 <!-- Entities -->
                 <div class="inspector-section">
-                    <div class="section-title">Umgebung & Gruppen</div>
+                    <div class="section-title" data-i18n="env_groups">Umgebung & Gruppen</div>
                     <div id="entity-list" class="entity-list"></div>
                 </div>
 
                 <!-- Variables -->
                 <div class="inspector-section">
-                    <div class="section-title">Globale Variablen</div>
+                    <div class="section-title" data-i18n="global_vars">Globale Variablen</div>
                     <div id="variable-list" class="entity-list"></div>
                 </div>
             </div>
@@ -174,9 +191,9 @@
 
     <!-- Mobile Tab Navigation -->
     <nav id="mobile-tabs">
-        <button class="mobile-tab active" data-target="panel-editor">Editor</button>
-        <button class="mobile-tab" data-target="panel-preview">Vorschau</button>
-        <button class="mobile-tab" data-target="panel-inspector">Tools</button>
+        <button class="mobile-tab active" data-target="panel-editor" data-i18n="tab_editor">Editor</button>
+        <button class="mobile-tab" data-target="panel-preview" data-i18n="tab_preview">Vorschau</button>
+        <button class="mobile-tab" data-target="panel-inspector" data-i18n="tab_tools">Tools</button>
     </nav>
 
     <!-- Toast Container -->
@@ -186,9 +203,10 @@
     <div id="notif-modal" class="modal-overlay" style="display:none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0; font-size: 16px; color: #f8f8f2;">System Log</h3>
+                <h3 style="margin: 0; font-size: 16px; color: #f8f8f2;" data-i18n="system_log">System Log</h3>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <button id="btn-clear-notifs" class="btn-secondary" style="padding: 4px 8px;">Alle löschen</button>
+                    <button id="btn-clear-notifs" class="btn-secondary" style="padding: 4px 8px;"
+                        data-i18n="clear_all">Alle löschen</button>
                     <button id="btn-close-notifs" class="close-btn" style="font-size: 20px;">&times;</button>
                 </div>
             </div>

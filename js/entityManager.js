@@ -3,6 +3,7 @@
 const lamps = {};
 const otherEntities = {};
 const lampStates = {}; // Speichert die rohen Werte für sofortiges Curve-Switching
+import { t } from './i18n.js';
 let selectedEntityCallback = null;
 let currentColorCurve = 'linear';
 
@@ -153,7 +154,7 @@ export function setLampColor(id, rgbArray, transition, brightness, isOff) {
             const span = stateBody.querySelector('span');
             badge.style.backgroundColor = isOff ? '#222' : rgbString;
             badge.style.boxShadow = isOff ? 'none' : `0 0 5px ${rgbString}`;
-            span.innerText = isOff ? 'Aus' : `${Math.round(brightness)}% | RGB(${Math.round(rgbArray[0])},${Math.round(rgbArray[1])},${Math.round(rgbArray[2])})`;
+            span.innerText = isOff ? t('off') : `${Math.round(brightness)}% | RGB(${Math.round(rgbArray[0])},${Math.round(rgbArray[1])},${Math.round(rgbArray[2])})`;
         }
     }
 }
@@ -172,7 +173,7 @@ export function resetLamps() {
     });
 
     // Reset browser states
-    document.querySelectorAll('.entity-body span').forEach(s => s.innerText = 'Aus');
+    document.querySelectorAll('.entity-body span').forEach(s => s.innerText = t('off'));
     document.querySelectorAll('.entity-badge').forEach(b => {
         b.style.backgroundColor = '#222';
         b.style.boxShadow = 'none';
@@ -191,7 +192,7 @@ function renderEntityBrowser(uniqueIds) {
     list.innerHTML = '';
     
     if (uniqueIds.length === 0) {
-        list.innerHTML = '<div style="color: #888; font-size: 11px; padding: 10px;">Keine Entitäten im Skript gefunden.</div>';
+        list.innerHTML = `<div style="color: #888; font-size: 11px; padding: 10px;">${t('no_entities')}</div>`;
         return;
     }
     
@@ -251,7 +252,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
     const btnVis = document.createElement('button');
     btnVis.className = 'btn-icon' + (!hiddenEntities[id] ? ' active' : '');
     btnVis.innerHTML = '👁';
-    btnVis.title = 'Sichtbarkeit umschalten';
+    btnVis.title = t('toggle_vis');
     btnVis.onclick = () => {
         hiddenEntities[id] = !hiddenEntities[id];
         saveHidden();
@@ -264,7 +265,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         const btnMakeGroup = document.createElement('button');
         btnMakeGroup.className = 'btn-icon';
         btnMakeGroup.innerHTML = '⊞';
-        btnMakeGroup.title = 'Als Gruppe markieren';
+        btnMakeGroup.title = t('mark_group');
         btnMakeGroup.onclick = () => {
             groups[id] = [];
             saveGroups();
@@ -278,7 +279,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         const btnRemove = document.createElement('button');
         btnRemove.className = 'btn-icon';
         btnRemove.innerHTML = '✖';
-        btnRemove.title = 'Aus Gruppe entfernen';
+        btnRemove.title = t('remove_group');
         btnRemove.onclick = () => {
             groups[parentId] = groups[parentId].filter(c => c !== id);
             saveGroups();
@@ -292,7 +293,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         const btnUngroup = document.createElement('button');
         btnUngroup.className = 'btn-icon';
         btnUngroup.innerHTML = '✖';
-        btnUngroup.title = 'Gruppe auflösen';
+        btnUngroup.title = t('ungroup');
         btnUngroup.onclick = () => {
             delete groups[id];
             saveGroups();
@@ -311,7 +312,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
     body.id = 'state-' + id.replace(/\./g, '-');
     body.innerHTML = `
         <div class="entity-badge"></div>
-        <span>Aus</span>
+        <span>${t('off')}</span>
     `;
     item.appendChild(body);
     
@@ -382,7 +383,7 @@ export function renderVariables(varsObj) {
     
     const keys = Object.keys(varsObj);
     if (keys.length === 0) {
-        list.innerHTML = '<div style="color: #888; font-size: 11px; padding: 10px;">Keine Variablen definiert.</div>';
+        list.innerHTML = `<div style="color: #888; font-size: 11px; padding: 10px;">${t('no_vars')}</div>`;
         return;
     }
     
@@ -399,3 +400,11 @@ export function renderVariables(varsObj) {
         list.appendChild(item);
     });
 }
+
+// Re-render when language changes
+document.addEventListener('languageChanged', () => {
+    // We need the last uniqueIds to re-render. 
+    // For simplicity, we just clear and wait for next sync or use a hack.
+    // Actually, since app.js calls validateAndSync() which calls this, 
+    // we can just wait for the next call or manually trigger it.
+});
