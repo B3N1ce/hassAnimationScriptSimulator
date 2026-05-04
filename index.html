@@ -17,91 +17,125 @@
 </head>
 <body>
 
-<div id="sidebar">
-    <div id="toolbar">
-        <div id="toolbar-actions" style="display: flex;">
-            <button id="toggle-btn" class="btn-start" style="flex: 1;">▶ Starten</button>
-            <button id="pause-btn" class="btn-start btn-pause" style="display: none; flex: 1;">⏸ Pause</button>
-            <button id="stop-btn" class="btn-start btn-stop" style="display: none; flex: 1;">⏹ Stopp</button>
+<!-- Global Header -->
+<header id="global-header">
+    <div class="header-logo">HA Aurora Studio</div>
+    <div class="header-actions">
+        <button id="btn-validate" class="btn-header btn-primary">✔ YAML Prüfen</button>
+        <div class="playback-controls">
+            <button id="toggle-btn" class="btn-start">▶ Starten</button>
+            <button id="pause-btn" class="btn-start btn-pause" style="display: none;">⏸ Pause</button>
+            <button id="stop-btn" class="btn-start btn-stop" style="display: none;">⏹ Stopp</button>
+        </div>
+        <button id="btn-copy-code" class="btn-header btn-secondary">📋 Kopieren</button>
+        <button id="btn-save-code" class="btn-header btn-secondary">💾 Speichern</button>
+    </div>
+</header>
+
+<!-- Main Container -->
+<main id="app-container">
+    
+    <!-- PANEL 1: Editor -->
+    <section id="panel-editor" class="panel active">
+        <div class="panel-header">
+            <div class="panel-tabs">
+                <div class="panel-tab active">YAML Skript</div>
+            </div>
+        </div>
+        <div class="panel-content">
+            <textarea id="code-editor"></textarea>
+        </div>
+    </section>
+    
+    <!-- PANEL 2: Preview (Room) -->
+    <section id="panel-preview" class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Simulation</span>
+            <div class="panel-tools">
+                <select id="sel-color-curve" class="dropdown-small">
+                    <option value="linear">Linear (Raw)</option>
+                    <option value="gamma22">Gamma 2.2</option>
+                    <option value="gamma28">Gamma 2.8</option>
+                    <option value="cie">CIE L* (Perceptual)</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel-content" id="room">
+            <!-- Lamps will be injected here -->
+        </div>
+    </section>
+    
+    <!-- PANEL 3: Inspector -->
+    <section id="panel-inspector" class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Inspector</span>
         </div>
         
-        <div id="color-tool">
-            <div class="color-tabs">
-                <div class="color-tab active" data-mode="rgb">RGB</div>
-                <div class="color-tab" data-mode="xy">XY</div>
-                <div class="color-tab" data-mode="hs">HS</div>
-            </div>
-            <div class="color-inputs">
-                <input type="color" id="picker-color" value="#00ffcc">
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <div class="input-group" id="group-rgb">
-                        <label>RGB</label>
-                        <input type="number" id="in-r" min="0" max="255" value="0">
-                        <input type="number" id="in-g" min="0" max="255" value="255">
-                        <input type="number" id="in-b" min="0" max="255" value="204">
+        <div class="panel-content scrollable">
+            <!-- Color Picker -->
+            <div class="inspector-section">
+                <div class="section-title">Color Picker</div>
+                <div id="color-tool">
+                    <div class="color-tabs">
+                        <div class="color-tab active" data-mode="rgb">RGB</div>
+                        <div class="color-tab" data-mode="xy">XY</div>
+                        <div class="color-tab" data-mode="hs">HS</div>
                     </div>
-                    <div class="input-group" id="group-xy" style="display:none;">
-                        <label>XY</label>
-                        <input type="number" id="in-x" step="0.001" value="0.171">
-                        <input type="number" id="in-y" step="0.001" value="0.342">
+                    <div class="color-inputs">
+                        <input type="color" id="picker-color" value="#00ffcc">
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <div class="input-group" id="group-rgb">
+                                <label>RGB</label>
+                                <input type="number" id="in-r" min="0" max="255" value="0">
+                                <input type="number" id="in-g" min="0" max="255" value="255">
+                                <input type="number" id="in-b" min="0" max="255" value="204">
+                            </div>
+                            <div class="input-group" id="group-xy" style="display:none;">
+                                <label>XY</label>
+                                <input type="number" id="in-x" step="0.001" value="0.171">
+                                <input type="number" id="in-y" step="0.001" value="0.342">
+                            </div>
+                            <div class="input-group" id="group-hs" style="display:none;">
+                                <label>HS</label>
+                                <input type="number" id="in-h" min="0" max="360" value="168">
+                                <input type="number" id="in-s" min="0" max="100" value="100">
+                            </div>
+                        </div>
                     </div>
-                    <div class="input-group" id="group-hs" style="display:none;">
-                        <label>HS</label>
-                        <input type="number" id="in-h" min="0" max="360" value="168">
-                        <input type="number" id="in-s" min="0" max="100" value="100">
+                    <div class="snippets-grid">
+                        <div class="code-snippet" id="btn-insert-color">In Editor einfügen</div>
+                    </div>
+                    <div class="color-favorites" id="favorites-container">
+                        <button class="favorite-add" id="btn-add-favorite" title="Aktuelle Farbe speichern">+</button>
                     </div>
                 </div>
             </div>
-            <div class="snippets-grid">
-                <div class="code-snippet" id="btn-insert-color">In Editor einfügen</div>
+            
+            <!-- Entities -->
+            <div class="inspector-section">
+                <div class="section-title">Umgebung & Gruppen</div>
+                <div id="entity-list" class="entity-list"></div>
             </div>
-            <div class="color-favorites" id="favorites-container">
-                <button class="favorite-add" id="btn-add-favorite" title="Aktuelle Farbe speichern">+</button>
-                <!-- Favoriten werden hier eingefügt -->
+            
+            <!-- Variables -->
+            <div class="inspector-section">
+                <div class="section-title">Globale Variablen</div>
+                <div id="variable-list" class="entity-list"></div>
             </div>
         </div>
-    </div>
-    <textarea id="code-editor"></textarea>
-    <div id="error-msg" style="margin-bottom: 0; border-radius: 0; border-left: none; border-right: none;"></div>
-    <div id="sidebar-footer" style="padding: 10px; background: #1e1e24; display: flex; gap: 10px; border-top: 1px solid #444; flex-shrink: 0;">
-        <button id="btn-copy-code" class="btn-secondary" style="flex: 1;">📋 Kopieren</button>
-        <button id="btn-save-code" class="btn-secondary" style="flex: 1;">💾 Speichern (.yaml)</button>
-    </div>
-</div>
-
-<div id="resizer"></div>
-
-<div id="preview-side">
-    <div id="preview-toolbar">
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <span style="font-size: 12px; color: #888;">Live Preview</span>
-            <select id="sel-color-curve" style="background: #1e1e24; color: #fff; border: 1px solid #444; padding: 2px 5px; font-size: 11px; border-radius: 3px;">
-                <option value="linear">LED-Kurve: Linear</option>
-                <option value="gamma22">LED-Kurve: Gamma 2.2 (Standard)</option>
-                <option value="gamma28">LED-Kurve: Gamma 2.8 (Real LED)</option>
-                <option value="cie">LED-Kurve: CIE L* (Perceptual)</option>
-            </select>
-        </div>
-        <button id="btn-toggle-entities" class="btn-secondary">Entitäten Browser</button>
-    </div>
-    <div id="room"></div>
+    </section>
     
-    <!-- Entity Browser Overlay -->
-    <div id="entity-browser" class="open">
-        <div class="browser-header">
-            <span class="browser-title">Umgebung</span>
-            <button class="close-btn" id="btn-close-entities">&times;</button>
-        </div>
-        <div class="browser-section-title">Lichter & Gruppen</div>
-        <div class="entity-list" id="entity-list">
-            <!-- Entitäten werden hier generiert -->
-        </div>
-        <div class="browser-section-title" style="margin-top: auto;">Variablen</div>
-        <div class="entity-list" id="variable-list" style="max-height: 40%; min-height: 150px; background: #1a1a1a;">
-            <!-- Variablen werden hier generiert -->
-        </div>
-    </div>
-</div>
+</main>
+
+<!-- Mobile Tab Navigation -->
+<nav id="mobile-tabs">
+    <button class="mobile-tab active" data-target="panel-editor">Editor</button>
+    <button class="mobile-tab" data-target="panel-preview">Vorschau</button>
+    <button class="mobile-tab" data-target="panel-inspector">Tools</button>
+</nav>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
 
 <!-- Main Application Module -->
 <script type="module" src="js/app.js"></script>

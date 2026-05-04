@@ -12,14 +12,12 @@ let colorPicker;
 const toggleBtn = document.getElementById('toggle-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const stopBtn = document.getElementById('stop-btn');
-const errorBox = document.getElementById('error-msg');
+const btnValidate = document.getElementById('btn-validate');
 const room = document.getElementById('room');
-const btnToggleEntities = document.getElementById('btn-toggle-entities');
-const btnCloseEntities = document.getElementById('btn-close-entities');
-const entityBrowser = document.getElementById('entity-browser');
 const selColorCurve = document.getElementById('sel-color-curve');
 const btnCopyCode = document.getElementById('btn-copy-code');
 const btnSaveCode = document.getElementById('btn-save-code');
+const toastContainer = document.getElementById('toast-container');
 
 function init() {
     // 1. Init CodeMirror
@@ -40,16 +38,21 @@ function init() {
         colorPicker.setColorFromExternal(bgColor);
     });
 
-    // 4. Sidebar Resizer
-    const resizer = document.getElementById('resizer');
-    resizer.onmousedown = () => {
-        document.onmousemove = (e) => {
-            const newWidth = Math.max(300, e.clientX);
-            document.getElementById('sidebar').style.width = newWidth + 'px';
-            editor.refresh();
-        };
-        document.onmouseup = () => document.onmousemove = null;
-    };
+    // 4. Mobile Tabs Logic
+    document.querySelectorAll('.mobile-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            
+            tab.classList.add('active');
+            const targetId = tab.dataset.target;
+            document.getElementById(targetId).classList.add('active');
+            
+            if (targetId === 'panel-editor') {
+                setTimeout(() => editor.refresh(), 50);
+            }
+        });
+    });
 
     // 5. Editor Change Event
     editor.on('change', () => {
@@ -114,12 +117,19 @@ function init() {
         setUIRunning(false, false);
     });
     
-    // 7. Entity Browser Toggle
-    btnToggleEntities.addEventListener('click', () => {
-        entityBrowser.classList.add('open');
-    });
-    btnCloseEntities.addEventListener('click', () => {
-        entityBrowser.classList.remove('open');
+    // 7. Standalone YAML Validate
+    btnValidate.addEventListener('click', () => {
+        const code = editor.getValue();
+        if (!code.trim()) {
+            showToast('Bitte Code eingeben.', 'error');
+            return;
+        }
+        try {
+            jsyaml.load(code);
+            showToast('YAML Syntax ist korrekt! ✅', 'success');
+        } catch (e) {
+            showToast('YAML Fehler: ' + e.message, 'error');
+        }
     });
 
     // 8. Color Curve Selector
@@ -168,10 +178,9 @@ function validateAndSync() {
     const code = editor.getValue();
     updateLampEntities(code, room);
     
-    // Wenn das Editor-Fenster komplett leer ist, verstecke Fehler und zeige nichts an.
+    // Wenn das Editor-Fenster komplett leer ist
     if (!code.trim()) {
         renderVariables({});
-        showError(null);
         if (!isPlaying) {
             toggleBtn.disabled = false;
             toggleBtn.classList.remove('btn-disabled');
@@ -183,14 +192,12 @@ function validateAndSync() {
         const doc = jsyaml.load(code);
         const vars = (doc && typeof doc === 'object') ? doc.variables : {};
         renderVariables(vars || {});
-        showError(null);
         if (!isPlaying) {
             toggleBtn.disabled = false;
             toggleBtn.classList.remove('btn-disabled');
         }
         return doc;
     } catch (e) {
-        showError("YAML Fehler:\n" + e.message);
         if (!isPlaying) {
             toggleBtn.disabled = true;
             toggleBtn.classList.add('btn-disabled');
@@ -199,13 +206,20 @@ function validateAndSync() {
     }
 }
 
-function showError(msg) {
-    if (msg) {
-        errorBox.innerText = msg;
-        errorBox.style.display = 'block';
-    } else {
-        errorBox.style.display = 'none';
-    }
+function showToast(msg, type = 'success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerText = msg;
+    toastContainer.appendChild(t);
+    
+    // Trigger Reflow for animation
+    void t.offsetWidth;
+    t.classList.add('show');
+    
+    setTimeout(() => {
+        t.classList.remove('show');
+        setTimeout(() => t.remove(), 300);
+    }, 4000);
 }
 
 
