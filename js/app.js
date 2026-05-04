@@ -92,6 +92,11 @@ function init() {
     const resizerLeft = document.getElementById('resizer-left');
     const resizerRight = document.getElementById('resizer-right');
     
+    // Fix initial layout glitch by setting explicit columns
+    if (window.innerWidth > 900) {
+        appContainer.style.gridTemplateColumns = "350px 6px 1fr 6px 320px";
+    }
+    
     let isResizingLeft = false;
     let isResizingRight = false;
 

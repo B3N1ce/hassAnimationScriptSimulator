@@ -219,6 +219,7 @@ button {
     background: #1a1a1a;
     height: 100%;
     overflow: hidden;
+    min-width: 0; /* Ermöglicht das Schrumpfen unter die Inhaltsgröße */
 }
 
 .panel:last-child {
@@ -234,12 +235,17 @@ button {
     padding: 0 15px;
     height: 40px;
     flex-shrink: 0;
+    min-width: 0; /* Verhindert das Rausdrücken des Headers */
 }
 
 .panel-title {
     font-weight: bold;
     font-size: 13px;
     color: #f8f8f2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 10px;
 }
 
 .panel-tabs {
