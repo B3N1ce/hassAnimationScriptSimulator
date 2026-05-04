@@ -8,7 +8,7 @@
 
 Aurora Studio is a modern, interactive integrated development environment (IDE) for creating and simulating complex Home Assistant light scripts. It allows developers to visualize animations in real-time without needing to switch actual hardware.
 
-![Aurora Studio Preview](https://via.placeholder.com/1200x600?text=Aurora+Studio+Interface+Preview) <!-- Tip: Replace this later with a real screenshot -->
+![Aurora Studio Preview](preview.png)
 
 ### Features
 
@@ -58,6 +58,8 @@ This project is not officially affiliated with **Home Assistant** or **Nabu Casa
 ## Deutsch
 
 Aurora Studio ist eine moderne, interaktive Entwicklungsumgebung (IDE) zur Erstellung und Simulation von komplexen Home Assistant Licht-Skripten. Es ermöglicht Entwicklern, Animationen in Echtzeit zu visualisieren, ohne echte Hardware schalten zu müssen.
+
+![Aurora Studio Vorschau](preview.png)
 
 ### Features
 
