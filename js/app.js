@@ -28,6 +28,8 @@ const notifList = document.getElementById('notif-list');
 
 let notifications = [];
 
+let labelsVisible = true;
+
 function updateNotifUI() {
     if (notifications.length > 0) {
         notifBadge.style.display = 'block';
@@ -237,10 +239,18 @@ function init() {
     // 9. Copy & Save
     btnCopyCode.addEventListener('click', () => {
         navigator.clipboard.writeText(editor.getValue()).then(() => {
-            const orig = btnCopyCode.innerText;
-            btnCopyCode.innerText = "✅ Kopiert!";
-            setTimeout(() => btnCopyCode.innerText = orig, 2000);
+            showToast('Code kopiert!', 'success');
         });
+    });
+
+    // 10. Label Toggle
+    const btnToggleLabels = document.getElementById('btn-toggle-labels');
+    btnToggleLabels.addEventListener('click', () => {
+        labelsVisible = !labelsVisible;
+        document.querySelectorAll('.lamp-label').forEach(l => {
+            l.classList.toggle('hidden', !labelsVisible);
+        });
+        btnToggleLabels.style.color = labelsVisible ? '#f8f8f2' : '#555';
     });
 
     btnSaveCode.addEventListener('click', () => {
