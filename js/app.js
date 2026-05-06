@@ -200,6 +200,9 @@ function init() {
         isPlaying = running;
         isPausedState = paused;
         editor.setOption('readOnly', running);
+        
+        if (running) document.body.classList.add('simulation-running');
+        else document.body.classList.remove('simulation-running');
 
         const wrapper = editor.getWrapperElement();
         if (running) {

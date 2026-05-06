@@ -1557,3 +1557,39 @@ label {
     width: 30px !important; /* Slightly wider for the arrow */
     font-size: 16px !important;
 }
+
+/* Disable editing during simulation */
+body.simulation-running .node-editor-content,
+body.simulation-running .color-picker-section,
+body.simulation-running #variable-list,
+body.simulation-running .btn-var-insert,
+body.simulation-running .node-input,
+body.simulation-running .node-slider,
+body.simulation-running .node-color-picker,
+body.simulation-running .node-input-mode {
+    pointer-events: none;
+    opacity: 0.6;
+    filter: grayscale(0.4);
+    cursor: not-allowed;
+}
+
+/* Allow scrolling in node editor but no interaction with fields */
+body.simulation-running .node-editor-content {
+    pointer-events: auto; /* Re-enable for scroll */
+}
+
+body.simulation-running .node-field,
+body.simulation-running .node-field-smart,
+body.simulation-running .btn-var-insert {
+    pointer-events: none;
+}
+
+/* Ensure Color Picker Tool is also disabled */
+body.simulation-running #color-tool,
+body.simulation-running .inspector-section,
+body.simulation-running .code-snippet,
+body.simulation-running .favorite-add {
+    pointer-events: none !important;
+    opacity: 0.6;
+    filter: grayscale(0.5);
+}
