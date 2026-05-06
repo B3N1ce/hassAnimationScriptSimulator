@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, setColorCurve, renderVariables } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, renderVariables } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -12,7 +12,6 @@ let editor;
 let colorPicker;
 
 const toggleBtn = document.getElementById('toggle-btn');
-const pauseBtn = document.getElementById('pause-btn');
 const stopBtn = document.getElementById('stop-btn');
 const btnValidate = document.getElementById('btn-validate');
 const room = document.getElementById('room');
@@ -124,7 +123,7 @@ function init() {
 
     // Fix initial layout glitch by setting explicit columns
     if (window.innerWidth > 900) {
-        appContainer.style.gridTemplateColumns = "350px 6px 1fr 6px 320px";
+        appContainer.style.gridTemplateColumns = "350px 8px 1fr 8px 320px";
     }
 
     let isResizingLeft = false;
@@ -157,12 +156,12 @@ function init() {
         if (isResizingLeft) {
             let newLeftW = e.clientX - containerRect.left;
             newLeftW = Math.max(200, Math.min(newLeftW, containerRect.width - rightW - 100));
-            appContainer.style.gridTemplateColumns = `${newLeftW}px 6px 1fr 6px ${rightW}px`;
+            appContainer.style.gridTemplateColumns = `${newLeftW}px 8px 1fr 8px ${rightW}px`;
             editor.refresh();
         } else if (isResizingRight) {
             let newRightW = containerRect.right - e.clientX;
             newRightW = Math.max(200, Math.min(newRightW, containerRect.width - leftW - 100));
-            appContainer.style.gridTemplateColumns = `${leftW}px 6px 1fr 6px ${newRightW}px`;
+            appContainer.style.gridTemplateColumns = `${leftW}px 8px 1fr 8px ${newRightW}px`;
         }
     });
 
@@ -205,20 +204,41 @@ function init() {
         const wrapper = editor.getWrapperElement();
         if (running) {
             wrapper.classList.add('disabled-dim');
-            toggleBtn.style.display = 'none';
-            pauseBtn.style.display = 'block';
-            stopBtn.style.display = 'block';
-            pauseBtn.innerHTML = paused ? t('resume') : t('pause');
+            toggleBtn.innerHTML = paused ? t('resume') : t('pause');
+            toggleBtn.className = 'btn-header btn-pause-style';
+            
+            stopBtn.innerHTML = t('stop');
+            stopBtn.className = 'btn-header btn-stop-style';
+            stopBtn.disabled = false;
+            stopBtn.classList.remove('btn-disabled');
         } else {
             wrapper.classList.remove('disabled-dim');
-            toggleBtn.style.display = 'block';
-            pauseBtn.style.display = 'none';
-            stopBtn.style.display = 'none';
+            toggleBtn.innerHTML = t('start');
+            toggleBtn.className = 'btn-header btn-start';
+            
+            stopBtn.innerHTML = t('reset');
+            stopBtn.className = 'btn-header btn-reset-style';
+            
+            // Reset Button nur aktivieren wenn Lampen modifiziert sind
+            const canReset = hasModifiedLamps();
+            stopBtn.disabled = !canReset;
+            if (canReset) stopBtn.classList.remove('btn-disabled');
+            else stopBtn.classList.add('btn-disabled');
         }
     }
 
     toggleBtn.addEventListener('click', () => {
-        if (isPlaying) return;
+        if (isPlaying) {
+            // Wenn es läuft, dann Pause/Resume
+            if (isPausedState) {
+                resumeSimulation();
+                setUIRunning(true, false);
+            } else {
+                pauseSimulation();
+                setUIRunning(true, true);
+            }
+            return;
+        }
 
         const doc = validateAndSync();
         if (!doc) return;
@@ -228,28 +248,20 @@ function init() {
 
         startSimulation(doc, () => {
             setUIRunning(false, false);
-            resetLamps();
         }, (err) => {
             showToast(t('script_error') + err.message, 'error');
             setUIRunning(false, false);
-            resetLamps();
         });
     });
 
-    pauseBtn.addEventListener('click', () => {
-        if (isPausedState) {
-            resumeSimulation();
-            setUIRunning(true, false);
-        } else {
-            pauseSimulation();
-            setUIRunning(true, true);
-        }
-    });
-
     stopBtn.addEventListener('click', () => {
-        stopSimulation();
-        resetLamps();
-        setUIRunning(false, false);
+        if (isPlaying || isPausedState) {
+            stopSimulation();
+            setUIRunning(false, false);
+        } else {
+            resetLamps();
+            setUIRunning(false, false); // Update Button State
+        }
     });
 
     // 7. Standalone YAML Validate
@@ -345,25 +357,31 @@ function init() {
 
 function validateAndSync() {
     const code = editor.getValue();
-    updateLampEntities(code, room);
 
     // Wenn das Editor-Fenster komplett leer ist
     if (!code.trim()) {
+        updateLampEntities({}, room);
         renderVariables({});
         if (!isPlaying) {
-            toggleBtn.disabled = false;
-            toggleBtn.classList.remove('btn-disabled');
+            toggleBtn.disabled = true;
+            toggleBtn.classList.add('btn-disabled');
         }
         return null;
     }
 
     try {
         const doc = jsyaml.load(code);
+        updateLampEntities(doc || {}, room);
         const vars = (doc && typeof doc === 'object') ? doc.variables : {};
         renderVariables(vars || {});
+        
+        // Prüfen ob das Skript ausführbaren Inhalt hat (sequence nicht leer)
+        const hasContent = doc && doc.sequence && Array.isArray(doc.sequence) && doc.sequence.length > 0;
+        
         if (!isPlaying) {
-            toggleBtn.disabled = false;
-            toggleBtn.classList.remove('btn-disabled');
+            toggleBtn.disabled = !hasContent;
+            if (hasContent) toggleBtn.classList.remove('btn-disabled');
+            else toggleBtn.classList.add('btn-disabled');
         }
         return doc;
     } catch (e) {

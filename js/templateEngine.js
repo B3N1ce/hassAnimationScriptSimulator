@@ -28,6 +28,12 @@ env.addFilter('random', function(val) {
     return val;
 });
 
+// Enforce a 'dump' filter (equivalent to HA's to_json)
+env.addFilter('dump', function(val) {
+    return JSON.stringify(val);
+});
+
+
 // --- HA Globals (Mocking) ---
 
 env.addGlobal('state_attr', function(entity_id, attr) {
@@ -98,6 +104,10 @@ export function resolveTemplate(val, vars = {}) {
         
         if (typeof rendered === 'string') {
             rendered = rendered.trim();
+            // Fallback: If it looks like a JSON array/object that wasn't caught by the exactMatch
+            if ((rendered.startsWith('[') && rendered.endsWith(']')) || (rendered.startsWith('{') && rendered.endsWith('}'))) {
+                try { return JSON.parse(rendered); } catch(e) {}
+            }
             if (rendered.toLowerCase() === 'true') return true;
             if (rendered.toLowerCase() === 'false') return false;
             // Float conversion if it's purely a number

@@ -4,6 +4,18 @@ let _editor = null;
 let _isSyncing = false;
 let _currentDoc = null; // live JS object (source of truth for nodes→YAML)
 
+const ICONS = {
+    script: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4.9V17L12 22l-9-4.9V7z"/></svg>`,
+    action: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+    delay: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    parallel: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="2" x2="9" y2="22"/><line x1="15" y1="2" x2="15" y2="22"/></svg>`,
+    repeat: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
+    choose: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>`,
+    if: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5l-4-4H4"/><path d="M12 17l4-4h4"/><circle cx="12" cy="3" r="1"/></svg>`,
+    wait: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2h14"/><path d="M5 22h14"/><path d="M6 2v6.7c0 .8.4 1.5 1 2.1l4 3.2-4 3.2c-.6.6-1 1.3-1 2.1V22"/><path d="M18 2v6.7c0 .8-.4 1.5-1 2.1l-4 3.2 4 3.2c.6.6 1 1.3 1 2.1V22"/></svg>`,
+    variables: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`
+};
+
 export function initNodeEditor(cmEditor) {
     _editor = cmEditor;
 }
@@ -37,7 +49,23 @@ function pushToYaml() {
     if (_isSyncing || !_currentDoc) return;
     _isSyncing = true;
     try {
-        const yaml = jsyaml.dump(_currentDoc, { lineWidth: 120, noRefs: true });
+        // Enforce a logical order for top-level keys
+        const ordered = {};
+        if ('alias' in _currentDoc) ordered.alias = _currentDoc.alias;
+        if ('mode' in _currentDoc) ordered.mode = _currentDoc.mode;
+        if ('icon' in _currentDoc) ordered.icon = _currentDoc.icon;
+        if ('variables' in _currentDoc) ordered.variables = _currentDoc.variables;
+        
+        // Copy any other keys (except sequence which should be last)
+        Object.keys(_currentDoc).forEach(k => {
+            if (!['alias', 'mode', 'icon', 'variables', 'sequence'].includes(k)) {
+                ordered[k] = _currentDoc[k];
+            }
+        });
+        
+        if ('sequence' in _currentDoc) ordered.sequence = _currentDoc.sequence;
+
+        const yaml = jsyaml.dump(ordered, { lineWidth: 120, noRefs: true });
         _editor.setValue(yaml);
     } finally {
         _isSyncing = false;
@@ -69,13 +97,12 @@ function renderGraph(container, doc) {
 
 function renderEmpty(container) {
     const empty = el('div', 'node-empty');
-    empty.innerHTML = '<span>No script yet. Start by adding a step.</span>';
+    empty.innerHTML = '<span>No script yet. Start by clicking the button below.</span>';
     const addBtn = makeAddBtn(() => {
         _currentDoc = { alias: 'My Script', sequence: [] };
-        showAddMenu(addBtn, _currentDoc.sequence, null, () => {
-            syncYamlToNodes();
-            pushToYaml();
-        });
+        pushToYaml();
+        container.innerHTML = '';
+        renderGraph(container, _currentDoc);
     });
     empty.appendChild(addBtn);
     container.appendChild(empty);
@@ -154,10 +181,13 @@ function detectType(step) {
 // ─── HEADER NODE ───────────────────────────────────────────────────────────
 
 function renderHeaderNode(doc) {
-    const node = makeNode('node-type-header', '◈', 'Script');
+    const node = makeNode('node-type-header', ICONS.script, 'Script');
     const body = node.querySelector('.node-body');
 
-    body.appendChild(makeField('Alias', makeInput(doc.alias || '', v => { doc.alias = v || undefined; pushToYaml(); })));
+    body.appendChild(makeField('Alias', makeInput(doc.alias || '', v => { 
+        doc.alias = v; // Keep even if empty string
+        pushToYaml(); 
+    })));
     body.appendChild(makeField('Mode', (() => {
         const sel = el('select', 'node-select');
         ['single','restart','queued','parallel'].forEach(m => {
@@ -176,7 +206,7 @@ function renderHeaderNode(doc) {
 // ─── ACTION NODE ───────────────────────────────────────────────────────────
 
 function renderActionNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-action', '⚡', 'Action');
+    const node = makeNode('node-type-action', ICONS.action, 'Action');
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -210,7 +240,7 @@ function renderActionNode(step, steps, index, onRebuild) {
 // ─── DELAY NODE ────────────────────────────────────────────────────────────
 
 function renderDelayNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-delay', '⏱', 'Delay');
+    const node = makeNode('node-type-delay', ICONS.delay, 'Delay');
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -239,7 +269,7 @@ function renderDelayNode(step, steps, index, onRebuild) {
 // ─── PARALLEL NODE ─────────────────────────────────────────────────────────
 
 function renderParallelNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-parallel', '⫴', 'Parallel');
+    const node = makeNode('node-type-parallel', ICONS.parallel, 'Parallel');
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -247,12 +277,6 @@ function renderParallelNode(step, steps, index, onRebuild) {
     step.parallel = branches;
 
     const branchesEl = el('div', 'node-branches');
-
-    const rebuildBranches = () => {
-        branchesEl.innerHTML = '';
-        renderBranchColumns(branchesEl, branches, onRebuild);
-    };
-
     renderBranchColumns(branchesEl, branches, onRebuild);
     body.appendChild(branchesEl);
 
@@ -260,8 +284,8 @@ function renderParallelNode(step, steps, index, onRebuild) {
     const addBranchBtn = el('button', 'btn-add-field');
     addBranchBtn.textContent = '+ Add branch';
     addBranchBtn.onclick = () => {
-        branches.push({ sequence: [] });
-        rebuildBranches();
+        branches.push({ action: 'light.turn_on' }); // Default to a simple action
+        onRebuild();
         pushToYaml();
     };
     body.appendChild(addBranchBtn);
@@ -284,9 +308,19 @@ function renderBranchColumns(container, branches, onRebuild) {
         }
 
         branchEl.appendChild(label);
-        const seq = branch.sequence || [];
-        branch.sequence = seq;
-        branchEl.appendChild(renderSequence(seq, branch, 'sequence'));
+        
+        // Every branch in 'parallel' is a sequence.
+        // In HA, a sequence can be a single step or a list of steps.
+        // We normalize to a list (array) here to ensure renderSequence can 
+        // correctly manage the steps (add/delete) via reference.
+        if (!Array.isArray(branch)) {
+            branches[i] = [branch];
+        }
+        const seq = branches[i];
+
+        // We pass 'branches' as parentObj and 'i' as key. 
+        // This ensures that if the entire sequence is replaced, the branches array is updated.
+        branchEl.appendChild(renderSequence(seq, branches, i));
         container.appendChild(branchEl);
     });
 }
@@ -294,7 +328,7 @@ function renderBranchColumns(container, branches, onRebuild) {
 // ─── REPEAT NODE ───────────────────────────────────────────────────────────
 
 function renderRepeatNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-repeat', '🔁', 'Repeat');
+    const node = makeNode('node-type-repeat', ICONS.repeat, 'Repeat');
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
     const r = step.repeat || {};
@@ -343,7 +377,7 @@ function renderRepeatNode(step, steps, index, onRebuild) {
 // ─── CHOOSE NODE ───────────────────────────────────────────────────────────
 
 function renderChooseNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-choose', '🔀', 'Choose');
+    const node = makeNode('node-type-choose', ICONS.choose, 'Choose');
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
     const choices = Array.isArray(step.choose) ? step.choose : [step.choose].filter(Boolean);
@@ -391,7 +425,7 @@ function renderChooseNode(step, steps, index, onRebuild) {
 // ─── IF/THEN/ELSE NODE ─────────────────────────────────────────────────────
 
 function renderIfNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-if', '↕', 'If / Then / Else');
+    const node = makeNode('node-type-if', ICONS.if, 'If / Then / Else');
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -418,7 +452,7 @@ function renderIfNode(step, steps, index, onRebuild) {
 // ─── WAIT NODE ─────────────────────────────────────────────────────────────
 
 function renderWaitNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-wait', '⌛', 'Wait');
+    const node = makeNode('node-type-wait', ICONS.wait, 'Wait');
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -439,14 +473,14 @@ function renderWaitNode(step, steps, index, onRebuild) {
 // ─── VARIABLES NODES ───────────────────────────────────────────────────────
 
 function renderVariablesNode(parentObj, key, vars) {
-    const node = makeNode('node-type-variables', '📦', 'Variables');
+    const node = makeNode('node-type-variables', ICONS.variables, 'Variables');
     const body = node.querySelector('.node-body');
     renderDataFields(body, vars, () => { parentObj[key] = vars; pushToYaml(); });
     return node;
 }
 
 function renderStepVariablesNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-variables', '📦', 'Set Variables');
+    const node = makeNode('node-type-variables', ICONS.variables, 'Set Variables');
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
     step.variables = step.variables || {};
@@ -488,16 +522,41 @@ function renderDataFields(container, obj, onChange) {
                 onChange();
             });
 
-            const valIn = el('input', 'node-input');
-            valIn.placeholder = 'value';
-            valIn.value = typeof obj[k] === 'object' ? JSON.stringify(obj[k]) : String(obj[k] ?? '');
+            const isComplex = typeof obj[k] === 'object' && obj[k] !== null;
+            const valIn = el(isComplex ? 'textarea' : 'input', 'node-input');
+            valIn.placeholder = 'value (JSON allowed)';
+            valIn.value = isComplex ? JSON.stringify(obj[k], null, 2) : String(obj[k] ?? '');
+            
+            if (isComplex) {
+                valIn.style.height = 'auto';
+                valIn.style.minHeight = '40px';
+                valIn.style.resize = 'vertical';
+            }
+
+            valIn.addEventListener('input', () => {
+                const v = valIn.value.trim();
+                if ((v.startsWith('[') && v.endsWith(']')) || (v.startsWith('{') && v.endsWith('}'))) {
+                    try {
+                        JSON.parse(v);
+                        valIn.style.borderColor = '#50fa7b'; // Valid JSON
+                    } catch (e) {
+                        valIn.style.borderColor = '#ff5555'; // Invalid JSON
+                    }
+                } else {
+                    valIn.style.borderColor = '';
+                }
+            });
+
             valIn.addEventListener('change', () => {
-                const v = valIn.value;
+                const v = valIn.value.trim();
                 let parsed = v;
-                if (!isNaN(parseFloat(v)) && String(parseFloat(v)) === v) parsed = parseFloat(v);
-                else if (v === 'true') parsed = true;
+                // Auto-type conversion
+                if (v === 'true') parsed = true;
                 else if (v === 'false') parsed = false;
-                else if (v.startsWith('[') || v.startsWith('{')) { try { parsed = JSON.parse(v); } catch {} }
+                else if (!isNaN(parseFloat(v)) && String(parseFloat(v)) === v) parsed = parseFloat(v);
+                else if ((v.startsWith('[') && v.endsWith(']')) || (v.startsWith('{') && v.endsWith('}'))) {
+                    try { parsed = JSON.parse(v); } catch (e) { /* keep as string if fails */ }
+                }
                 obj[keyIn.value] = parsed;
                 onChange();
             });
@@ -532,14 +591,14 @@ function renderDataFields(container, obj, onChange) {
 // ─── ADD STEP MENU ─────────────────────────────────────────────────────────
 
 const STEP_TYPES = [
-    { type: 'action',    icon: '⚡', label: 'Action',    template: () => ({ action: 'light.turn_on', target: { entity_id: '' }, data: {} }) },
-    { type: 'delay',     icon: '⏱', label: 'Delay',     template: () => ({ delay: 1 }) },
-    { type: 'parallel',  icon: '⫴', label: 'Parallel',  template: () => ({ parallel: [{ sequence: [] }, { sequence: [] }] }) },
-    { type: 'repeat',    icon: '🔁', label: 'Repeat',    template: () => ({ repeat: { count: 1, sequence: [] } }) },
-    { type: 'choose',    icon: '🔀', label: 'Choose',    template: () => ({ choose: [{ conditions: [], sequence: [] }], default: [] }) },
-    { type: 'if',        icon: '↕',  label: 'If/Then/Else', template: () => ({ if: [], then: [], else: [] }) },
-    { type: 'wait',      icon: '⌛', label: 'Wait',      template: () => ({ wait_template: '{{ true }}' }) },
-    { type: 'variables', icon: '📦', label: 'Variables', template: () => ({ variables: {} }) },
+    { type: 'action',    icon: ICONS.action, label: 'Action',    template: () => ({ action: 'light.turn_on', target: { entity_id: '' }, data: {} }) },
+    { type: 'delay',     icon: ICONS.delay,  label: 'Delay',     template: () => ({ delay: 1 }) },
+    { type: 'parallel',  icon: ICONS.parallel, label: 'Parallel',  template: () => ({ parallel: [{ sequence: [] }, { sequence: [] }] }) },
+    { type: 'repeat',    icon: ICONS.repeat, label: 'Repeat',    template: () => ({ repeat: { count: 1, sequence: [] } }) },
+    { type: 'choose',    icon: ICONS.choose, label: 'Choose',    template: () => ({ choose: [{ conditions: [], sequence: [] }], default: [] }) },
+    { type: 'if',        icon: ICONS.if,     label: 'If/Then/Else', template: () => ({ if: [], then: [], else: [] }) },
+    { type: 'wait',      icon: ICONS.wait,   label: 'Wait',      template: () => ({ wait_template: '{{ true }}' }) },
+    { type: 'variables', icon: ICONS.variables, label: 'Variables', template: () => ({ variables: {} }) },
 ];
 
 function showAddMenu(anchorBtn, steps, insertAt, onAdded) {

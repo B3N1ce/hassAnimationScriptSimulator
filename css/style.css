@@ -2,6 +2,31 @@
     box-sizing: border-box;
 }
 
+/* Global Scrollbar Styling (Firefox) */
+* {
+    scrollbar-width: auto;
+    scrollbar-color: #44475a #1e1e24;
+}
+
+/* Global Scrollbar Styling (Chromium) */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e1e24;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #44475a;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6272a4;
+}
+
 body {
     margin: 0;
     display: flex;
@@ -56,7 +81,9 @@ body {
 
 .playback-controls {
     display: flex;
-    width: 160px;
+    width: auto;
+    min-width: 120px;
+    gap: 8px;
 }
 
 .btn-header-icon {
@@ -96,73 +123,47 @@ button {
 }
 
 .btn-header {
-    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 4px 16px;
+    min-width: 128px;
+    height: 34px;
     border: none;
     border-radius: 4px;
     font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
     cursor: pointer;
     transition: 0.2s;
-    font-size: 12px;
+    white-space: nowrap;
+    font-family: inherit;
+    color: #282a36;
 }
 
 .btn-primary {
     background: #8be9fd;
-    color: #282a36;
 }
 
 .btn-primary:hover {
     filter: brightness(1.1);
 }
 
-.btn-secondary {
-    background: #444;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: 0.2s;
-}
-
-.btn-secondary:hover {
-    background: #6272a4;
-}
-
-#toggle-btn,
-#pause-btn,
-#stop-btn {
-    width: 100%;
-    padding: 8px 12px;
-    cursor: pointer;
-    border: none;
-    border-radius: 4px;
-    font-weight: bold;
-    transition: 0.3s;
-    text-transform: uppercase;
-    font-size: 11px;
-}
-
 .btn-start {
     background: #50fa7b;
-    color: #282a36;
 }
 
-.btn-pause {
+.btn-pause-style {
     background: #f1fa8c !important;
-    color: #282a36 !important;
-    border-radius: 4px 0 0 4px !important;
-    border: none !important;
-    margin: 0 !important;
 }
 
-.btn-stop {
+.btn-reset-style {
+    background: #7f90ff !important;
+}
+
+.btn-stop-style {
     background: #ff5555 !important;
-    color: #282a36 !important;
-    border-radius: 0 4px 4px 0 !important;
-    border: none !important;
-    border-left: 1px solid rgba(40, 42, 54, 0.3) !important;
-    margin: 0 !important;
 }
 
 .btn-disabled {
@@ -170,6 +171,12 @@ button {
     color: #888 !important;
     cursor: not-allowed !important;
     opacity: 0.6;
+}
+
+#toggle-btn,
+#pause-btn,
+#stop-btn {
+    flex: 1;
 }
 
 .close-btn {
@@ -200,20 +207,31 @@ button {
 #app-container {
     flex-grow: 1;
     display: grid;
-    grid-template-columns: 350px 6px 1fr 6px 320px;
+    grid-template-columns: 350px 8px 1fr 8px 320px;
     overflow: hidden;
     position: relative;
 }
 
 .resizer {
-    background: #333;
+    background: transparent;
+    width: 8px;
     cursor: col-resize;
     z-index: 20;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+.resizer::before {
+    content: '';
+    width: 2px;
+    height: 100%;
+    background: #333;
     transition: background 0.2s;
 }
 
-.resizer:hover,
-.resizer.dragging {
+.resizer:hover::before,
+.resizer.dragging::before {
     background: #bd93f9;
 }
 
@@ -289,7 +307,10 @@ button {
 .editor-view {
     display: none;
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .editor-view.active {
@@ -299,7 +320,10 @@ button {
 /* Node Editor Container */
 #node-container {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     overflow: auto;
     padding: 30px 20px 80px 20px;
     background: #141418;
@@ -341,19 +365,29 @@ button {
 }
 
 /* Node card */
-.node-item {
+.node-item,
+.node-item-container {
     background: #21222c;
     border: 1px solid #44475a;
     border-radius: 8px;
-    width: 280px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    width: fit-content;
+    min-width: 280px;
+    max-width: 95vw;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     position: relative;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.node-item:hover {
+.node-item-container.node-type-parallel {
+    width: auto;
+    min-width: 320px;
+    max-width: 95%;
+}
+
+.node-item:hover,
+.node-item-container:hover {
     border-color: #6272a4;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .node-header {
@@ -367,7 +401,7 @@ button {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #f8f8f2;
-    border-bottom: 1px solid rgba(0,0,0,0.2);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .node-header-title {
@@ -377,7 +411,13 @@ button {
 }
 
 .node-header-icon {
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.node-header-icon svg {
+    display: block;
 }
 
 .node-header-actions {
@@ -394,7 +434,7 @@ button {
 .node-header-actions button {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.5);
+    color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
     padding: 2px 4px;
     border-radius: 3px;
@@ -404,7 +444,7 @@ button {
 
 .node-header-actions button:hover {
     color: #fff;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .node-body {
@@ -417,15 +457,46 @@ button {
 }
 
 /* Node type colors */
-.node-type-action .node-header   { background: #6272a4; }
-.node-type-delay .node-header    { background: #e6ac00; color: #1a1a1a; }
-.node-type-parallel .node-header { background: #ff79c6; }
-.node-type-repeat .node-header   { background: #50fa7b; color: #1a1a1a; }
-.node-type-choose .node-header   { background: #8be9fd; color: #1a1a1a; }
-.node-type-if .node-header       { background: #ffb86c; color: #1a1a1a; }
-.node-type-wait .node-header     { background: #bd93f9; }
-.node-type-variables .node-header { background: #44475a; }
-.node-type-header .node-header   { background: #282a36; border-bottom: 1px solid #6272a4; }
+.node-type-action .node-header {
+    background: #6272a4;
+}
+
+.node-type-delay .node-header {
+    background: #e6ac00;
+    color: #1a1a1a;
+}
+
+.node-type-parallel .node-header {
+    background: #ff79c6;
+}
+
+.node-type-repeat .node-header {
+    background: #50fa7b;
+    color: #1a1a1a;
+}
+
+.node-type-choose .node-header {
+    background: #8be9fd;
+    color: #1a1a1a;
+}
+
+.node-type-if .node-header {
+    background: #ffb86c;
+    color: #1a1a1a;
+}
+
+.node-type-wait .node-header {
+    background: #bd93f9;
+}
+
+.node-type-variables .node-header {
+    background: #44475a;
+}
+
+.node-type-header .node-header {
+    background: #282a36;
+    border-bottom: 1px solid #6272a4;
+}
 
 /* Node form fields */
 .node-field {
@@ -528,11 +599,12 @@ button {
 /* Parallel / Choose branches */
 .node-branches {
     display: flex;
-    gap: 12px;
-    padding: 10px 0;
+    gap: 16px;
+    padding: 10px;
     justify-content: center;
     width: 100%;
     overflow-x: auto;
+    min-height: 50px;
 }
 
 .node-branch {
@@ -540,9 +612,13 @@ button {
     flex-direction: column;
     align-items: center;
     gap: 0;
-    min-width: 200px;
+    min-width: 300px;
+    /* Give branches enough space for nodes */
     position: relative;
     flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    padding: 8px 4px;
 }
 
 .node-branch-label {
@@ -595,7 +671,7 @@ button {
     padding: 4px 0;
     z-index: 100;
     min-width: 160px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     display: none;
 }
 
@@ -621,8 +697,9 @@ button {
 
 .node-add-menu-item .menu-icon {
     width: 18px;
-    text-align: center;
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Empty state */
@@ -659,6 +736,11 @@ button {
     position: relative;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    /* Prevent parent scrolling from fighting with child editors */
+}
+
+.panel-content.scrollable {
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -699,8 +781,25 @@ button {
     right: 0;
     bottom: 0;
     height: 100%;
+    width: 100%;
     font-size: 13px;
-    z-index: 1;
+    z-index: 5;
+    /* Increased from 1 */
+    /* Ensure Firefox shows scrollbars on dark background */
+    scrollbar-color: #44475a #1e1e24;
+    scrollbar-width: thin;
+}
+
+.CodeMirror textarea {
+    overflow: hidden !important;
+}
+
+/* Force CodeMirror scrollbars to be visible and interactive */
+.CodeMirror-vscrollbar,
+.CodeMirror-hscrollbar {
+    z-index: 10 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .CodeMirror.disabled-dim {
@@ -1260,7 +1359,8 @@ label {
     .btn-header {
         flex: 1;
         padding: 12px;
-        font-size: 14px;
+        font-size: 12px;
+        min-width: 128px;
     }
 
     #toast-container {

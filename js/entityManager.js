@@ -62,24 +62,50 @@ function updateRoomVisibility() {
     });
 }
 
-export function updateLampEntities(code, roomElement) {
-    const regex = /entity_id:\s*([a-zA-Z0-9_\.]+)|(?:^|\s)-?\s*([a-zA-Z0-9_]+\.[a-zA-Z0-9_]+)/g;
-    let match;
+/**
+ * Prüft, ob mindestens eine Lampe existiert und diese NICHT im Initialzustand (aus) ist.
+ */
+export function hasModifiedLamps() {
+    const ids = Object.keys(lamps);
+    if (ids.length === 0) return false;
+    
+    // Eine Lampe gilt als "modifiziert", wenn sie nicht aus ist (isOff ist false)
+    return ids.some(id => !lampStates[id].isOff);
+}
+
+export function updateLampEntities(doc, roomElement) {
     const foundIds = new Set();
 
-    while ((match = regex.exec(code)) !== null) {
-        let id = match[1] || match[2];
-        if (id) {
-            id = id.trim();
-            // Ignoriere reine Zahlen (wie 0.68 aus dem feuer Skript)
-            if (!isNaN(id)) continue;
-            if (id.endsWith('.turn_on') || id.endsWith('.turn_off') || id.endsWith('.toggle')) continue;
-            if (!id.includes('.')) id = "light." + id;
-            foundIds.add(id);
+    function findEntities(obj) {
+        if (!obj || typeof obj !== 'object') return;
+
+        // Check for entity_id key
+        if (obj.entity_id) {
+            const ids = Array.isArray(obj.entity_id) ? obj.entity_id : [obj.entity_id];
+            ids.forEach(id => {
+                if (typeof id === 'string' && !id.includes('{{')) {
+                    let cleanId = id.trim();
+                    if (!cleanId.includes('.')) cleanId = "light." + cleanId;
+                    foundIds.add(cleanId);
+                }
+            });
         }
+        
+        // Also check if the object itself looks like an entity ID (e.g. in shorthand lists)
+        if (typeof obj === 'string' && obj.includes('.') && !obj.includes('{{') && !obj.includes(' ')) {
+            const parts = obj.split('.');
+            if (parts.length === 2 && !['action', 'service', 'condition'].includes(parts[1])) {
+                 foundIds.add(obj.trim());
+            }
+        }
+
+        // Recurse
+        Object.values(obj).forEach(val => findEntities(val));
     }
 
-    const uniqueIds = Array.from(foundIds);
+    findEntities(doc);
+
+    const uniqueIds = Array.from(foundIds).filter(id => id.startsWith('light.'));
 
     Object.keys(lamps).forEach(id => {
         if (!uniqueIds.includes(id)) {

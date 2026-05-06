@@ -270,7 +270,11 @@ export function calculateRgbFromInputs(data, vars, resolveTemplate) {
         }
     } else if (data.rgb_color) {
         let col = resolveTemplate(data.rgb_color, vars);
-        if (typeof col === 'string') col = col.split(',').map(n => parseInt(n.trim()));
+        if (typeof col === 'string') {
+            // Strip brackets if present (e.g. "[255, 255, 0]")
+            const clean = col.trim().replace(/^\[|\]$/g, '');
+            col = clean.split(',').map(n => parseInt(n.trim()));
+        }
         if (Array.isArray(col) && col.length >= 3) {
             // Apply brightness manually to RGB
             rgb = [col[0] * (b/100), col[1] * (b/100), col[2] * (b/100)];
