@@ -15,6 +15,7 @@ function saveGroups() { localStorage.setItem('ha_simulator_groups', JSON.stringi
 function saveHidden() { localStorage.setItem('ha_simulator_hidden', JSON.stringify(hiddenEntities)); }
 
 export function getGroups() { return groups; }
+export function getAvailableEntities() { return Object.keys(lamps); }
 
 export function initEntityManager(callback) {
     selectedEntityCallback = callback;
@@ -53,12 +54,15 @@ function applyCurve(c, curve) {
 
 function updateRoomVisibility() {
     Object.keys(lamps).forEach(id => {
-        // Hide if it's a group OR explicitly hidden
-        if (groups[id] || hiddenEntities[id]) {
-            lamps[id].style.display = 'none';
-        } else {
-            lamps[id].style.display = 'flex';
-        }
+        const el = lamps[id];
+        const isGroup = !!groups[id];
+        const isHidden = !!hiddenEntities[id];
+
+        el.classList.toggle('is-group-master', isGroup);
+        el.classList.toggle('is-hidden-ghost', isHidden);
+        
+        // We no longer use display: none, but CSS classes for transparency
+        el.style.display = 'flex';
     });
 }
 
@@ -461,7 +465,7 @@ function setupDragAndDrop() {
                     if (!groups[groupId].includes(childId)) {
                         groups[groupId].push(childId);
                         saveGroups();
-                        renderEntityBrowser(lampsList);
+                        renderEntityBrowser(Object.keys(lamps));
                     }
                 }
             });
@@ -469,30 +473,7 @@ function setupDragAndDrop() {
     });
 }
 
-export function renderVariables(varsObj) {
-    const list = document.getElementById('variable-list');
-    if (!list) return;
-    list.innerHTML = '';
-
-    const keys = Object.keys(varsObj);
-    if (keys.length === 0) {
-        list.innerHTML = `<div style="color: #888; font-size: 11px; padding: 10px;">${t('no_vars')}</div>`;
-        return;
-    }
-
-    keys.forEach(key => {
-        let val = varsObj[key];
-        let valStr = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
-
-        const item = document.createElement('div');
-        item.className = 'var-item';
-        item.innerHTML = `
-            <div class="var-key">${key}</div>
-            <div class="var-val">${valStr}</div>
-        `;
-        list.appendChild(item);
-    });
-}
+// Variables rendering moved to nodeEditor.js (updateVariablePanel)
 
 // Re-render when language changes
 document.addEventListener('languageChanged', () => {

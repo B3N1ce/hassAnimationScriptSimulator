@@ -1,8 +1,10 @@
-// js/nodeEditor.js — Bidirectional Node Editor for Aurora Studio
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, getAvailableEntities } from './entityManager.js';
+import { t } from './i18n.js';
 
 let _editor = null;
 let _isSyncing = false;
 let _currentDoc = null; // live JS object (source of truth for nodes→YAML)
+let _lastFocusedElement = null;
 
 const ICONS = {
     script: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4.9V17L12 22l-9-4.9V7z"/></svg>`,
@@ -18,6 +20,13 @@ const ICONS = {
 
 export function initNodeEditor(cmEditor) {
     _editor = cmEditor;
+    
+    // Global focus tracking for variable insertion
+    document.addEventListener('focusin', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.classList.contains('CodeMirror-code')) {
+            _lastFocusedElement = e.target;
+        }
+    });
 }
 
 // Called when switching TO the Nodes tab
@@ -33,15 +42,20 @@ export function syncYamlToNodes() {
         return;
     }
     try {
-        _currentDoc = jsyaml.load(code);
-        if (!_currentDoc || typeof _currentDoc !== 'object') {
-            _currentDoc = { sequence: [] };
-        }
+        const loaded = jsyaml.load(code);
+        _currentDoc = (loaded && typeof loaded === 'object') ? loaded : {};
+        
+        // Ensure explicit defaults
+        if (_currentDoc.alias === undefined) _currentDoc.alias = 'My Script';
+        if (_currentDoc.mode === undefined) _currentDoc.mode = 'single';
+        if (!_currentDoc.sequence) _currentDoc.sequence = [];
+        
     } catch (e) {
         container.innerHTML = `<div class="node-empty"><span style="color:#ff5555">YAML error: ${e.message}</span></div>`;
         return;
     }
     renderGraph(container, _currentDoc);
+    updateVariablePanel();
 }
 
 // Called after any node edit to push back to CodeMirror
@@ -51,8 +65,11 @@ function pushToYaml() {
     try {
         // Enforce a logical order for top-level keys
         const ordered = {};
-        if ('alias' in _currentDoc) ordered.alias = _currentDoc.alias;
-        if ('mode' in _currentDoc) ordered.mode = _currentDoc.mode;
+        
+        // Always explicit top-level fields
+        ordered.alias = _currentDoc.alias ?? 'My Script';
+        ordered.mode = _currentDoc.mode ?? 'single';
+        
         if ('icon' in _currentDoc) ordered.icon = _currentDoc.icon;
         if ('variables' in _currentDoc) ordered.variables = _currentDoc.variables;
         
@@ -63,10 +80,11 @@ function pushToYaml() {
             }
         });
         
-        if ('sequence' in _currentDoc) ordered.sequence = _currentDoc.sequence;
+        ordered.sequence = _currentDoc.sequence || [];
 
         const yaml = jsyaml.dump(ordered, { lineWidth: 120, noRefs: true });
         _editor.setValue(yaml);
+        updateVariablePanel();
     } finally {
         _isSyncing = false;
     }
@@ -196,7 +214,10 @@ function renderHeaderNode(doc) {
             if (doc.mode === m) o.selected = true;
             sel.appendChild(o);
         });
-        sel.addEventListener('change', () => { doc.mode = sel.value || undefined; pushToYaml(); });
+        sel.addEventListener('change', () => { 
+            doc.mode = sel.value; 
+            pushToYaml(); 
+        });
         return sel;
     })()));
 
@@ -210,28 +231,72 @@ function renderActionNode(step, steps, index, onRebuild) {
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
-    // Action name
-    body.appendChild(makeField('Action', makeInput(step.action || step.service || '', v => {
+    // Action (ComboBox)
+    const actionList = ['light.turn_on', 'light.turn_off', 'light.toggle', 'switch.turn_on', 'switch.turn_off'];
+    body.appendChild(makeField('Action', makeComboBox(step.action || step.service || '', actionList, v => {
         delete step.service;
         step.action = v;
+        onRebuild(); // Rebuild to show/hide property sections
         pushToYaml();
     }, 'e.g. light.turn_on')));
 
-    // Entity ID
+    // Entity (ComboBox)
+    const entityList = getAvailableEntities();
     const entityVal = step.target?.entity_id || step.entity_id || '';
-    body.appendChild(makeField('Entity', makeInput(Array.isArray(entityVal) ? entityVal.join(', ') : entityVal, v => {
+    body.appendChild(makeField('Entity', makeComboBox(Array.isArray(entityVal) ? entityVal.join(', ') : entityVal, entityList, v => {
         const ids = v.split(',').map(s => s.trim()).filter(Boolean);
         step.target = step.target || {};
         step.target.entity_id = ids.length === 1 ? ids[0] : ids;
         pushToYaml();
     }, 'entity_id')));
 
-    // Data fields
+    // Smart Properties for light.turn_on
+    if (step.action === 'light.turn_on') {
+        const props = el('div', 'node-props-section');
+        props.appendChild(makeSectionLabel('Light Properties'));
+        
+        step.data = step.data || {};
+        
+        // Brightness
+        props.appendChild(makeSmartRange('Brightness', step.data.brightness_pct, 0, 100, '%', v => {
+            step.data.brightness_pct = (typeof v === 'string' && v.includes('{')) ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
+            pushToYaml();
+        }));
+        
+        // Color (Multi-mode)
+        props.appendChild(makeSmartColor('Color', step.data, () => {
+            pushToYaml();
+        }));
+        
+        // Transition
+        props.appendChild(makeSmartField('Transition', step.data.transition, 'seconds', v => {
+            step.data.transition = isNaN(parseFloat(v)) ? v : parseFloat(v);
+            pushToYaml();
+        }));
+        
+        body.appendChild(props);
+    }
+
+    // Data fields (Custom)
     const dataSection = el('div');
-    dataSection.appendChild(makeSectionLabel('Data'));
+    dataSection.appendChild(makeSectionLabel('Custom Data'));
     const dataObj = step.data || {};
     step.data = dataObj;
-    renderDataFields(dataSection, dataObj, () => pushToYaml());
+    
+    // Filter out keys already handled by smart UI to avoid confusion
+    const filteredData = {};
+    const smartKeys = ['brightness_pct', 'rgb_color', 'hs_color', 'xy_color', 'transition'];
+    Object.keys(dataObj).forEach(k => {
+        if (!smartKeys.includes(k) || step.action !== 'light.turn_on') {
+            filteredData[k] = dataObj[k];
+        }
+    });
+    
+    renderDataFields(dataSection, filteredData, () => {
+        // Merge filtered data back
+        Object.assign(step.data, filteredData);
+        pushToYaml();
+    });
     body.appendChild(dataSection);
 
     return node;
@@ -592,12 +657,12 @@ function renderDataFields(container, obj, onChange) {
 
 const STEP_TYPES = [
     { type: 'action',    icon: ICONS.action, label: 'Action',    template: () => ({ action: 'light.turn_on', target: { entity_id: '' }, data: {} }) },
-    { type: 'delay',     icon: ICONS.delay,  label: 'Delay',     template: () => ({ delay: 1 }) },
-    { type: 'parallel',  icon: ICONS.parallel, label: 'Parallel',  template: () => ({ parallel: [{ sequence: [] }, { sequence: [] }] }) },
+    { type: 'delay',     icon: ICONS.delay,  label: 'Delay',     template: () => ({ delay: '00:00:01' }) },
+    { type: 'parallel',  icon: ICONS.parallel, label: 'Parallel',  template: () => ({ parallel: [] }) },
     { type: 'repeat',    icon: ICONS.repeat, label: 'Repeat',    template: () => ({ repeat: { count: 1, sequence: [] } }) },
     { type: 'choose',    icon: ICONS.choose, label: 'Choose',    template: () => ({ choose: [{ conditions: [], sequence: [] }], default: [] }) },
     { type: 'if',        icon: ICONS.if,     label: 'If/Then/Else', template: () => ({ if: [], then: [], else: [] }) },
-    { type: 'wait',      icon: ICONS.wait,   label: 'Wait',      template: () => ({ wait_template: '{{ true }}' }) },
+    { type: 'wait',      icon: ICONS.wait,   label: 'Wait',      template: () => ({ wait_template: '', timeout: '' }) },
     { type: 'variables', icon: ICONS.variables, label: 'Variables', template: () => ({ variables: {} }) },
 ];
 
@@ -734,4 +799,498 @@ function makeSectionLabel(text) {
     const s = el('div', 'node-section-label');
     s.textContent = text;
     return s;
+}
+
+// ─── SMART UI HELPERS ──────────────────────────────────────────────────────
+
+function makeComboBox(value, options, onChange, placeholder) {
+    const container = el('div', 'node-combo-container');
+    const input = el('input', 'node-input');
+    input.value = value;
+    input.placeholder = placeholder;
+    
+    const dlId = 'dl-' + Math.random().toString(36).substr(2, 9);
+    const dl = el('datalist');
+    dl.id = dlId;
+    options.forEach(opt => {
+        const o = el('option');
+        o.value = opt;
+        dl.appendChild(o);
+    });
+    container.appendChild(dl);
+    input.setAttribute('list', dlId);
+    
+    input.addEventListener('change', () => onChange(input.value));
+    container.appendChild(input);
+    return container;
+}
+
+function makeSmartRange(label, value, min, max, unit, onChange) {
+    const field = el('div', 'node-field node-field-smart');
+    const lbl = el('span', 'node-field-label');
+    lbl.textContent = label;
+    
+    const controlRow = el('div', 'node-smart-row');
+    
+    const slider = el('input', 'node-slider');
+    slider.type = 'range';
+    slider.min = min;
+    slider.max = max;
+    slider.value = (typeof value === 'number') ? value : (isNaN(parseFloat(value)) ? 0 : parseFloat(value));
+    
+    const override = el('input', 'node-input node-input-override');
+    override.value = (value === undefined || value === null) ? '' : (Array.isArray(value) ? JSON.stringify(value) : value);
+    override.placeholder = 'Value or {{...}}';
+    
+    slider.addEventListener('input', () => {
+        override.value = slider.value;
+        onChange(parseFloat(slider.value));
+    });
+    
+    override.addEventListener('change', () => {
+        const v = override.value;
+        if (!isNaN(parseFloat(v)) && !v.includes('{')) {
+            slider.value = parseFloat(v);
+            onChange(parseFloat(v));
+        } else {
+            onChange(v);
+        }
+    });
+    
+    controlRow.appendChild(slider);
+    controlRow.appendChild(override);
+    field.appendChild(lbl);
+    field.appendChild(controlRow);
+    return field;
+}
+
+function makeSmartColor(label, dataObj, onChange) {
+    const field = el('div', 'node-field node-field-smart');
+    const headRow = el('div', 'node-smart-head');
+    
+    const lbl = el('span', 'node-field-label');
+    lbl.textContent = label;
+    headRow.appendChild(lbl);
+    
+    // Mode selector
+    const modes = ['rgb_color', 'hs_color', 'xy_color'];
+    let currentMode = modes.find(m => dataObj[m] !== undefined) || 'rgb_color';
+    
+    const modeSel = el('select', 'node-input-mode');
+    modes.forEach(m => {
+        const o = el('option');
+        o.value = m; o.textContent = m.split('_')[0].toUpperCase();
+        if (m === currentMode) o.selected = true;
+        modeSel.appendChild(o);
+    });
+    headRow.appendChild(modeSel);
+    field.appendChild(headRow);
+    
+    const controlRow = el('div', 'node-smart-row');
+    const picker = el('input', 'node-color-picker');
+    picker.type = 'color';
+    
+    const override = el('input', 'node-input node-input-override');
+    override.placeholder = 'Value or {{...}}';
+    
+    const updateUI = () => {
+        const val = dataObj[currentMode];
+        override.value = (val === undefined || val === null) ? '' : (Array.isArray(val) ? JSON.stringify(val) : val);
+        
+        let rgb = [255, 255, 255];
+        if (val) {
+            if (currentMode === 'rgb_color') rgb = val;
+            else if (currentMode === 'hs_color') rgb = hsToRgb(val);
+            else if (currentMode === 'xy_color') rgb = xyToRgb(val);
+        }
+        picker.value = rgbToHex(rgb);
+    };
+    
+    modeSel.addEventListener('change', () => {
+        const oldMode = currentMode;
+        currentMode = modeSel.value;
+        const oldVal = dataObj[oldMode];
+        
+        if (oldVal !== undefined) {
+            let rgb = [255, 255, 255];
+            if (oldMode === 'rgb_color') rgb = oldVal;
+            else if (oldMode === 'hs_color') rgb = hsToRgb(oldVal);
+            else if (oldMode === 'xy_color') rgb = xyToRgb(oldVal);
+            
+            delete dataObj[oldMode];
+            if (currentMode === 'rgb_color') dataObj[currentMode] = rgb;
+            else if (currentMode === 'hs_color') dataObj[currentMode] = rgbToHs(rgb);
+            else if (currentMode === 'xy_color') dataObj[currentMode] = rgbToXy(rgb);
+        } else {
+            // Default if nothing was there
+            dataObj[currentMode] = (currentMode === 'rgb_color') ? [255,255,255] : (currentMode === 'hs_color' ? [0,0] : [0.323, 0.329]);
+        }
+        
+        updateUI();
+        onChange();
+    });
+    
+    picker.addEventListener('input', () => {
+        const rgb = hexToRgb(picker.value);
+        if (currentMode === 'rgb_color') dataObj[currentMode] = rgb;
+        else if (currentMode === 'hs_color') dataObj[currentMode] = rgbToHs(rgb);
+        else if (currentMode === 'xy_color') dataObj[currentMode] = rgbToXy(rgb);
+        
+        override.value = JSON.stringify(dataObj[currentMode]);
+        onChange();
+    });
+    
+    override.addEventListener('change', () => {
+        const v = override.value.trim();
+        if (v.startsWith('[') && v.endsWith(']')) {
+            try {
+                dataObj[currentMode] = JSON.parse(v);
+                updateUI();
+                onChange();
+            } catch(e) { dataObj[currentMode] = v; onChange(); }
+        } else {
+            dataObj[currentMode] = v;
+            onChange();
+        }
+    });
+    
+    updateUI();
+    
+    controlRow.appendChild(picker);
+    controlRow.appendChild(override);
+    field.appendChild(controlRow);
+    return field;
+}
+
+function makeSmartField(label, value, unit, onChange) {
+    const field = el('div', 'node-field node-field-smart');
+    const lbl = el('span', 'node-field-label');
+    lbl.textContent = label;
+    
+    const input = el('input', 'node-input');
+    input.value = (value === undefined || value === null) ? '' : value;
+    input.placeholder = `Value in ${unit} or {{...}}`;
+    input.addEventListener('change', () => onChange(input.value));
+    
+    field.appendChild(lbl);
+    field.appendChild(input);
+    return field;
+}
+
+// ─── VARIABLE DISCOVERY & PANEL ───────────────────────────────────────────
+
+export function updateVariablePanel(externalDoc = null) {
+    const container = document.getElementById('variable-list');
+    if (!container) return;
+    
+    const docToUse = externalDoc || _currentDoc;
+    if (externalDoc && typeof externalDoc === 'object') _currentDoc = externalDoc; // Keep in sync if valid
+    
+    if (!docToUse) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = '';
+
+    const vars = discoverVariables(docToUse);
+    const sortedKeys = Object.keys(vars).sort();
+
+    if (sortedKeys.length === 0) {
+        container.innerHTML = `<div style="padding:10px;color:#666;font-size:11px;text-align:center;">${t('no_vars_found') || 'Keine Variablen definiert'}</div>`;
+        return;
+    }
+
+    sortedKeys.forEach(key => {
+        const row = el('div', 'entity-item');
+        row.style.cursor = 'pointer';
+        row.title = t('click_to_insert') || 'Klicken zum Einfügen';
+        
+        const insertBtn = el('button', 'btn-var-insert');
+        insertBtn.innerHTML = '←';
+        insertBtn.title = t('click_to_insert') || 'In Editor einfügen';
+        row.appendChild(insertBtn);
+
+        const info = el('div', 'entity-info');
+        const name = el('div', 'entity-name');
+        name.textContent = key;
+        
+        const valPreview = el('div', 'entity-id');
+        valPreview.textContent = String(vars[key]).substring(0, 30);
+        
+        info.appendChild(name);
+        info.appendChild(valPreview);
+        row.appendChild(info);
+
+        row.onclick = () => {
+            showVariableEditor(key, vars[key]);
+        };
+
+        insertBtn.onclick = (e) => {
+            e.stopPropagation();
+            insertVariableAtCursor(`{{ ${key} }}`);
+        };
+
+        container.appendChild(row);
+    });
+}
+
+function discoverVariables(doc) {
+    const vars = {};
+
+    // 1. Top level
+    if (doc.variables) {
+        Object.assign(vars, doc.variables);
+    }
+
+    // 2. Recursive scan of sequence
+    const scanSequence = (seq) => {
+        if (!Array.isArray(seq)) return;
+        seq.forEach(step => {
+            if (step.variables) {
+                Object.assign(vars, step.variables);
+            }
+            // Nested structures
+            if (step.repeat?.sequence) scanSequence(step.repeat.sequence);
+            if (step.parallel) {
+                step.parallel.forEach(branch => {
+                    if (Array.isArray(branch)) scanSequence(branch);
+                    else if (branch.sequence) scanSequence(branch.sequence);
+                });
+            }
+            if (step.choose) {
+                step.choose.forEach(choice => scanSequence(choice.sequence));
+                if (step.default) scanSequence(step.default);
+            }
+            if (step.if) {
+                scanSequence(step.then);
+                scanSequence(step.else);
+            }
+        });
+    };
+
+    scanSequence(doc.sequence);
+    return vars;
+}
+
+function insertVariableAtCursor(text) {
+    // 1. Check if CodeMirror is focused (YAML Editor)
+    if (_lastFocusedElement && (_lastFocusedElement.closest('.CodeMirror') || _lastFocusedElement.classList.contains('CodeMirror-code'))) {
+        _editor.focus();
+        const doc = _editor.getDoc();
+        const cursor = doc.getCursor();
+        doc.replaceRange(text, cursor);
+        return;
+    }
+
+    // 2. Check for standard inputs (Node Editor)
+    if (_lastFocusedElement && (_lastFocusedElement.tagName === 'INPUT' || _lastFocusedElement.tagName === 'TEXTAREA')) {
+        const el = _lastFocusedElement;
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        const val = el.value;
+        el.value = val.slice(0, start) + text + val.slice(end);
+        el.selectionStart = el.selectionEnd = start + text.length;
+        el.focus();
+        
+        // Trigger 'change' event for node editor sync
+        el.dispatchEvent(new Event('change'));
+    } else {
+        // Fallback: Copy to clipboard and show toast
+        navigator.clipboard.writeText(text);
+        if (window.showToast) window.showToast(t('copied_to_clipboard') || 'In Zwischenablage kopiert');
+    }
+}
+
+function showVariableEditor(key, value) {
+    // Create Modal
+    const overlay = el('div', 'modal-overlay');
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '2000';
+    
+    const modal = el('div', 'modal-content');
+    modal.style.width = '400px';
+    modal.style.maxWidth = '90vw';
+    
+    const header = el('div', 'modal-header');
+    header.innerHTML = `<h3>Edit Variable: ${key}</h3>`;
+    const closeBtn = el('button', 'close-btn');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.onclick = () => overlay.remove();
+    header.appendChild(closeBtn);
+    
+    const body = el('div', 'modal-body');
+    body.style.padding = '15px';
+    
+    const textarea = el('textarea', 'node-input');
+    textarea.style.width = '100%';
+    textarea.style.minHeight = '150px';
+    textarea.style.fontFamily = 'monospace';
+    textarea.style.fontSize = '12px';
+    textarea.style.background = '#1a1a1a';
+    textarea.style.color = '#bd93f9';
+    textarea.value = typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
+    
+    const footer = el('div', 'modal-footer');
+    footer.style.justifyContent = 'flex-end';
+    footer.style.padding = '10px';
+    footer.style.gap = '10px';
+    
+    const saveBtn = el('button', 'btn-header btn-start');
+    saveBtn.textContent = 'Save Changes';
+    saveBtn.style.width = 'auto';
+    saveBtn.onclick = () => {
+        let newVal = textarea.value.trim();
+        // Try auto-parse
+        if (newVal === 'true') newVal = true;
+        else if (newVal === 'false') newVal = false;
+        else if (!isNaN(parseFloat(newVal)) && String(parseFloat(newVal)) === newVal) newVal = parseFloat(newVal);
+        else if ((newVal.startsWith('[') && newVal.endsWith(']')) || (newVal.startsWith('{') && newVal.endsWith('}'))) {
+            try { newVal = JSON.parse(newVal); } catch(e) {}
+        }
+        
+        updateVariableInDoc(_currentDoc, key, newVal);
+        pushToYaml();
+        syncYamlToNodes(); // Re-render nodes to show change
+        overlay.remove();
+    };
+    
+    footer.appendChild(saveBtn);
+    modal.appendChild(header);
+    modal.appendChild(body);
+    body.appendChild(textarea);
+    modal.appendChild(footer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+}
+
+function updateVariableInDoc(doc, key, newVal) {
+    if (!doc) return;
+    // Recursive search and replace
+    if (doc.variables && doc.variables[key] !== undefined) {
+        doc.variables[key] = newVal;
+    }
+    
+    const scan = (seq) => {
+        if (!Array.isArray(seq)) return;
+        seq.forEach(step => {
+            if (step.variables && step.variables[key] !== undefined) {
+                step.variables[key] = newVal;
+            }
+            if (step.repeat?.sequence) scan(step.repeat.sequence);
+            if (step.parallel) {
+                step.parallel.forEach(b => {
+                    if (Array.isArray(b)) scan(b);
+                    else if (b.sequence) scan(b.sequence);
+                });
+            }
+            if (step.choose) {
+                step.choose.forEach(c => scan(c.sequence));
+                if (step.default) scan(step.default);
+            }
+            if (step.if) {
+                scan(step.then);
+                scan(step.else);
+            }
+        });
+    };
+    scan(doc.sequence);
+}
+
+function rgbToHs(rgb) {
+    let r = rgb[0] / 255, g = rgb[1] / 255, b = rgb[2] / 255;
+    let max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, v = max;
+    let d = max - min;
+    s = max === 0 ? 0 : d / max;
+    if (max === min) h = 0;
+    else {
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return [Math.round(h * 360), Math.round(s * 100)];
+}
+
+function hsToRgb(hs) {
+    let h = hs[0] / 360, s = hs[1] / 100, v = 1.0; // Use full brightness for pure chromaticity
+    let r, g, b;
+    let i = Math.floor(h * 6);
+    let f = h * 6 - i;
+    let p = v * (1 - s);
+    let q = v * (1 - f * s);
+    let t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function rgbToXy(rgb) {
+    let r = rgb[0] / 255, g = rgb[1] / 255, b = rgb[2] / 255;
+    // Gamma correction
+    r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : (r / 12.92);
+    g = (g > 0.04045) ? Math.pow((g + 0.055) / 1.055, 2.4) : (g / 12.92);
+    b = (b > 0.04045) ? Math.pow((b + 0.055) / 1.055, 2.4) : (b / 12.92);
+    
+    let X = r * 0.4124 + g * 0.3576 + b * 0.1805;
+    let Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+    let Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+    
+    let sum = X + Y + Z;
+    if (sum === 0) return [0.3127, 0.329]; // D65 white point
+    
+    let x = X / sum;
+    let y = Y / sum;
+    return [parseFloat(x.toFixed(4)), parseFloat(y.toFixed(4))];
+}
+
+function xyToRgb(xy) {
+    let x = xy[0], y = xy[1];
+    let z = 1.0 - x - y;
+    let Y = 1.0; 
+    let X = (Y / y) * x;
+    let Z = (Y / y) * z;
+    
+    // Reverse transformation
+    let r = X * 3.2406 - Y * 1.5372 - Z * 0.4986;
+    let g = -X * 0.9689 + Y * 1.8758 + Z * 0.0415;
+    let b = X * 0.0557 - Y * 0.2040 + Z * 1.0570;
+    
+    // Normalize if any component > 1.0
+    let max = Math.max(r, g, b);
+    if (max > 1.0) {
+        r /= max; g /= max; b /= max;
+    }
+    
+    // Reverse Gamma
+    r = r <= 0.0031308 ? 12.92 * r : 1.055 * Math.pow(r, (1.0 / 2.4)) - 0.055;
+    g = g <= 0.0031308 ? 12.92 * g : 1.055 * Math.pow(g, (1.0 / 2.4)) - 0.055;
+    b = b <= 0.0031308 ? 12.92 * b : 1.055 * Math.pow(b, (1.0 / 2.4)) - 0.055;
+    
+    return [
+        Math.max(0, Math.min(255, Math.round(r * 255))),
+        Math.max(0, Math.min(255, Math.round(g * 255))),
+        Math.max(0, Math.min(255, Math.round(b * 255)))
+    ];
+}
+
+function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b];
+}
+
+function rgbToHex(rgb) {
+    if (!Array.isArray(rgb) || rgb.length !== 3) return '#ffffff';
+    return '#' + rgb.map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
 }

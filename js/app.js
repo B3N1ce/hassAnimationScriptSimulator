@@ -1,10 +1,10 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, renderVariables } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
-import { initNodeEditor, syncYamlToNodes } from './nodeEditor.js';
+import { initNodeEditor, syncYamlToNodes, updateVariablePanel } from './nodeEditor.js';
 
 let isPlaying = false;
 let isPausedState = false;
@@ -206,7 +206,7 @@ function init() {
             wrapper.classList.add('disabled-dim');
             toggleBtn.innerHTML = paused ? t('resume') : t('pause');
             toggleBtn.className = 'btn-header btn-pause-style';
-            
+
             stopBtn.innerHTML = t('stop');
             stopBtn.className = 'btn-header btn-stop-style';
             stopBtn.disabled = false;
@@ -215,10 +215,10 @@ function init() {
             wrapper.classList.remove('disabled-dim');
             toggleBtn.innerHTML = t('start');
             toggleBtn.className = 'btn-header btn-start';
-            
+
             stopBtn.innerHTML = t('reset');
             stopBtn.className = 'btn-header btn-reset-style';
-            
+
             // Reset Button nur aktivieren wenn Lampen modifiziert sind
             const canReset = hasModifiedLamps();
             stopBtn.disabled = !canReset;
@@ -361,7 +361,7 @@ function validateAndSync() {
     // Wenn das Editor-Fenster komplett leer ist
     if (!code.trim()) {
         updateLampEntities({}, room);
-        renderVariables({});
+        updateVariablePanel({});
         if (!isPlaying) {
             toggleBtn.disabled = true;
             toggleBtn.classList.add('btn-disabled');
@@ -372,12 +372,13 @@ function validateAndSync() {
     try {
         const doc = jsyaml.load(code);
         updateLampEntities(doc || {}, room);
-        const vars = (doc && typeof doc === 'object') ? doc.variables : {};
-        renderVariables(vars || {});
-        
+
+        // Update Global Variable Panel with full discovery
+        updateVariablePanel(doc);
+
         // Prüfen ob das Skript ausführbaren Inhalt hat (sequence nicht leer)
         const hasContent = doc && doc.sequence && Array.isArray(doc.sequence) && doc.sequence.length > 0;
-        
+
         if (!isPlaying) {
             toggleBtn.disabled = !hasContent;
             if (hasContent) toggleBtn.classList.remove('btn-disabled');
@@ -393,7 +394,7 @@ function validateAndSync() {
     }
 }
 
-function showToast(msg, type = 'success') {
+window.showToast = function (msg, type = 'success') {
     // Add to notification log
     const time = new Date().toLocaleTimeString();
     notifications.unshift({ id: Date.now() + Math.floor(Math.random() * 1000), time, msg, type });

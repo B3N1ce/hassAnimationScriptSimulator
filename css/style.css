@@ -1367,3 +1367,193 @@ label {
         bottom: 100px;
     }
 }
+/* Smart UI Components */
+.node-field-smart {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.node-smart-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.node-slider {
+    flex: 1;
+    height: 6px;
+    background: #444;
+    border-radius: 3px;
+    appearance: none;
+    outline: none;
+}
+
+.node-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #bd93f9;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.node-color-picker {
+    width: 40px;
+    height: 24px;
+    border: none;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.node-input-override {
+    width: 100px !important;
+    font-size: 10px !important;
+    padding: 4px 6px !important;
+    color: #bd93f9 !important;
+    border-color: #444 !important;
+}
+
+.node-input-override:focus {
+    border-color: #bd93f9 !important;
+}
+
+.node-props-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    border-left: 2px solid #bd93f9;
+}
+
+.node-combo-container {
+    width: 100%;
+}
+
+.node-smart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.node-input-mode {
+    background: #444;
+    color: #bd93f9;
+    border: none;
+    border-radius: 4px;
+    font-size: 9px;
+    padding: 2px 4px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.node-input-mode:focus {
+    outline: none;
+    background: #6272a4;
+}
+
+/* Visibility & Group States in Simulator */
+.lamp.is-hidden-ghost {
+    opacity: 0.25;
+    border: 1px dashed rgba(255, 255, 255, 0.4);
+    filter: grayscale(0.5);
+    pointer-events: none; /* Deactivate interaction for ghost entities */
+}
+
+.lamp.is-group-master {
+    border: 2px solid #bd93f9;
+    box-shadow: 0 0 10px rgba(189, 147, 249, 0.3);
+}
+
+.lamp.is-group-master::after {
+    content: '📁';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 12px;
+    background: #282a36;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+/* Variable Insert Button (Dracula Theme) */
+.btn-var-insert {
+    background: #44475a;
+    color: #50fa7b; /* Dracula Green */
+    border: 1px solid #6272a4;
+    border-radius: 3px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.btn-var-insert:hover {
+    background: #50fa7b;
+    color: #282a36;
+    border-color: #50fa7b;
+    transform: scale(1.1);
+}
+
+.btn-var-insert:active {
+    transform: scale(0.9);
+}
+
+.entity-item {
+    padding-left: 8px; /* Alignment for the new button position */
+}
+
+/* Side-Tab Style Variable Insert Button */
+.entity-item {
+    display: flex;
+    align-items: stretch; /* Make children full height */
+    padding-left: 0 !important;
+    overflow: hidden;
+}
+
+.btn-var-insert {
+    width: 24px !important;
+    height: auto !important; /* Managed by stretch */
+    border: none !important;
+    border-right: 1px solid #6272a4 !important;
+    border-radius: 0 !important;
+    margin-right: 12px !important;
+    background: #44475a;
+}
+
+.btn-var-insert:hover {
+    background: #bd93f9 !important; /* Dracula Purple for active feel */
+    color: #282a36 !important;
+    transform: none !important;
+}
+
+/* Variable-specific Item Overrides */
+#variable-list .entity-item {
+    flex-direction: row !important; /* Side-by-side */
+    align-items: stretch !important;
+    padding: 0 !important; /* Button will take its own space */
+    min-height: 40px;
+}
+
+#variable-list .entity-info {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#variable-list .btn-var-insert {
+    width: 30px !important; /* Slightly wider for the arrow */
+    font-size: 16px !important;
+}
