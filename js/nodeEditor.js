@@ -400,8 +400,8 @@ function renderRepeatNode(step, steps, index, onRebuild) {
     step.repeat = r;
 
     // Mode selector
-    const modeMap = { count: 'Count', while: 'While', for_each: 'For Each' };
-    let currentMode = r.count !== undefined ? 'count' : r.while ? 'while' : r.for_each ? 'for_each' : 'count';
+    const modeMap = { count: 'Count', while: 'While', until: 'Until', for_each: 'For Each' };
+    let currentMode = r.count !== undefined ? 'count' : r.while !== undefined ? 'while' : r.until !== undefined ? 'until' : r.for_each !== undefined ? 'for_each' : 'count';
 
     const modeEl = makeField('Mode', (() => {
         const sel = el('select', 'node-select');
@@ -413,9 +413,10 @@ function renderRepeatNode(step, steps, index, onRebuild) {
         });
         sel.addEventListener('change', () => {
             const m = sel.value;
-            delete r.count; delete r.while; delete r.for_each;
+            delete r.count; delete r.while; delete r.until; delete r.for_each;
             if (m === 'count') r.count = 1;
             else if (m === 'while') r.while = '';
+            else if (m === 'until') r.until = '';
             else r.for_each = '';
             onRebuild(); pushToYaml();
         });
@@ -427,6 +428,8 @@ function renderRepeatNode(step, steps, index, onRebuild) {
         body.appendChild(makeField('Count', makeInput(String(r.count ?? 1), v => { r.count = parseInt(v) || 1; pushToYaml(); })));
     } else if (currentMode === 'while') {
         body.appendChild(makeField('While', makeInput(String(r.while || ''), v => { r.while = v; pushToYaml(); }, '{{ condition }}')));
+    } else if (currentMode === 'until') {
+        body.appendChild(makeField('Until', makeInput(String(r.until || ''), v => { r.until = v; pushToYaml(); }, '{{ condition }}')));
     } else {
         body.appendChild(makeField('For Each', makeInput(typeof r.for_each === 'string' ? r.for_each : JSON.stringify(r.for_each), v => { r.for_each = v; pushToYaml(); })));
     }
@@ -985,7 +988,6 @@ export function updateVariablePanel(externalDoc = null) {
     if (!container) return;
 
     const docToUse = externalDoc || _currentDoc;
-    if (externalDoc && typeof externalDoc === 'object') _currentDoc = externalDoc; // Keep in sync if valid
 
     if (!docToUse) {
         container.innerHTML = '';
@@ -1150,9 +1152,21 @@ function showVariableEditor(key, value) {
             try { newVal = JSON.parse(newVal); } catch (e) { }
         }
 
-        updateVariableInDoc(_currentDoc, key, newVal);
-        pushToYaml();
-        syncYamlToNodes(); // Re-render nodes to show change
+        let docObj;
+        try {
+            docObj = jsyaml.load(_editor.getValue()) || {};
+        } catch(e) {
+            docObj = _currentDoc || {};
+        }
+        
+        updateVariableInDoc(docObj, key, newVal);
+        
+        const yaml = jsyaml.dump(docObj, { lineWidth: 120, noRefs: true });
+        _editor.setValue(yaml);
+        
+        if (document.getElementById('view-nodes').classList.contains('active')) {
+             syncYamlToNodes();
+        }
         overlay.remove();
     };
 

@@ -55,7 +55,7 @@ export class ColorPicker {
             const r = parseInt(hex.slice(1,3), 16);
             const g = parseInt(hex.slice(3,5), 16);
             const b = parseInt(hex.slice(5,7), 16);
-            this.updateFromRgb(r, g, b);
+            this.updateFromRgb(r, g, b, this.pickerColor);
         });
         
         // RGB Inputs
@@ -64,7 +64,8 @@ export class ColorPicker {
                 this.updateFromRgb(
                     parseInt(this.inR.value) || 0,
                     parseInt(this.inG.value) || 0,
-                    parseInt(this.inB.value) || 0
+                    parseInt(this.inB.value) || 0,
+                    input
                 );
             });
         });
@@ -73,7 +74,7 @@ export class ColorPicker {
         [this.inX, this.inY].forEach(input => {
             input.addEventListener('change', () => {
                 const rgb = this.xyToRgb(parseFloat(this.inX.value) || 0, parseFloat(this.inY.value) || 0);
-                this.updateFromRgb(rgb[0], rgb[1], rgb[2]);
+                this.updateFromRgb(rgb[0], rgb[1], rgb[2], input);
             });
         });
         
@@ -81,7 +82,7 @@ export class ColorPicker {
         [this.inH, this.inS].forEach(input => {
             input.addEventListener('change', () => {
                 const rgb = this.hsToRgb(parseInt(this.inH.value) || 0, parseInt(this.inS.value) || 0);
-                this.updateFromRgb(rgb[0], rgb[1], rgb[2]);
+                this.updateFromRgb(rgb[0], rgb[1], rgb[2], input);
             });
         });
         
@@ -112,29 +113,33 @@ export class ColorPicker {
         });
     }
     
-    updateFromRgb(r, g, b) {
+    updateFromRgb(r, g, b, excludeInput = null) {
         // Clamp
         r = Math.max(0, Math.min(255, r));
         g = Math.max(0, Math.min(255, g));
         b = Math.max(0, Math.min(255, b));
         
-        // Update UI
-        this.inR.value = r;
-        this.inG.value = g;
-        this.inB.value = b;
+        // Update RGB Inputs
+        if (excludeInput !== this.inR) this.inR.value = r;
+        if (excludeInput !== this.inG) this.inG.value = g;
+        if (excludeInput !== this.inB) this.inB.value = b;
         
         const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-        this.pickerColor.value = hex;
+        if (excludeInput !== this.pickerColor) this.pickerColor.value = hex;
         
         // Update XY
         const xy = this.rgbToXy(r, g, b);
-        this.inX.value = xy[0].toFixed(3);
-        this.inY.value = xy[1].toFixed(3);
+        if (excludeInput !== this.inX && excludeInput !== this.inY) {
+            this.inX.value = xy[0].toFixed(3);
+            this.inY.value = xy[1].toFixed(3);
+        }
         
         // Update HS
         const hs = this.rgbToHs(r, g, b);
-        this.inH.value = Math.round(hs[0]);
-        this.inS.value = Math.round(hs[1]);
+        if (excludeInput !== this.inH && excludeInput !== this.inS) {
+            this.inH.value = Math.round(hs[0]);
+            this.inS.value = Math.round(hs[1]);
+        }
     }
     
     // Externer Call, wenn eine Entity angeklickt wird
