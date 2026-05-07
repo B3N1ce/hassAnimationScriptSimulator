@@ -20,7 +20,7 @@ const ICONS = {
 
 export function initNodeEditor(cmEditor) {
     _editor = cmEditor;
-    
+
     // Global focus tracking for variable insertion
     document.addEventListener('focusin', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.classList.contains('CodeMirror-code')) {
@@ -44,12 +44,12 @@ export function syncYamlToNodes() {
     try {
         const loaded = jsyaml.load(code);
         _currentDoc = (loaded && typeof loaded === 'object') ? loaded : {};
-        
+
         // Ensure explicit defaults
         if (_currentDoc.alias === undefined) _currentDoc.alias = 'My Script';
         if (_currentDoc.mode === undefined) _currentDoc.mode = 'single';
         if (!_currentDoc.sequence) _currentDoc.sequence = [];
-        
+
     } catch (e) {
         container.innerHTML = `<div class="node-empty"><span style="color:#ff5555">YAML error: ${e.message}</span></div>`;
         return;
@@ -65,21 +65,21 @@ function pushToYaml() {
     try {
         // Enforce a logical order for top-level keys
         const ordered = {};
-        
+
         // Always explicit top-level fields
         ordered.alias = _currentDoc.alias ?? 'My Script';
         ordered.mode = _currentDoc.mode ?? 'single';
-        
+
         if ('icon' in _currentDoc) ordered.icon = _currentDoc.icon;
         if ('variables' in _currentDoc) ordered.variables = _currentDoc.variables;
-        
+
         // Copy any other keys (except sequence which should be last)
         Object.keys(_currentDoc).forEach(k => {
             if (!['alias', 'mode', 'icon', 'variables', 'sequence'].includes(k)) {
                 ordered[k] = _currentDoc[k];
             }
         });
-        
+
         ordered.sequence = _currentDoc.sequence || [];
 
         const yaml = jsyaml.dump(ordered, { lineWidth: 120, noRefs: true });
@@ -171,13 +171,13 @@ function renderSequence(steps, parentObj, key) {
 function renderStepNode(step, steps, index, onRebuild) {
     const type = detectType(step);
     const renderers = {
-        action:    renderActionNode,
-        delay:     renderDelayNode,
-        parallel:  renderParallelNode,
-        repeat:    renderRepeatNode,
-        choose:    renderChooseNode,
-        if:        renderIfNode,
-        wait:      renderWaitNode,
+        action: renderActionNode,
+        delay: renderDelayNode,
+        parallel: renderParallelNode,
+        repeat: renderRepeatNode,
+        choose: renderChooseNode,
+        if: renderIfNode,
+        wait: renderWaitNode,
         variables: renderStepVariablesNode,
     };
     const renderer = renderers[type] || renderUnknownNode;
@@ -202,21 +202,21 @@ function renderHeaderNode(doc) {
     const node = makeNode('node-type-header', ICONS.script, 'Script');
     const body = node.querySelector('.node-body');
 
-    body.appendChild(makeField('Alias', makeInput(doc.alias || '', v => { 
+    body.appendChild(makeField('Alias', makeInput(doc.alias || '', v => {
         doc.alias = v; // Keep even if empty string
-        pushToYaml(); 
+        pushToYaml();
     })));
     body.appendChild(makeField('Mode', (() => {
         const sel = el('select', 'node-select');
-        ['single','restart','queued','parallel'].forEach(m => {
+        ['single', 'restart', 'queued', 'parallel'].forEach(m => {
             const o = document.createElement('option');
             o.value = m; o.textContent = m;
             if (doc.mode === m) o.selected = true;
             sel.appendChild(o);
         });
-        sel.addEventListener('change', () => { 
-            doc.mode = sel.value; 
-            pushToYaml(); 
+        sel.addEventListener('change', () => {
+            doc.mode = sel.value;
+            pushToYaml();
         });
         return sel;
     })()));
@@ -254,26 +254,26 @@ function renderActionNode(step, steps, index, onRebuild) {
     if (step.action === 'light.turn_on') {
         const props = el('div', 'node-props-section');
         props.appendChild(makeSectionLabel('Light Properties'));
-        
+
         step.data = step.data || {};
-        
+
         // Brightness
         props.appendChild(makeSmartRange('Brightness', step.data.brightness_pct, 0, 100, '%', v => {
             step.data.brightness_pct = (typeof v === 'string' && v.includes('{')) ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
             pushToYaml();
         }));
-        
+
         // Color (Multi-mode)
         props.appendChild(makeSmartColor('Color', step.data, () => {
             pushToYaml();
         }));
-        
+
         // Transition
         props.appendChild(makeSmartField('Transition', step.data.transition, 'seconds', v => {
             step.data.transition = isNaN(parseFloat(v)) ? v : parseFloat(v);
             pushToYaml();
         }));
-        
+
         body.appendChild(props);
     }
 
@@ -282,7 +282,7 @@ function renderActionNode(step, steps, index, onRebuild) {
     dataSection.appendChild(makeSectionLabel('Custom Data'));
     const dataObj = step.data || {};
     step.data = dataObj;
-    
+
     // Filter out keys already handled by smart UI to avoid confusion
     const filteredData = {};
     const smartKeys = ['brightness_pct', 'rgb_color', 'hs_color', 'xy_color', 'transition'];
@@ -291,7 +291,7 @@ function renderActionNode(step, steps, index, onRebuild) {
             filteredData[k] = dataObj[k];
         }
     });
-    
+
     renderDataFields(dataSection, filteredData, () => {
         // Merge filtered data back
         Object.assign(step.data, filteredData);
@@ -373,7 +373,7 @@ function renderBranchColumns(container, branches, onRebuild) {
         }
 
         branchEl.appendChild(label);
-        
+
         // Every branch in 'parallel' is a sequence.
         // In HA, a sequence can be a single step or a list of steps.
         // We normalize to a list (array) here to ensure renderSequence can 
@@ -591,7 +591,7 @@ function renderDataFields(container, obj, onChange) {
             const valIn = el(isComplex ? 'textarea' : 'input', 'node-input');
             valIn.placeholder = 'value (JSON allowed)';
             valIn.value = isComplex ? JSON.stringify(obj[k], null, 2) : String(obj[k] ?? '');
-            
+
             if (isComplex) {
                 valIn.style.height = 'auto';
                 valIn.style.minHeight = '40px';
@@ -656,13 +656,13 @@ function renderDataFields(container, obj, onChange) {
 // ─── ADD STEP MENU ─────────────────────────────────────────────────────────
 
 const STEP_TYPES = [
-    { type: 'action',    icon: ICONS.action, label: 'Action',    template: () => ({ action: 'light.turn_on', target: { entity_id: '' }, data: {} }) },
-    { type: 'delay',     icon: ICONS.delay,  label: 'Delay',     template: () => ({ delay: '00:00:01' }) },
-    { type: 'parallel',  icon: ICONS.parallel, label: 'Parallel',  template: () => ({ parallel: [] }) },
-    { type: 'repeat',    icon: ICONS.repeat, label: 'Repeat',    template: () => ({ repeat: { count: 1, sequence: [] } }) },
-    { type: 'choose',    icon: ICONS.choose, label: 'Choose',    template: () => ({ choose: [{ conditions: [], sequence: [] }], default: [] }) },
-    { type: 'if',        icon: ICONS.if,     label: 'If/Then/Else', template: () => ({ if: [], then: [], else: [] }) },
-    { type: 'wait',      icon: ICONS.wait,   label: 'Wait',      template: () => ({ wait_template: '', timeout: '' }) },
+    { type: 'action', icon: ICONS.action, label: 'Action', template: () => ({ action: 'light.turn_on', target: { entity_id: '' }, data: {} }) },
+    { type: 'delay', icon: ICONS.delay, label: 'Delay', template: () => ({ delay: '00:00:01' }) },
+    { type: 'parallel', icon: ICONS.parallel, label: 'Parallel', template: () => ({ parallel: [] }) },
+    { type: 'repeat', icon: ICONS.repeat, label: 'Repeat', template: () => ({ repeat: { count: 1, sequence: [] } }) },
+    { type: 'choose', icon: ICONS.choose, label: 'Choose', template: () => ({ choose: [{ conditions: [], sequence: [] }], default: [] }) },
+    { type: 'if', icon: ICONS.if, label: 'If/Then/Else', template: () => ({ if: [], then: [], else: [] }) },
+    { type: 'wait', icon: ICONS.wait, label: 'Wait', template: () => ({ wait_template: '', timeout: '' }) },
     { type: 'variables', icon: ICONS.variables, label: 'Variables', template: () => ({ variables: {} }) },
 ];
 
@@ -734,7 +734,8 @@ function addNodeControls(node, steps, index, onRebuild) {
     const delBtn = document.createElement('button');
     delBtn.textContent = '✕';
     delBtn.title = 'Delete step';
-    delBtn.style.color = '#ff5555aa';
+    delBtn.classList.add('btn-entity-header-delete');
+    //delBtn.style.color = '#de1414aa';
     delBtn.onclick = () => {
         steps.splice(index, 1);
         onRebuild(); pushToYaml();
@@ -808,7 +809,7 @@ function makeComboBox(value, options, onChange, placeholder) {
     const input = el('input', 'node-input');
     input.value = value;
     input.placeholder = placeholder;
-    
+
     const dlId = 'dl-' + Math.random().toString(36).substr(2, 9);
     const dl = el('datalist');
     dl.id = dlId;
@@ -819,7 +820,7 @@ function makeComboBox(value, options, onChange, placeholder) {
     });
     container.appendChild(dl);
     input.setAttribute('list', dlId);
-    
+
     input.addEventListener('change', () => onChange(input.value));
     container.appendChild(input);
     return container;
@@ -829,24 +830,24 @@ function makeSmartRange(label, value, min, max, unit, onChange) {
     const field = el('div', 'node-field node-field-smart');
     const lbl = el('span', 'node-field-label');
     lbl.textContent = label;
-    
+
     const controlRow = el('div', 'node-smart-row');
-    
+
     const slider = el('input', 'node-slider');
     slider.type = 'range';
     slider.min = min;
     slider.max = max;
     slider.value = (typeof value === 'number') ? value : (isNaN(parseFloat(value)) ? 0 : parseFloat(value));
-    
+
     const override = el('input', 'node-input node-input-override');
     override.value = (value === undefined || value === null) ? '' : (Array.isArray(value) ? JSON.stringify(value) : value);
     override.placeholder = 'Value or {{...}}';
-    
+
     slider.addEventListener('input', () => {
         override.value = slider.value;
         onChange(parseFloat(slider.value));
     });
-    
+
     override.addEventListener('change', () => {
         const v = override.value;
         if (!isNaN(parseFloat(v)) && !v.includes('{')) {
@@ -856,7 +857,7 @@ function makeSmartRange(label, value, min, max, unit, onChange) {
             onChange(v);
         }
     });
-    
+
     controlRow.appendChild(slider);
     controlRow.appendChild(override);
     field.appendChild(lbl);
@@ -867,15 +868,15 @@ function makeSmartRange(label, value, min, max, unit, onChange) {
 function makeSmartColor(label, dataObj, onChange) {
     const field = el('div', 'node-field node-field-smart');
     const headRow = el('div', 'node-smart-head');
-    
+
     const lbl = el('span', 'node-field-label');
     lbl.textContent = label;
     headRow.appendChild(lbl);
-    
+
     // Mode selector
     const modes = ['rgb_color', 'hs_color', 'xy_color'];
     let currentMode = modes.find(m => dataObj[m] !== undefined) || 'rgb_color';
-    
+
     const modeSel = el('select', 'node-input-mode');
     modes.forEach(m => {
         const o = el('option');
@@ -885,18 +886,18 @@ function makeSmartColor(label, dataObj, onChange) {
     });
     headRow.appendChild(modeSel);
     field.appendChild(headRow);
-    
+
     const controlRow = el('div', 'node-smart-row');
     const picker = el('input', 'node-color-picker');
     picker.type = 'color';
-    
+
     const override = el('input', 'node-input node-input-override');
     override.placeholder = 'Value or {{...}}';
-    
+
     const updateUI = () => {
         const val = dataObj[currentMode];
         override.value = (val === undefined || val === null) ? '' : (Array.isArray(val) ? JSON.stringify(val) : val);
-        
+
         let rgb = [255, 255, 255];
         if (val) {
             if (currentMode === 'rgb_color') rgb = val;
@@ -905,41 +906,41 @@ function makeSmartColor(label, dataObj, onChange) {
         }
         picker.value = rgbToHex(rgb);
     };
-    
+
     modeSel.addEventListener('change', () => {
         const oldMode = currentMode;
         currentMode = modeSel.value;
         const oldVal = dataObj[oldMode];
-        
+
         if (oldVal !== undefined) {
             let rgb = [255, 255, 255];
             if (oldMode === 'rgb_color') rgb = oldVal;
             else if (oldMode === 'hs_color') rgb = hsToRgb(oldVal);
             else if (oldMode === 'xy_color') rgb = xyToRgb(oldVal);
-            
+
             delete dataObj[oldMode];
             if (currentMode === 'rgb_color') dataObj[currentMode] = rgb;
             else if (currentMode === 'hs_color') dataObj[currentMode] = rgbToHs(rgb);
             else if (currentMode === 'xy_color') dataObj[currentMode] = rgbToXy(rgb);
         } else {
             // Default if nothing was there
-            dataObj[currentMode] = (currentMode === 'rgb_color') ? [255,255,255] : (currentMode === 'hs_color' ? [0,0] : [0.323, 0.329]);
+            dataObj[currentMode] = (currentMode === 'rgb_color') ? [255, 255, 255] : (currentMode === 'hs_color' ? [0, 0] : [0.323, 0.329]);
         }
-        
+
         updateUI();
         onChange();
     });
-    
+
     picker.addEventListener('input', () => {
         const rgb = hexToRgb(picker.value);
         if (currentMode === 'rgb_color') dataObj[currentMode] = rgb;
         else if (currentMode === 'hs_color') dataObj[currentMode] = rgbToHs(rgb);
         else if (currentMode === 'xy_color') dataObj[currentMode] = rgbToXy(rgb);
-        
+
         override.value = JSON.stringify(dataObj[currentMode]);
         onChange();
     });
-    
+
     override.addEventListener('change', () => {
         const v = override.value.trim();
         if (v.startsWith('[') && v.endsWith(']')) {
@@ -947,15 +948,15 @@ function makeSmartColor(label, dataObj, onChange) {
                 dataObj[currentMode] = JSON.parse(v);
                 updateUI();
                 onChange();
-            } catch(e) { dataObj[currentMode] = v; onChange(); }
+            } catch (e) { dataObj[currentMode] = v; onChange(); }
         } else {
             dataObj[currentMode] = v;
             onChange();
         }
     });
-    
+
     updateUI();
-    
+
     controlRow.appendChild(picker);
     controlRow.appendChild(override);
     field.appendChild(controlRow);
@@ -966,12 +967,12 @@ function makeSmartField(label, value, unit, onChange) {
     const field = el('div', 'node-field node-field-smart');
     const lbl = el('span', 'node-field-label');
     lbl.textContent = label;
-    
+
     const input = el('input', 'node-input');
     input.value = (value === undefined || value === null) ? '' : value;
     input.placeholder = `Value in ${unit} or {{...}}`;
     input.addEventListener('change', () => onChange(input.value));
-    
+
     field.appendChild(lbl);
     field.appendChild(input);
     return field;
@@ -982,15 +983,15 @@ function makeSmartField(label, value, unit, onChange) {
 export function updateVariablePanel(externalDoc = null) {
     const container = document.getElementById('variable-list');
     if (!container) return;
-    
+
     const docToUse = externalDoc || _currentDoc;
     if (externalDoc && typeof externalDoc === 'object') _currentDoc = externalDoc; // Keep in sync if valid
-    
+
     if (!docToUse) {
         container.innerHTML = '';
         return;
     }
-    
+
     container.innerHTML = '';
 
     const vars = discoverVariables(docToUse);
@@ -1005,7 +1006,7 @@ export function updateVariablePanel(externalDoc = null) {
         const row = el('div', 'entity-item');
         row.style.cursor = 'pointer';
         row.title = t('click_to_insert') || 'Klicken zum Einfügen';
-        
+
         const insertBtn = el('button', 'btn-var-insert');
         insertBtn.innerHTML = '←';
         insertBtn.title = t('click_to_insert') || 'In Editor einfügen';
@@ -1014,10 +1015,10 @@ export function updateVariablePanel(externalDoc = null) {
         const info = el('div', 'entity-info');
         const name = el('div', 'entity-name');
         name.textContent = key;
-        
+
         const valPreview = el('div', 'entity-id');
         valPreview.textContent = String(vars[key]).substring(0, 30);
-        
+
         info.appendChild(name);
         info.appendChild(valPreview);
         row.appendChild(info);
@@ -1092,7 +1093,7 @@ function insertVariableAtCursor(text) {
         el.value = val.slice(0, start) + text + val.slice(end);
         el.selectionStart = el.selectionEnd = start + text.length;
         el.focus();
-        
+
         // Trigger 'change' event for node editor sync
         el.dispatchEvent(new Event('change'));
     } else {
@@ -1107,21 +1108,21 @@ function showVariableEditor(key, value) {
     const overlay = el('div', 'modal-overlay');
     overlay.style.display = 'flex';
     overlay.style.zIndex = '2000';
-    
+
     const modal = el('div', 'modal-content');
     modal.style.width = '400px';
     modal.style.maxWidth = '90vw';
-    
+
     const header = el('div', 'modal-header');
     header.innerHTML = `<h3>Edit Variable: ${key}</h3>`;
     const closeBtn = el('button', 'close-btn');
     closeBtn.innerHTML = '&times;';
     closeBtn.onclick = () => overlay.remove();
     header.appendChild(closeBtn);
-    
+
     const body = el('div', 'modal-body');
     body.style.padding = '15px';
-    
+
     const textarea = el('textarea', 'node-input');
     textarea.style.width = '100%';
     textarea.style.minHeight = '150px';
@@ -1130,12 +1131,12 @@ function showVariableEditor(key, value) {
     textarea.style.background = '#1a1a1a';
     textarea.style.color = '#bd93f9';
     textarea.value = typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
-    
+
     const footer = el('div', 'modal-footer');
     footer.style.justifyContent = 'flex-end';
     footer.style.padding = '10px';
     footer.style.gap = '10px';
-    
+
     const saveBtn = el('button', 'btn-header btn-start');
     saveBtn.textContent = 'Save Changes';
     saveBtn.style.width = 'auto';
@@ -1146,15 +1147,15 @@ function showVariableEditor(key, value) {
         else if (newVal === 'false') newVal = false;
         else if (!isNaN(parseFloat(newVal)) && String(parseFloat(newVal)) === newVal) newVal = parseFloat(newVal);
         else if ((newVal.startsWith('[') && newVal.endsWith(']')) || (newVal.startsWith('{') && newVal.endsWith('}'))) {
-            try { newVal = JSON.parse(newVal); } catch(e) {}
+            try { newVal = JSON.parse(newVal); } catch (e) { }
         }
-        
+
         updateVariableInDoc(_currentDoc, key, newVal);
         pushToYaml();
         syncYamlToNodes(); // Re-render nodes to show change
         overlay.remove();
     };
-    
+
     footer.appendChild(saveBtn);
     modal.appendChild(header);
     modal.appendChild(body);
@@ -1170,7 +1171,7 @@ function updateVariableInDoc(doc, key, newVal) {
     if (doc.variables && doc.variables[key] !== undefined) {
         doc.variables[key] = newVal;
     }
-    
+
     const scan = (seq) => {
         if (!Array.isArray(seq)) return;
         seq.forEach(step => {
@@ -1240,14 +1241,14 @@ function rgbToXy(rgb) {
     r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : (r / 12.92);
     g = (g > 0.04045) ? Math.pow((g + 0.055) / 1.055, 2.4) : (g / 12.92);
     b = (b > 0.04045) ? Math.pow((b + 0.055) / 1.055, 2.4) : (b / 12.92);
-    
+
     let X = r * 0.4124 + g * 0.3576 + b * 0.1805;
     let Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
     let Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
-    
+
     let sum = X + Y + Z;
     if (sum === 0) return [0.3127, 0.329]; // D65 white point
-    
+
     let x = X / sum;
     let y = Y / sum;
     return [parseFloat(x.toFixed(4)), parseFloat(y.toFixed(4))];
@@ -1256,26 +1257,26 @@ function rgbToXy(rgb) {
 function xyToRgb(xy) {
     let x = xy[0], y = xy[1];
     let z = 1.0 - x - y;
-    let Y = 1.0; 
+    let Y = 1.0;
     let X = (Y / y) * x;
     let Z = (Y / y) * z;
-    
+
     // Reverse transformation
     let r = X * 3.2406 - Y * 1.5372 - Z * 0.4986;
     let g = -X * 0.9689 + Y * 1.8758 + Z * 0.0415;
     let b = X * 0.0557 - Y * 0.2040 + Z * 1.0570;
-    
+
     // Normalize if any component > 1.0
     let max = Math.max(r, g, b);
     if (max > 1.0) {
         r /= max; g /= max; b /= max;
     }
-    
+
     // Reverse Gamma
     r = r <= 0.0031308 ? 12.92 * r : 1.055 * Math.pow(r, (1.0 / 2.4)) - 0.055;
     g = g <= 0.0031308 ? 12.92 * g : 1.055 * Math.pow(g, (1.0 / 2.4)) - 0.055;
     b = b <= 0.0031308 ? 12.92 * b : 1.055 * Math.pow(b, (1.0 / 2.4)) - 0.055;
-    
+
     return [
         Math.max(0, Math.min(255, Math.round(r * 255))),
         Math.max(0, Math.min(255, Math.round(g * 255))),

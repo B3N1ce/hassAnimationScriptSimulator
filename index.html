@@ -5,9 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aurora Studio</title>
+    <link rel="icon" type="image/png" href="Icon.png">
+    <!--
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23282a36' stroke='%2350fa7b' stroke-width='6'/><circle cx='50' cy='50' r='18' fill='%2350fa7b' opacity='0.8'/><circle cx='50' cy='50' r='28' fill='none' stroke='%23bd93f9' stroke-width='3' stroke-dasharray='8 6'/></svg>"
         type="image/svg+xml">
+    -->
+
     <!-- CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
@@ -26,9 +30,12 @@
     <!-- Global Header -->
     <header id="global-header">
         <div class="header-logo-container">
-            <div class="header-logo" data-i18n="title">Aurora Studio</div>
-            <div class="header-subheadline" data-i18n="subheadline">Licht-Animationen entwerfen und simulieren –
-                maßgeschneidert für Home Assistant.</div>
+            <img id="header-logo-img" src="Icon.png" alt="Logo" class="header-logo-img">
+            <div class="header-text-group">
+                <div class="header-logo" data-i18n="title">Aurora Studio</div>
+                <div class="header-subheadline" data-i18n="subheadline">Design and simulate light animations – made for
+                    Home Assistant.</div>
+            </div>
         </div>
         <div class="header-actions">
             <button id="btn-validate" class="btn-header btn-primary" data-i18n="validate_yaml">✔ YAML Prüfen</button>

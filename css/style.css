@@ -44,6 +44,7 @@ body {
 }
 
 /* Global Header */
+
 #global-header {
     background: #1e1e24;
     padding: 10px 20px;
@@ -57,7 +58,27 @@ body {
 
 .header-logo-container {
     display: flex;
+    flex-direction: row;
+    /* Richtet Logo und Text-Gruppe nebeneinander aus */
+    align-items: center;
+    /* Zentriert das Logo vertikal zur Texthöhe */
+    gap: 12px;
+    /* Abstand zwischen Logo und Text */
+}
+
+.header-logo-img {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    /* Verhindert, dass das Logo gestaucht wird */
+    filter: drop-shadow(0 0 6px rgba(189, 147, 249, 0.8));
+}
+
+.header-text-group {
+    display: flex;
     flex-direction: column;
+    /* Stapelt Headline und Subheadline wieder untereinander */
+    justify-content: center;
 }
 
 .header-logo {
@@ -91,7 +112,7 @@ body {
     border: none;
     color: #aaa;
     cursor: pointer;
-    padding: 6px;
+    padding: 10px;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -101,6 +122,14 @@ body {
 .btn-header-icon:hover {
     color: #fff;
     background: #333;
+}
+
+#btn-language {
+    min-width: 62px;
+}
+
+#btn-validate {
+    min-width: 140px;
 }
 
 #notif-badge {
@@ -148,6 +177,18 @@ button {
 
 .btn-primary:hover {
     filter: brightness(1.1);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #fff;
+    border: 0px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .btn-start {
@@ -394,7 +435,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 10px;
+    padding: 4px 10px;
     border-radius: 7px 7px 0 0;
     font-size: 10px;
     font-weight: bold;
@@ -434,17 +475,26 @@ button {
 .node-header-actions button {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: #fff;
     cursor: pointer;
     padding: 2px 4px;
     border-radius: 3px;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1;
 }
 
 .node-header-actions button:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
+    color: #333;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.node-header-actions .btn-entity-header-delete {
+    color: #de1414aa;
+}
+
+.node-header-actions .btn-entity-header-delete:hover {
+    background-color: #de1414aa;
+    color: white;
 }
 
 .node-body {
@@ -804,7 +854,8 @@ button {
 
 .CodeMirror.disabled-dim {
     opacity: 0.5;
-    pointer-events: none;
+    /*pointer-events: none;*/
+    /*removed to allow scrolling in editor while running*/
     filter: grayscale(50%);
 }
 
@@ -1019,7 +1070,22 @@ label {
 .entity-id {
     font-family: monospace;
     color: #8be9fd;
-    word-break: break-all;
+    flex-shrink: 1;
+    min-width: 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.entity-info {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.entity-actions {
+    flex-shrink: 0;
 }
 
 .entity-actions button {
@@ -1341,7 +1407,7 @@ label {
     }
 
     .header-logo {
-        display: none;
+        display: flex;
     }
 
     .header-actions {
@@ -1367,6 +1433,7 @@ label {
         bottom: 100px;
     }
 }
+
 /* Smart UI Components */
 .node-field-smart {
     display: flex;
@@ -1461,7 +1528,8 @@ label {
     opacity: 0.25;
     border: 1px dashed rgba(255, 255, 255, 0.4);
     filter: grayscale(0.5);
-    pointer-events: none; /* Deactivate interaction for ghost entities */
+    pointer-events: none;
+    /* Deactivate interaction for ghost entities */
 }
 
 .lamp.is-group-master {
@@ -1483,7 +1551,8 @@ label {
 /* Variable Insert Button (Dracula Theme) */
 .btn-var-insert {
     background: #44475a;
-    color: #50fa7b; /* Dracula Green */
+    color: #50fa7b;
+    /* Dracula Green */
     border: 1px solid #6272a4;
     border-radius: 3px;
     width: 18px;
@@ -1510,21 +1579,10 @@ label {
     transform: scale(0.9);
 }
 
-.entity-item {
-    padding-left: 8px; /* Alignment for the new button position */
-}
-
-/* Side-Tab Style Variable Insert Button */
-.entity-item {
-    display: flex;
-    align-items: stretch; /* Make children full height */
-    padding-left: 0 !important;
-    overflow: hidden;
-}
-
 .btn-var-insert {
     width: 24px !important;
-    height: auto !important; /* Managed by stretch */
+    height: auto !important;
+    /* Managed by stretch */
     border: none !important;
     border-right: 1px solid #6272a4 !important;
     border-radius: 0 !important;
@@ -1533,18 +1591,23 @@ label {
 }
 
 .btn-var-insert:hover {
-    background: #bd93f9 !important; /* Dracula Purple for active feel */
+    background: #bd93f9 !important;
+    /* Dracula Purple for active feel */
     color: #282a36 !important;
     transform: none !important;
 }
 
 /* Variable-specific Item Overrides */
 #variable-list .entity-item {
-    flex-direction: row !important; /* Side-by-side */
+    flex-direction: row !important;
+    /* Side-by-side */
     align-items: stretch !important;
-    padding: 0 !important; /* Button will take its own space */
+    padding: 0 !important;
+    /* Button will take its own space */
     min-height: 40px;
 }
+
+
 
 #variable-list .entity-info {
     padding: 8px 10px;
@@ -1554,7 +1617,8 @@ label {
 }
 
 #variable-list .btn-var-insert {
-    width: 30px !important; /* Slightly wider for the arrow */
+    width: 30px !important;
+    /* Slightly wider for the arrow */
     font-size: 16px !important;
 }
 
@@ -1563,6 +1627,7 @@ body.simulation-running .node-editor-content,
 body.simulation-running .color-picker-section,
 body.simulation-running #variable-list,
 body.simulation-running .btn-var-insert,
+body.simulation-running .node-graph,
 body.simulation-running .node-input,
 body.simulation-running .node-slider,
 body.simulation-running .node-color-picker,
@@ -1575,7 +1640,8 @@ body.simulation-running .node-input-mode {
 
 /* Allow scrolling in node editor but no interaction with fields */
 body.simulation-running .node-editor-content {
-    pointer-events: auto; /* Re-enable for scroll */
+    pointer-events: auto;
+    /* Re-enable for scroll */
 }
 
 body.simulation-running .node-field,

@@ -3,7 +3,7 @@
 const translations = {
     de: {
         title: "Aurora Studio",
-        subheadline: "Licht-Animationen entwerfen und simulieren – maßgeschneidert für Home Assistant.",
+        subheadline: "Licht-Animationen entwerfen und simulieren – für Home Assistant.",
         validate_yaml: "✔ YAML Prüfen",
         start: "▶ Starten",
         pause: "⏸ Pause",
@@ -17,7 +17,7 @@ const translations = {
         toggle_labels: "Labels ein/ausblenden",
         inspector: "Inspector",
         color_picker: "Color Picker",
-        insert_editor: "In Editor einfügen",
+        insert_editor: "Bei Textposition einfügen",
         save_color: "Aktuelle Farbe speichern",
         env_groups: "Umgebung & Gruppen",
         global_vars: "Globale Variablen",
@@ -48,7 +48,7 @@ const translations = {
     },
     en: {
         title: "Aurora Studio",
-        subheadline: "Design and simulate light animations – tailor-made for Home Assistant.",
+        subheadline: "Design and simulate light animations – made for Home Assistant.",
         validate_yaml: "✔ Validate YAML",
         start: "▶ Start",
         pause: "⏸ Pause",
@@ -62,7 +62,7 @@ const translations = {
         toggle_labels: "Toggle labels",
         inspector: "Inspector",
         color_picker: "Color Picker",
-        insert_editor: "Insert into editor",
+        insert_editor: "Insert at text position",
         save_color: "Save current color",
         env_groups: "Environment & Groups",
         global_vars: "Global Variables",
