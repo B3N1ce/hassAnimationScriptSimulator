@@ -185,14 +185,14 @@ function renderStepNode(step, steps, index, onRebuild) {
 }
 
 function detectType(step) {
-    if (step.action || step.service) return 'action';
+    if (step.action !== undefined || step.service !== undefined) return 'action';
     if (step.delay !== undefined) return 'delay';
-    if (step.parallel) return 'parallel';
-    if (step.repeat) return 'repeat';
-    if (step.choose) return 'choose';
-    if (step.if) return 'if';
-    if (step.wait_template || step.wait_for_trigger) return 'wait';
-    if (step.variables) return 'variables';
+    if (step.parallel !== undefined) return 'parallel';
+    if (step.repeat !== undefined) return 'repeat';
+    if (step.choose !== undefined) return 'choose';
+    if (step.if !== undefined) return 'if';
+    if (step.wait_template !== undefined || step.wait_for_trigger !== undefined) return 'wait';
+    if (step.variables !== undefined) return 'variables';
     return 'unknown';
 }
 
@@ -259,7 +259,8 @@ function renderActionNode(step, steps, index, onRebuild) {
 
         // Brightness
         props.appendChild(makeSmartRange('Brightness', step.data.brightness_pct, 0, 100, '%', v => {
-            step.data.brightness_pct = (typeof v === 'string' && v.includes('{')) ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
+            if (v === '') delete step.data.brightness_pct;
+            else step.data.brightness_pct = (typeof v === 'string' && v.includes('{')) ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
             pushToYaml();
         }));
 
@@ -270,7 +271,8 @@ function renderActionNode(step, steps, index, onRebuild) {
 
         // Transition
         props.appendChild(makeSmartField('Transition', step.data.transition, 'seconds', v => {
-            step.data.transition = isNaN(parseFloat(v)) ? v : parseFloat(v);
+            if (v === '') delete step.data.transition;
+            else step.data.transition = isNaN(parseFloat(v)) ? v : parseFloat(v);
             pushToYaml();
         }));
 
@@ -524,15 +526,78 @@ function renderWaitNode(step, steps, index, onRebuild) {
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
-    const val = step.wait_template || step.wait_for_trigger || '';
-    body.appendChild(makeField('Template', makeInput(String(val), v => {
-        delete step.wait_for_trigger;
-        step.wait_template = v;
-        pushToYaml();
-    }, '{{ template }}')));
+    // Type Selector: Template vs Trigger
+    const modeMap = { wait_template: 'Template', wait_for_trigger: 'Trigger' };
+    let currentMode = step.wait_for_trigger !== undefined ? 'wait_for_trigger' : 'wait_template';
 
-    if (step.timeout !== undefined) {
-        body.appendChild(makeField('Timeout', makeInput(String(step.timeout), v => { step.timeout = v; pushToYaml(); })));
+    const modeEl = makeField('Wait For', (() => {
+        const sel = el('select', 'node-select');
+        Object.entries(modeMap).forEach(([v, l]) => {
+            const o = document.createElement('option');
+            o.value = v; o.textContent = l;
+            if (v === currentMode) o.selected = true;
+            sel.appendChild(o);
+        });
+        sel.addEventListener('change', () => {
+            const m = sel.value;
+            delete step.wait_template;
+            delete step.wait_for_trigger;
+            if (m === 'wait_template') step.wait_template = '';
+            else step.wait_for_trigger = [];
+            onRebuild(); pushToYaml();
+        });
+        return sel;
+    })());
+    body.appendChild(modeEl);
+
+    // Main Input
+    if (currentMode === 'wait_template') {
+        const val = step.wait_template || '';
+        body.appendChild(makeField('Template', makeInput(String(val), v => {
+            step.wait_template = v;
+            pushToYaml();
+        }, '{{ is_state(...) }}')));
+    } else {
+        const val = step.wait_for_trigger || '';
+        body.appendChild(makeField('Trigger', makeInput(typeof val === 'object' ? JSON.stringify(val) : String(val), v => {
+            try { step.wait_for_trigger = JSON.parse(v); } catch(e) { step.wait_for_trigger = v; }
+            pushToYaml();
+        }, '[{"platform": "state"...}]')));
+    }
+
+    // Timeout
+    body.appendChild(makeField('Timeout', makeInput(step.timeout !== undefined ? (typeof step.timeout === 'object' ? JSON.stringify(step.timeout) : String(step.timeout)) : '', v => { 
+        if (v.trim() === '') {
+            delete step.timeout;
+            delete step.continue_on_timeout;
+            onRebuild(); // Rebuild to remove Continue field
+        } else {
+            let parsed = v;
+            if (!isNaN(parseFloat(v)) && String(parseFloat(v)) === v) parsed = parseFloat(v);
+            else { try { parsed = JSON.parse(v); } catch(e){} }
+            
+            const wasEmpty = step.timeout === undefined;
+            step.timeout = parsed;
+            if (wasEmpty) onRebuild(); // Rebuild to show Continue field
+        }
+        pushToYaml(); 
+    }, 'e.g. 10, "00:01:00"')));
+
+    // Continue on timeout (only if timeout exists)
+    if (step.timeout !== undefined && step.timeout !== '') {
+        const contVal = step.continue_on_timeout !== false; // HA default is true
+        const sel = el('select', 'node-select');
+        ['true', 'false'].forEach(m => {
+            const o = document.createElement('option');
+            o.value = m; o.textContent = m;
+            if (m === String(contVal)) o.selected = true;
+            sel.appendChild(o);
+        });
+        sel.addEventListener('change', () => {
+            step.continue_on_timeout = sel.value === 'true';
+            pushToYaml();
+        });
+        body.appendChild(makeField('Continue', sel));
     }
 
     return node;
@@ -946,6 +1011,11 @@ function makeSmartColor(label, dataObj, onChange) {
 
     override.addEventListener('change', () => {
         const v = override.value.trim();
+        if (v === '') {
+            delete dataObj[currentMode];
+            onChange();
+            return;
+        }
         if (v.startsWith('[') && v.endsWith(']')) {
             try {
                 dataObj[currentMode] = JSON.parse(v);
