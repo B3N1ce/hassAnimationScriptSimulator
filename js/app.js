@@ -65,6 +65,44 @@ function updateNotifUI() {
     });
 }
 
+let colorMarks = [];
+function updateColorPreviews(cm) {
+    colorMarks.forEach(m => m.clear());
+    colorMarks = [];
+    
+    const doc = cm.getDoc();
+    const rgbRegex = /\[\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\]/g;
+    
+    for (let i = 0; i < doc.lineCount(); i++) {
+        const text = doc.getLine(i);
+        let match;
+        while ((match = rgbRegex.exec(text)) !== null) {
+            const r = parseInt(match[1]);
+            const g = parseInt(match[2]);
+            const b = parseInt(match[3]);
+            if (r <= 255 && g <= 255 && b <= 255) {
+                const marker = document.createElement('span');
+                marker.style.display = 'inline-block';
+                marker.style.width = '12px';
+                marker.style.height = '12px';
+                marker.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                marker.style.border = '1px solid #000';
+                marker.style.marginRight = '6px';
+                marker.style.verticalAlign = 'middle';
+                marker.style.borderRadius = '2px';
+                marker.style.boxShadow = '0 0 2px rgba(0,0,0,0.5)';
+                marker.title = `RGB: ${r}, ${g}, ${b}`;
+                
+                const mark = doc.setBookmark({line: i, ch: match.index}, {
+                    widget: marker,
+                    insertLeft: true
+                });
+                colorMarks.push(mark);
+            }
+        }
+    }
+}
+
 function init() {
     // 1. Init CodeMirror
     editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
@@ -90,6 +128,16 @@ function init() {
 
     // 3. Init Node Editor
     initNodeEditor(editor);
+
+    editor.on('change', () => {
+        updateColorPreviews(editor);
+        if (!isPlaying) {
+            validateAndSync();
+        }
+    });
+    
+    // Initial call
+    updateColorPreviews(editor);
 
     // Tab switching
     document.querySelectorAll('#panel-editor .panel-tab').forEach(tab => {
@@ -190,6 +238,7 @@ function init() {
 
     // 5. Editor Change Event
     editor.on('change', () => {
+        updateColorPreviews(editor);
         if (!isPlaying) {
             validateAndSync();
         }

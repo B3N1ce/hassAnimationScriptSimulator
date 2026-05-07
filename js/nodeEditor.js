@@ -642,9 +642,17 @@ function renderDataFields(container, obj, onChange) {
         renderRows();
     };
 
+    const isPossibleColor = (k, v) => {
+        if (!Array.isArray(v)) return false;
+        if (v.length === 3 && v.every(n => typeof n === 'number' && n >= 0 && n <= 255)) return true;
+        if (v.length === 2 && v.every(n => typeof n === 'number') && (k.includes('xy') || k.includes('hs') || k.includes('color'))) return true;
+        return false;
+    };
+
     const renderRows = () => {
         Object.keys(obj).forEach(k => {
             const row = el('div', 'node-data-row');
+            
             const keyIn = el('input', 'node-input node-input-key');
             keyIn.placeholder = 'key';
             keyIn.value = k;
@@ -652,18 +660,63 @@ function renderDataFields(container, obj, onChange) {
                 const oldVal = obj[k];
                 delete obj[k];
                 obj[keyIn.value] = oldVal;
+                rebuild();
                 onChange();
             });
 
             const isComplex = typeof obj[k] === 'object' && obj[k] !== null;
-            const valIn = el(isComplex ? 'textarea' : 'input', 'node-input');
+            const isColor = isPossibleColor(k, obj[k]);
+
+            const valIn = el(isComplex && !isColor ? 'textarea' : 'input', 'node-input');
             valIn.placeholder = 'value (JSON allowed)';
             valIn.value = isComplex ? JSON.stringify(obj[k], null, 2) : String(obj[k] ?? '');
 
-            if (isComplex) {
+            if (isComplex && !isColor) {
                 valIn.style.height = 'auto';
                 valIn.style.minHeight = '40px';
                 valIn.style.resize = 'vertical';
+            }
+
+            const valContainer = el('div');
+            valContainer.style.display = 'flex';
+            valContainer.style.flex = '1';
+            valContainer.style.gap = '5px';
+            valContainer.appendChild(valIn);
+
+            if (isColor) {
+                const picker = el('input', 'node-color-picker');
+                picker.type = 'color';
+                picker.style.width = '30px';
+                picker.style.height = '28px';
+                picker.style.padding = '0';
+                picker.style.cursor = 'pointer';
+                picker.style.flexShrink = '0';
+                
+                let rgb = [255, 255, 255];
+                if (obj[k].length === 3) rgb = obj[k];
+                else if (k.includes('hs')) rgb = hsToRgb(obj[k]);
+                else if (k.includes('xy')) rgb = xyToRgb(obj[k]);
+                picker.value = rgbToHex(rgb);
+                
+                picker.addEventListener('input', () => {
+                    const hex = picker.value;
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    
+                    let newArr = [r, g, b];
+                    if (obj[k].length === 2) {
+                        if (k.includes('hs')) newArr = rgbToHs(newArr);
+                        else newArr = rgbToXy(newArr);
+                    }
+                    
+                    obj[keyIn.value] = newArr;
+                    valIn.value = JSON.stringify(newArr);
+                    valIn.style.borderColor = '#50fa7b';
+                    onChange();
+                });
+                
+                valContainer.appendChild(picker);
             }
 
             valIn.addEventListener('input', () => {
@@ -671,9 +724,9 @@ function renderDataFields(container, obj, onChange) {
                 if ((v.startsWith('[') && v.endsWith(']')) || (v.startsWith('{') && v.endsWith('}'))) {
                     try {
                         JSON.parse(v);
-                        valIn.style.borderColor = '#50fa7b'; // Valid JSON
+                        valIn.style.borderColor = '#50fa7b';
                     } catch (e) {
-                        valIn.style.borderColor = '#ff5555'; // Invalid JSON
+                        valIn.style.borderColor = '#ff5555';
                     }
                 } else {
                     valIn.style.borderColor = '';
@@ -683,23 +736,28 @@ function renderDataFields(container, obj, onChange) {
             valIn.addEventListener('change', () => {
                 const v = valIn.value.trim();
                 let parsed = v;
-                // Auto-type conversion
                 if (v === 'true') parsed = true;
                 else if (v === 'false') parsed = false;
                 else if (!isNaN(parseFloat(v)) && String(parseFloat(v)) === v) parsed = parseFloat(v);
                 else if ((v.startsWith('[') && v.endsWith(']')) || (v.startsWith('{') && v.endsWith('}'))) {
-                    try { parsed = JSON.parse(v); } catch (e) { /* keep as string if fails */ }
+                    try { parsed = JSON.parse(v); } catch (e) { }
                 }
                 obj[keyIn.value] = parsed;
                 onChange();
+                
+                // Rebuild if color state changed or we need to update the picker's color
+                const isNowColor = isPossibleColor(keyIn.value, parsed);
+                if (isColor !== isNowColor || isNowColor) {
+                    rebuild();
+                }
             });
 
             const rm = el('button', 'btn-remove-field');
             rm.textContent = '✕';
-            rm.addEventListener('click', () => { delete obj[k]; rebuild(); onChange(); });
+            rm.addEventListener('click', () => { delete obj[keyIn.value]; rebuild(); onChange(); });
 
             row.appendChild(keyIn);
-            row.appendChild(valIn);
+            row.appendChild(valContainer);
             row.appendChild(rm);
             list.appendChild(row);
         });
