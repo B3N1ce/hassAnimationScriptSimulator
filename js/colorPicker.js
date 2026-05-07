@@ -1,5 +1,6 @@
 // js/colorPicker.js
 import { t } from './i18n.js';
+import { insertVariableAtCursor } from './nodeEditor.js';
 
 export class ColorPicker {
     constructor(editorInstance) {
@@ -88,18 +89,24 @@ export class ColorPicker {
         
         // Insert Button
         this.btnInsert.addEventListener('click', () => {
-            let snippet = '';
+            let valueOnly = '';
+            let fullSnippet = '';
+
             if (this.currentMode === 'rgb') {
-                snippet = `rgb_color: [${this.inR.value}, ${this.inG.value}, ${this.inB.value}]`;
+                valueOnly = `[${this.inR.value}, ${this.inG.value}, ${this.inB.value}]`;
+                fullSnippet = `rgb_color: ${valueOnly}`;
             } else if (this.currentMode === 'xy') {
-                snippet = `xy_color: [${this.inX.value}, ${this.inY.value}]`;
+                valueOnly = `[${this.inX.value}, ${this.inY.value}]`;
+                fullSnippet = `xy_color: ${valueOnly}`;
             } else if (this.currentMode === 'hs') {
-                snippet = `hs_color: [${this.inH.value}, ${this.inS.value}]`;
+                valueOnly = `[${this.inH.value}, ${this.inS.value}]`;
+                fullSnippet = `hs_color: ${valueOnly}`;
             }
-            if (this.editor) {
-                this.editor.replaceSelection(snippet);
-                this.editor.focus();
-            }
+
+            const viewNodes = document.getElementById('view-nodes');
+            const isNodeEditor = viewNodes && viewNodes.classList.contains('active');
+            
+            insertVariableAtCursor(isNodeEditor ? valueOnly : fullSnippet);
         });
         
         // Add Favorite

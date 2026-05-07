@@ -1146,7 +1146,7 @@ function discoverVariables(doc) {
     return vars;
 }
 
-function insertVariableAtCursor(text) {
+export function insertVariableAtCursor(text) {
     // 1. Check if CodeMirror is focused (YAML Editor)
     if (_lastFocusedElement && (_lastFocusedElement.closest('.CodeMirror') || _lastFocusedElement.classList.contains('CodeMirror-code'))) {
         _editor.focus();
