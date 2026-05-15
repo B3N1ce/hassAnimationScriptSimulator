@@ -4,6 +4,17 @@ import { calculateRgbFromInputs } from './colorPicker.js';
 
 let playSessionId = 0;
 let isPaused = false;
+let varUpdateCallback = null;
+export const breakpoints = new Set();
+
+export function toggleBreakpoint(path) {
+    if (breakpoints.has(path)) breakpoints.delete(path);
+    else breakpoints.add(path);
+}
+
+export function setVarUpdateCallback(cb) {
+    varUpdateCallback = cb;
+}
 
 export function stopSimulation() {
     playSessionId++;
@@ -32,6 +43,8 @@ export function startSimulation(doc, onComplete, onError) {
             vars[k] = resolveTemplate(v, vars);
         }
     }
+    
+    if (varUpdateCallback) varUpdateCallback(vars);
 
     executeSteps(steps, sid, vars)
         .then(() => {
@@ -79,6 +92,12 @@ async function executeSteps(steps, sid, vars = {}) {
     for (const s of list) {
         if (sid !== playSessionId) return;
 
+        if (s.__path && breakpoints.has(s.__path) && !isPaused) {
+            pauseSimulation();
+            // Optional: emit event to UI
+            if (window.onBreakpointHit) window.onBreakpointHit(s.__path);
+        }
+
         while (isPaused && sid === playSessionId) {
             await new Promise(r => setTimeout(r, 100));
         }
@@ -90,6 +109,7 @@ async function executeSteps(steps, sid, vars = {}) {
                 for (let [k, v] of Object.entries(s.variables)) {
                     vars[k] = resolveTemplate(v, vars);
                 }
+                if (varUpdateCallback) varUpdateCallback(vars);
             }
 
             // 2. Parallel

@@ -1,10 +1,30 @@
+import { breakpoints, toggleBreakpoint } from './simulator.js';
 import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, getAvailableEntities } from './entityManager.js';
 import { t } from './i18n.js';
+import { resolveTemplate } from './templateEngine.js';
 
 let _editor = null;
 let _isSyncing = false;
 let _currentDoc = null; // live JS object (source of truth for nodes→YAML)
 let _lastFocusedElement = null;
+let _currentRuntimeVars = {};
+
+export function updateRuntimeVariablesUI(vars) {
+    _currentRuntimeVars = { ...vars };
+    for (const [key, val] of Object.entries(vars)) {
+        const el = document.getElementById(`runtime-var-${key}`);
+        if (el) {
+            el.textContent = typeof val === 'object' ? JSON.stringify(val).substring(0, 30) : String(val).substring(0, 30);
+        }
+    }
+}
+
+export function resetRuntimeVariablesUI() {
+    _currentRuntimeVars = {};
+    const els = document.querySelectorAll('[id^="runtime-var-"]');
+    els.forEach(el => el.textContent = '-');
+    highlightExecutingNode(null);
+}
 
 const ICONS = {
     script: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4.9V17L12 22l-9-4.9V7z"/></svg>`,
@@ -29,6 +49,20 @@ export function initNodeEditor(cmEditor) {
     });
 }
 
+export function assignPaths(obj, currentPath = "root") {
+    if (!obj || typeof obj !== 'object') return;
+    
+    Object.defineProperty(obj, '__path', { value: currentPath, enumerable: false, configurable: true });
+
+    if (Array.isArray(obj)) {
+        obj.forEach((item, idx) => assignPaths(item, `${currentPath}[${idx}]`));
+    } else {
+        for (const [k, v] of Object.entries(obj)) {
+            assignPaths(v, `${currentPath}.${k}`);
+        }
+    }
+}
+
 // Called when switching TO the Nodes tab
 export function syncYamlToNodes() {
     if (_isSyncing) return;
@@ -44,6 +78,8 @@ export function syncYamlToNodes() {
     try {
         const loaded = jsyaml.load(code);
         _currentDoc = (loaded && typeof loaded === 'object') ? loaded : {};
+        
+        assignPaths(_currentDoc);
 
         // Ensure explicit defaults
         if (_currentDoc.alias === undefined) _currentDoc.alias = 'My Script';
@@ -82,6 +118,8 @@ function pushToYaml() {
 
         ordered.sequence = _currentDoc.sequence || [];
 
+        assignPaths(_currentDoc);
+        
         const yaml = jsyaml.dump(ordered, { lineWidth: 120, noRefs: true });
         _editor.setValue(yaml);
         updateVariablePanel();
@@ -227,7 +265,7 @@ function renderHeaderNode(doc) {
 // ─── ACTION NODE ───────────────────────────────────────────────────────────
 
 function renderActionNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-action', ICONS.action, 'Action');
+    const node = makeNode('node-type-action', ICONS.action, 'Action', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -307,7 +345,7 @@ function renderActionNode(step, steps, index, onRebuild) {
 // ─── DELAY NODE ────────────────────────────────────────────────────────────
 
 function renderDelayNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-delay', ICONS.delay, 'Delay');
+    const node = makeNode('node-type-delay', ICONS.delay, 'Delay', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -336,7 +374,7 @@ function renderDelayNode(step, steps, index, onRebuild) {
 // ─── PARALLEL NODE ─────────────────────────────────────────────────────────
 
 function renderParallelNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-parallel', ICONS.parallel, 'Parallel');
+    const node = makeNode('node-type-parallel', ICONS.parallel, 'Parallel', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -395,7 +433,7 @@ function renderBranchColumns(container, branches, onRebuild) {
 // ─── REPEAT NODE ───────────────────────────────────────────────────────────
 
 function renderRepeatNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-repeat', ICONS.repeat, 'Repeat');
+    const node = makeNode('node-type-repeat', ICONS.repeat, 'Repeat', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
     const r = step.repeat || {};
@@ -447,7 +485,7 @@ function renderRepeatNode(step, steps, index, onRebuild) {
 // ─── CHOOSE NODE ───────────────────────────────────────────────────────────
 
 function renderChooseNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-choose', ICONS.choose, 'Choose');
+    const node = makeNode('node-type-choose', ICONS.choose, 'Choose', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
     const choices = Array.isArray(step.choose) ? step.choose : [step.choose].filter(Boolean);
@@ -495,7 +533,7 @@ function renderChooseNode(step, steps, index, onRebuild) {
 // ─── IF/THEN/ELSE NODE ─────────────────────────────────────────────────────
 
 function renderIfNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-if', ICONS.if, 'If / Then / Else');
+    const node = makeNode('node-type-if', ICONS.if, 'If / Then / Else', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -522,7 +560,7 @@ function renderIfNode(step, steps, index, onRebuild) {
 // ─── WAIT NODE ─────────────────────────────────────────────────────────────
 
 function renderWaitNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-wait', ICONS.wait, 'Wait');
+    const node = makeNode('node-type-wait', ICONS.wait, 'Wait', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
 
@@ -606,14 +644,14 @@ function renderWaitNode(step, steps, index, onRebuild) {
 // ─── VARIABLES NODES ───────────────────────────────────────────────────────
 
 function renderVariablesNode(parentObj, key, vars) {
-    const node = makeNode('node-type-variables', ICONS.variables, 'Variables');
+    const node = makeNode('node-type-variables', ICONS.variables, 'Variables', parentObj);
     const body = node.querySelector('.node-body');
     renderDataFields(body, vars, () => { parentObj[key] = vars; pushToYaml(); });
     return node;
 }
 
 function renderStepVariablesNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-variables', ICONS.variables, 'Set Variables');
+    const node = makeNode('node-type-variables', ICONS.variables, 'Set Variables', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
     step.variables = step.variables || {};
@@ -622,7 +660,7 @@ function renderStepVariablesNode(step, steps, index, onRebuild) {
 }
 
 function renderUnknownNode(step, steps, index, onRebuild) {
-    const node = makeNode('node-type-variables', '?', 'Unknown Step');
+    const node = makeNode('node-type-variables', '?', 'Unknown Step', step);
     addNodeControls(node, steps, index, onRebuild);
     const body = node.querySelector('.node-body');
     body.innerHTML = `<span style="color:#888;font-size:10px">${JSON.stringify(step)}</span>`;
@@ -839,6 +877,7 @@ function addNodeControls(node, steps, index, onRebuild) {
         const upBtn = document.createElement('button');
         upBtn.textContent = '↑';
         upBtn.title = 'Move up';
+        upBtn.classList.add('btn-move-up');
         upBtn.onclick = () => {
             [steps[index], steps[index - 1]] = [steps[index - 1], steps[index]];
             onRebuild(); pushToYaml();
@@ -850,6 +889,7 @@ function addNodeControls(node, steps, index, onRebuild) {
         const downBtn = document.createElement('button');
         downBtn.textContent = '↓';
         downBtn.title = 'Move down';
+        downBtn.classList.add('btn-move-down');
         downBtn.onclick = () => {
             [steps[index], steps[index + 1]] = [steps[index + 1], steps[index]];
             onRebuild(); pushToYaml();
@@ -881,18 +921,46 @@ function connector() {
     return el('div', 'step-connector');
 }
 
-function makeNode(typeClass, icon, title) {
+function makeNode(typeClass, icon, title, stepObj = null) {
     const node = el('div', `node-item ${typeClass}`);
+    if (stepObj && stepObj.__path) {
+        node.dataset.path = stepObj.__path;
+    }
+    
+    // Check if this step has an active breakpoint
+    const hasBp = stepObj && stepObj.__path && breakpoints.has(stepObj.__path);
+    const bpClass = hasBp ? 'bp-active' : '';
+
     node.innerHTML = `
         <div class="node-header">
             <div class="node-header-title">
                 <span class="node-header-icon">${icon}</span>
                 <span>${title}</span>
             </div>
-            <div class="node-header-actions"></div>
+            <div class="node-header-actions">
+                ${stepObj ? `<button class="btn-breakpoint ${bpClass}" title="Toggle Breakpoint" style="margin-right: 5px; color: ${hasBp ? '#ff5555' : '#555'};">&#x23FA;</button>` : ''}
+            </div>
         </div>
         <div class="node-body"></div>
     `;
+
+    if (stepObj && stepObj.__path) {
+        const bpBtn = node.querySelector('.btn-breakpoint');
+        if (bpBtn) {
+            bpBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleBreakpoint(stepObj.__path);
+                const isActive = breakpoints.has(stepObj.__path);
+                bpBtn.style.color = isActive ? '#ff5555' : '#555';
+                if (isActive) bpBtn.classList.add('bp-active');
+                else bpBtn.classList.remove('bp-active');
+                
+                // Inform others (YAML Editor) to refresh markers
+                document.dispatchEvent(new CustomEvent('breakpointsChanged'));
+            };
+        }
+    }
+    
     return node;
 }
 
@@ -1140,9 +1208,10 @@ export function updateVariablePanel(externalDoc = null) {
         const insertBtn = el('button', 'btn-var-insert');
         insertBtn.innerHTML = '←';
         insertBtn.title = t('click_to_insert') || 'In Editor einfügen';
-        row.appendChild(insertBtn);
-
         const info = el('div', 'entity-info');
+        info.style.flex = "1";
+        info.style.minWidth = "0";
+
         const name = el('div', 'entity-name');
         name.textContent = key;
 
@@ -1151,10 +1220,36 @@ export function updateVariablePanel(externalDoc = null) {
 
         info.appendChild(name);
         info.appendChild(valPreview);
-        row.appendChild(info);
+        
+        const runtimeInfo = el('div', 'entity-info');
+        runtimeInfo.style.flex = "1";
+        runtimeInfo.style.minWidth = "0";
+        runtimeInfo.style.borderLeft = "1px solid #444";
+        runtimeInfo.style.paddingLeft = "8px";
 
-        row.onclick = () => {
+        const runtimeLbl = el('div', 'entity-name');
+        runtimeLbl.textContent = "Runtime";
+        runtimeLbl.style.color = "#50fa7b";
+
+        const runtimeVal = el('div', 'entity-id');
+        runtimeVal.id = `runtime-var-${key}`;
+        runtimeVal.textContent = _currentRuntimeVars && _currentRuntimeVars[key] !== undefined ? 
+                                 String(_currentRuntimeVars[key]).substring(0,30) : "-";
+        runtimeVal.style.color = "#f8f8f2";
+        
+        runtimeInfo.appendChild(runtimeLbl);
+        runtimeInfo.appendChild(runtimeVal);
+
+        row.appendChild(insertBtn);
+        row.appendChild(info);
+        row.appendChild(runtimeInfo);
+
+        // Keep the detail dialog click handler on the info/row
+        info.onclick = () => {
             showVariableEditor(key, vars[key]);
+        };
+        runtimeInfo.onclick = () => {
+            showVariableEditor(key, _currentRuntimeVars && _currentRuntimeVars[key] !== undefined ? _currentRuntimeVars[key] : vars[key]);
         };
 
         insertBtn.onclick = (e) => {
@@ -1437,3 +1532,70 @@ function rgbToHex(rgb) {
     if (!Array.isArray(rgb) || rgb.length !== 3) return '#ffffff';
     return '#' + rgb.map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
 }
+
+export function getCurrentRuntimeVars() {
+    return _currentRuntimeVars;
+}
+
+export function getCurrentDoc() {
+    return _currentDoc;
+}
+
+export function setCurrentDoc(doc) {
+    _currentDoc = doc;
+    if (_currentDoc) assignPaths(_currentDoc);
+}
+
+export function highlightExecutingNode(path) {
+    // Clear old highlight
+    document.querySelectorAll('.node-item.is-executing').forEach(n => n.classList.remove('is-executing'));
+    
+    if (!path) return;
+
+    // Find node with matching path
+    const node = document.querySelector(`.node-item[data-path="${path}"]`);
+    if (node) {
+        node.classList.add('is-executing');
+        node.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+}
+
+document.addEventListener('mousemove', (e) => {
+    const tooltip = document.getElementById('template-tooltip');
+    if (!tooltip) return;
+
+    let target = e.target;
+    
+    // Check if we are hovering the field itself (which should be enabled)
+    // or an input inside it
+    if (target && (target.classList.contains('node-field') || target.classList.contains('node-field-smart'))) {
+        target = target.querySelector('input, textarea');
+    }
+
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        const val = target.value;
+        if (typeof val === 'string' && val.includes('{{')) {
+            try {
+                const resolved = resolveTemplate(val, _currentRuntimeVars);
+                if (String(resolved) !== String(val)) {
+                    tooltip.textContent = `↳ ${typeof resolved === 'object' ? JSON.stringify(resolved) : String(resolved)}`;
+                } else {
+                    tooltip.textContent = `↳ (Vorschau: Keine Laufzeitdaten)`;
+                }
+                tooltip.style.display = 'block';
+                
+                // Keep within viewport bounds
+                let x = e.clientX + 15;
+                let y = e.clientY + 15;
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+                return;
+            } catch(err) {}
+        }
+    }
+    tooltip.style.display = 'none';
+});
+
+// Interaction blocking handled via CSS pointer-events: none on inputs
+// but allowing it on .node-field for tooltips.
+

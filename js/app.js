@@ -2,14 +2,16 @@
 
 import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
-import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation } from './simulator.js';
+import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
-import { initNodeEditor, syncYamlToNodes, updateVariablePanel } from './nodeEditor.js';
+import { initNodeEditor, syncYamlToNodes, updateVariablePanel, updateRuntimeVariablesUI, resetRuntimeVariablesUI, getCurrentRuntimeVars, getCurrentDoc, assignPaths, setCurrentDoc, highlightExecutingNode } from './nodeEditor.js';
+import { resolveTemplate } from './templateEngine.js';
 
 let isPlaying = false;
 let isPausedState = false;
 let editor;
 let colorPicker;
+let activeLineHandle = null;
 
 const toggleBtn = document.getElementById('toggle-btn');
 const stopBtn = document.getElementById('stop-btn');
@@ -109,6 +111,7 @@ function init() {
         mode: 'yaml',
         theme: 'dracula',
         lineNumbers: true,
+        gutters: ["CodeMirror-linenumbers", "breakpoints"],
         tabSize: 2,
         extraKeys: { "Tab": function (cm) { cm.replaceSelection("  ", "end"); } }
     });
@@ -129,6 +132,9 @@ function init() {
     // 3. Init Node Editor
     initNodeEditor(editor);
 
+    // 4. Set Runtime Variable Callback
+    setVarUpdateCallback(updateRuntimeVariablesUI);
+
     editor.on('change', () => {
         updateColorPreviews(editor);
         if (!isPlaying) {
@@ -138,6 +144,82 @@ function init() {
     
     // Initial call
     updateColorPreviews(editor);
+
+    editor.on("gutterClick", (cm, n) => {
+        const result = mapLineToPath(cm, n);
+        
+        if (!result || !result.path) {
+            showToast("Kein gültiger Breakpoint-Schritt gefunden.", "warning");
+            return;
+        }
+
+        toggleBreakpoint(result.path);
+        refreshBreakpointMarkers();
+        
+        // Push the state to node editor to update its buttons visually
+        syncYamlToNodes();
+    });
+
+        // Template Resolution Hover & Gutter Highlighting
+        document.addEventListener('mousemove', (e) => {
+            // Only if YAML view is active
+            const yamlView = document.getElementById('view-yaml');
+            if (!yamlView || !yamlView.classList.contains('active')) return;
+
+            // Clear all previous force-hovers
+            document.querySelectorAll('.breakpoint-hint.force-hover').forEach(el => el.classList.remove('force-hover'));
+
+            const tooltip = document.getElementById('template-tooltip');
+            if (!tooltip) return;
+
+            const vars = getCurrentRuntimeVars() || {};
+
+            // Check if mouse is over the editor
+            const wrapper = editor.getWrapperElement();
+            const rect = wrapper.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+                tooltip.style.display = 'none';
+                return;
+            }
+
+            const pos = editor.coordsChar({left: e.clientX, top: e.clientY}, "window");
+            
+            // 1. Gutter Parent Highlighting
+            const mapResult = mapLineToPath(editor, pos.line);
+            if (mapResult && mapResult.line !== undefined) {
+                const info = editor.lineInfo(mapResult.line);
+                if (info && info.gutterMarkers && info.gutterMarkers.breakpoints) {
+                    info.gutterMarkers.breakpoints.classList.add('force-hover');
+                }
+            }
+
+            // 2. Tooltip Logic
+            const line = editor.getLine(pos.line);
+            if (line && line.includes('{{')) {
+                const regex = /\{\{.*?\}\}/g;
+                let match;
+                let found = false;
+                while ((match = regex.exec(line)) !== null) {
+                    if (pos.ch >= match.index && pos.ch <= match.index + match[0].length) {
+                        try {
+                            const resolved = resolveTemplate(match[0], vars);
+                            if (String(resolved) !== String(match[0])) {
+                                tooltip.textContent = `↳ ${typeof resolved === 'object' ? JSON.stringify(resolved) : String(resolved)}`;
+                            } else {
+                                tooltip.textContent = `↳ (Vorschau: Keine Laufzeitdaten)`;
+                            }
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = (e.clientX + 15) + 'px';
+                            tooltip.style.top = (e.clientY + 15) + 'px';
+                            found = true;
+                            break;
+                        } catch(err) {}
+                    }
+                }
+                if (found) return;
+            }
+            tooltip.style.display = 'none';
+        });
 
     // Tab switching
     document.querySelectorAll('#panel-editor .panel-tab').forEach(tab => {
@@ -149,10 +231,15 @@ function init() {
             if (view) view.classList.add('active');
             if (tab.dataset.tab === 'yaml') {
                 editor.refresh();
+                refreshBreakpointMarkers();
             } else if (tab.dataset.tab === 'nodes') {
                 syncYamlToNodes();
             }
         });
+    });
+
+    document.addEventListener('breakpointsChanged', () => {
+        refreshBreakpointMarkers();
     });
 
     // Initial apply translations
@@ -279,10 +366,19 @@ function init() {
         }
     }
 
+    window.onBreakpointHit = (path) => {
+        setUIRunning(true, true);
+        showToast(`Breakpoint erreicht: ${path}`, 'info');
+        highlightExecutingNode(path);
+        highlightLineByPath(path);
+    };
+
     toggleBtn.addEventListener('click', () => {
         if (isPlaying) {
             // Wenn es läuft, dann Pause/Resume
             if (isPausedState) {
+                highlightExecutingNode(null);
+                highlightLineByPath(null);
                 resumeSimulation();
                 setUIRunning(true, false);
             } else {
@@ -296,6 +392,7 @@ function init() {
         if (!doc) return;
 
         resetLamps();
+        resetRuntimeVariablesUI();
         setUIRunning(true, false);
 
         startSimulation(doc, () => {
@@ -310,8 +407,11 @@ function init() {
         if (isPlaying || isPausedState) {
             stopSimulation();
             setUIRunning(false, false);
+            highlightExecutingNode(null);
+            highlightLineByPath(null);
         } else {
             resetLamps();
+            resetRuntimeVariablesUI();
             setUIRunning(false, false); // Update Button State
         }
     });
@@ -423,10 +523,14 @@ function validateAndSync() {
 
     try {
         const doc = jsyaml.load(code);
+        if (doc) setCurrentDoc(doc);
         updateLampEntities(doc || {}, room);
 
         // Update Global Variable Panel with full discovery
         updateVariablePanel(doc);
+        
+        // Update Breakpoint Markers in YAML Gutter
+        refreshBreakpointMarkers();
 
         // Prüfen ob das Skript ausführbaren Inhalt hat (sequence nicht leer)
         const hasContent = doc && doc.sequence && Array.isArray(doc.sequence) && doc.sequence.length > 0;
@@ -466,6 +570,105 @@ window.showToast = function (msg, type = 'success') {
         t.classList.remove('show');
         setTimeout(() => t.remove(), 300);
     }, 4000);
+}
+
+function mapLineToPath(cm, startLine) {
+    let targetLine = startLine;
+    let m = null;
+    let key = null;
+
+    const allowedKeys = ['action', 'service', 'delay', 'parallel', 'repeat', 'choose', 'if', 'wait_template', 'wait_for_trigger', 'variables'];
+
+    while (targetLine >= 0) {
+        const text = cm.getLine(targetLine);
+        const match = text.match(/^\s*-?\s*([a-z_]+):/);
+        if (match && allowedKeys.includes(match[1])) {
+            m = match;
+            key = match[1];
+            break;
+        }
+        targetLine--;
+    }
+
+    if (!m) return { path: null, line: startLine };
+    
+    let occurrence = 0;
+    for (let i = 0; i <= targetLine; i++) {
+        const l = cm.getLine(i);
+        const match = l.match(/^\s*-?\s*([a-z_]+):/);
+        if (match && match[1] === key) {
+            occurrence++;
+        }
+    }
+    
+    let currentOccurrence = 0;
+    let foundPath = null;
+    
+    function traverse(obj) {
+        if (!obj || typeof obj !== 'object' || foundPath) return;
+        if (Array.isArray(obj)) {
+            obj.forEach(traverse);
+        } else {
+            if (obj[key] !== undefined && obj.__path) {
+                currentOccurrence++;
+                if (currentOccurrence === occurrence) {
+                    foundPath = obj.__path;
+                    return;
+                }
+            }
+            Object.values(obj).forEach(traverse);
+        }
+    }
+    
+    traverse(getCurrentDoc());
+    return { path: foundPath, line: targetLine };
+}
+
+function refreshBreakpointMarkers() {
+    if (!editor) return;
+    editor.clearGutter("breakpoints");
+    const lineCount = editor.lineCount();
+    const allowedKeys = ['action', 'service', 'delay', 'parallel', 'repeat', 'choose', 'if', 'wait_template', 'wait_for_trigger', 'variables'];
+
+    for (let i = 0; i < lineCount; i++) {
+        const line = editor.getLine(i);
+        const match = line.match(/^\s*-?\s*([a-z_]+):/);
+        if (match && allowedKeys.includes(match[1])) {
+            const result = mapLineToPath(editor, i);
+            if (result && result.path) {
+                const isActive = breakpoints.has(result.path);
+                const marker = document.createElement("div");
+                if (isActive) {
+                    marker.className = "breakpoint-marker";
+                    marker.innerHTML = "●";
+                } else {
+                    marker.className = "breakpoint-hint";
+                    marker.innerHTML = "○";
+                    marker.title = "Breakpoint hier setzen";
+                }
+                editor.setGutterMarker(i, "breakpoints", marker);
+            }
+        }
+    }
+}
+
+function highlightLineByPath(path) {
+    if (activeLineHandle) {
+        editor.removeLineClass(activeLineHandle, "background", "cm-active-step-line");
+        activeLineHandle = null;
+    }
+    
+    if (!path) return;
+    
+    const lineCount = editor.lineCount();
+    for (let i = 0; i < lineCount; i++) {
+        const result = mapLineToPath(editor, i);
+        if (result && result.path === path) {
+            activeLineHandle = editor.addLineClass(i, "background", "cm-active-step-line");
+            editor.scrollIntoView({line: i, ch: 0}, 200);
+            break;
+        }
+    }
 }
 
 

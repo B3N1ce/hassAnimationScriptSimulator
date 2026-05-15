@@ -853,10 +853,9 @@ button {
 }
 
 .CodeMirror.disabled-dim {
-    opacity: 0.5;
-    /*pointer-events: none;*/
-    /*removed to allow scrolling in editor while running*/
-    filter: grayscale(50%);
+    opacity: 0.95;
+    filter: none;
+    transition: opacity 0.3s ease;
 }
 
 /* Preview Specific */
@@ -1623,19 +1622,23 @@ label {
 }
 
 /* Disable editing during simulation */
-body.simulation-running .node-editor-content,
 body.simulation-running .color-picker-section,
 body.simulation-running #variable-list,
-body.simulation-running .btn-var-insert,
-body.simulation-running .node-graph,
 body.simulation-running .node-input,
 body.simulation-running .node-slider,
 body.simulation-running .node-color-picker,
-body.simulation-running .node-input-mode {
-    pointer-events: none;
+body.simulation-running .node-input-mode,
+body.simulation-running .node-select,
+body.simulation-running .btn-var-insert,
+body.simulation-running .btn-add-field,
+body.simulation-running .btn-remove-field,
+body.simulation-running .btn-entity-header-delete,
+body.simulation-running .btn-move-up,
+body.simulation-running .btn-move-down {
+    pointer-events: none !important;
     opacity: 0.6;
-    filter: grayscale(0.4);
-    cursor: not-allowed;
+    filter: grayscale(0.5);
+    cursor: default;
 }
 
 /* Allow scrolling in node editor but no interaction with fields */
@@ -1646,8 +1649,10 @@ body.simulation-running .node-editor-content {
 
 body.simulation-running .node-field,
 body.simulation-running .node-field-smart,
-body.simulation-running .btn-var-insert {
-    pointer-events: none;
+body.simulation-running .node-header,
+body.simulation-running .node-header-actions,
+body.simulation-running .btn-breakpoint {
+    pointer-events: auto !important;
 }
 
 /* Ensure Color Picker Tool is also disabled */
@@ -1658,4 +1663,74 @@ body.simulation-running .favorite-add {
     pointer-events: none !important;
     opacity: 0.6;
     filter: grayscale(0.5);
+}
+
+/* Floating Tooltip */
+.floating-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: #44475a;
+    color: #f8f8f2;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    pointer-events: none;
+    border: 1px solid #6272a4;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    white-space: pre-wrap;
+    max-width: 300px;
+}
+
+.breakpoints {
+    width: 20px;
+    cursor: pointer;
+}
+
+.breakpoint-marker {
+    color: rgba(255, 85, 85, 1);
+    font-size: 16px;
+    text-align: center;
+    line-height: 1;
+    filter: drop-shadow(0 0 2px rgba(255, 85, 85, 0.5));
+    cursor: pointer;
+}
+
+.breakpoint-hint {
+    color: rgba(255, 125, 125, 0.4);
+    font-size: 16px;
+    text-align: center;
+    line-height: 1;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+
+.breakpoint-hint:hover,
+.breakpoint-hint.force-hover {
+    color: rgba(255, 85, 85, 1);
+}
+
+/* Active Breakpoint/Step Highlighting */
+.node-item.is-executing {
+    border: 2px solid #ff5555 !important;
+    box-shadow: 0 0 20px rgba(255, 85, 85, 0.5) !important;
+    z-index: 100;
+}
+
+.cm-active-step-line {
+    background: rgba(255, 85, 85, 0.25) !important;
+}
+
+/* Debug Mode Visual Cues */
+body.simulation-running #panel-editor {
+    outline: 1px solid rgba(255, 85, 85, 0.3);
+}
+
+body.simulation-running .panel-header {
+    border-bottom: 1px solid rgba(255, 85, 85, 0.4);
+    background: linear-gradient(90deg, #343746 0%, #442c2c 100%);
+}
+
+body.simulation-running .panel-tab.active {
+    border-bottom-color: #ff5555;
 }
