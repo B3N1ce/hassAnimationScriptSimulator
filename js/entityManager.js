@@ -61,8 +61,23 @@ export function toggleLabels() {
 export function resizeCanvas() {
     if (!canvas) return;
     const rect = canvas.parentElement.getBoundingClientRect();
+    const oldWidth = canvas.width;
+    const oldHeight = canvas.height;
+    
     canvas.width = rect.width;
     canvas.height = rect.height;
+    
+    // Lampen im Sichtfeld halten
+    const margin = 40;
+    lamps.forEach(lamp => {
+        // Falls die Lampe vorher im Bild war, schiebe sie sanft mit oder halte sie im neuen Rand
+        if (lamp.x > canvas.width - margin) {
+            lamp.x = Math.max(margin, canvas.width - margin);
+        }
+        if (lamp.y > canvas.height - margin) {
+            lamp.y = Math.max(margin, canvas.height - margin);
+        }
+    });
 }
 
 function handleMouseDown(e) {
