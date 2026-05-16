@@ -77,6 +77,28 @@
                     <div class="panel-tab" data-tab="nodes" data-i18n="node_editor">Nodes</div>
                 </div>
                 <div class="editor-actions">
+                    <div class="dropdown-container">
+                        <button id="btn-new-script" class="btn-editor-icon" data-i18n-title="new_script" title="Neues Skript">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <div id="new-script-menu" class="dropdown-menu">
+                            <div class="dropdown-item" data-action="scratch">
+                                <span class="item-title">From Scratch</span>
+                                <span class="item-desc">Leeres Skript starten</span>
+                            </div>
+                            <div class="dropdown-item" data-action="template">
+                                <span class="item-title">Beginner Template</span>
+                                <span class="item-desc">Mit Beispiel-Code starten</span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item cancel" data-action="cancel">
+                                <span class="item-title">Abbrechen</span>
+                            </div>
+                        </div>
+                    </div>
                     <button id="btn-copy-code" class="btn-editor-icon" data-i18n-title="copy_code"
                         title="Code kopieren">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -115,13 +137,39 @@
                 <div class="panel-tools">
                     <div class="panel-tools-group" style="display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 2px 5px; border-radius: 4px; border: 1px solid #444;" title="Raum-Hintergrund (Farbe oder Foto)">
                         <input type="color" id="picker-wall-color" value="#ffffff" style="width: 18px; height: 18px; padding: 0; border: 1px solid #666; background: none; cursor: pointer; border-radius: 2px;">
-                        <button id="btn-upload-bg" class="btn-editor-icon" style="background: none; border: none; padding: 0;" title="Hintergrundbild hochladen / Upload Background" data-i18n-title="upload_bg">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                <polyline points="21 15 16 10 5 21"/>
-                            </svg>
-                        </button>
+                        
+                        <div class="dropdown-container">
+                            <button id="btn-bg-menu" class="btn-editor-icon" style="background: none; border: none; padding: 0;" title="Hintergrund wählen / Choose Background" data-i18n-title="choose_bg">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                            </button>
+                            <div id="bg-dropdown-menu" class="dropdown-menu">
+                                <div class="dropdown-item" data-bg="backgrounds/living_room.png">
+                                    <span class="item-title">Wohnzimmer</span>
+                                    <span class="item-desc">Moderner Loft-Style</span>
+                                </div>
+                                <div class="dropdown-item" data-bg="backgrounds/bedroom.png">
+                                    <span class="item-title">Schlafzimmer</span>
+                                    <span class="item-desc">Gemütliches Ambiente</span>
+                                </div>
+                                <div class="dropdown-item" data-bg="backgrounds/office.png">
+                                    <span class="item-title">Home Office</span>
+                                    <span class="item-desc">Arbeitszimmer bei Nacht</span>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div id="btn-upload-custom-bg" class="dropdown-item" data-action="upload">
+                                    <span class="item-title">Eigenes Foto...</span>
+                                    <span class="item-desc">Bild von deinem Raum laden</span>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item cancel" data-action="cancel">
+                                    <span class="item-title">Abbrechen</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <input type="file" id="input-room-image" accept="image/*" style="display: none;">
 

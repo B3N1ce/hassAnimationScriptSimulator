@@ -10,6 +10,7 @@ let currentColorCurve = 'linear';
 // Groups & Visibility Storage
 let groups = JSON.parse(localStorage.getItem('ha_simulator_groups')) || {};
 let hiddenEntities = JSON.parse(localStorage.getItem('ha_simulator_hidden')) || {};
+let storedPositions = JSON.parse(localStorage.getItem('ha_simulator_lamp_positions')) || {};
 
 // Canvas State
 let canvas, ctx;
@@ -26,6 +27,13 @@ export function getAvailableEntities() { return Array.from(lamps.keys()); }
 
 function saveGroups() { localStorage.setItem('ha_simulator_groups', JSON.stringify(groups)); }
 function saveHidden() { localStorage.setItem('ha_simulator_hidden', JSON.stringify(hiddenEntities)); }
+function savePositions() {
+    const positions = {};
+    lamps.forEach((lamp, id) => {
+        positions[id] = { x: lamp.x, y: lamp.y };
+    });
+    localStorage.setItem('ha_simulator_lamp_positions', JSON.stringify(positions));
+}
 
 export function initEntityManager(callback) {
     selectedEntityCallback = callback;
@@ -98,16 +106,15 @@ export function resizeCanvas() {
         lightMapCanvas.height = canvas.height;
     }
     
-    // Lampen im Sichtfeld halten
+    keepLampsInBounds();
+}
+
+export function keepLampsInBounds() {
+    if (!canvas) return;
     const margin = 40;
     lamps.forEach(lamp => {
-        // Falls die Lampe vorher im Bild war, schiebe sie sanft mit oder halte sie im neuen Rand
-        if (lamp.x > canvas.width - margin) {
-            lamp.x = Math.max(margin, canvas.width - margin);
-        }
-        if (lamp.y > canvas.height - margin) {
-            lamp.y = Math.max(margin, canvas.height - margin);
-        }
+        lamp.x = Math.max(margin, Math.min(lamp.x, canvas.width - margin));
+        lamp.y = Math.max(margin, Math.min(lamp.y, canvas.height - margin));
     });
 }
 
@@ -165,6 +172,9 @@ function handleMouseMove(e) {
 }
 
 function handleMouseUp() {
+    if (dragTarget) {
+        savePositions();
+    }
     dragTarget = null;
 }
 
@@ -363,10 +373,11 @@ export function updateLampEntities(doc, roomElement) {
     // Add new lamps
     uniqueIds.forEach((id, index) => {
         if (!lamps.has(id)) {
+            const stored = storedPositions[id];
             lamps.set(id, {
                 id,
-                x: 100 + (lamps.size * 120),
-                y: 100,
+                x: stored ? stored.x : (100 + (lamps.size * 120)),
+                y: stored ? stored.y : 100,
                 currentRgb: [255, 255, 255],
                 startRgb: [255, 255, 255],
                 targetRgb: [255, 255, 255],
@@ -380,6 +391,7 @@ export function updateLampEntities(doc, roomElement) {
         }
     });
 
+    keepLampsInBounds();
     renderEntityBrowser(uniqueIds);
 }
 

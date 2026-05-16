@@ -106,6 +106,10 @@ function updateColorPreviews(cm) {
 }
 
 function init() {
+    const appContainer = document.getElementById('app-container');
+    const resizerLeft = document.getElementById('resizer-left');
+    const resizerRight = document.getElementById('resizer-right');
+
     // 1. Init CodeMirror
     editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
         mode: 'yaml',
@@ -115,6 +119,24 @@ function init() {
         tabSize: 2,
         extraKeys: { "Tab": function (cm) { cm.replaceSelection("  ", "end"); } }
     });
+
+    // 1.1 Persistenz: Gespeichertes Skript laden
+    const savedScript = localStorage.getItem('ha_animation_script');
+    if (savedScript) {
+        editor.setValue(savedScript);
+    }
+
+    // 1.2 Persistenz: Layout laden (Bereits oben initialisiert)
+
+    // 1.3 Persistenz: Farbraum laden
+    const savedCurve = localStorage.getItem('ha_simulator_color_curve');
+    if (savedCurve) {
+        const selColorCurve = document.getElementById('sel-color-curve');
+        if (selColorCurve) {
+            selColorCurve.value = savedCurve;
+            setColorCurve(savedCurve);
+        }
+    }
 
     // Fix: Remove trailing newlines on paste (avoids issues on some mobile devices/HASS copy)
     editor.on('paste', (cm, e) => {
@@ -258,13 +280,13 @@ function init() {
     });
 
     // 4. Desktop Resizer Logic
-    const appContainer = document.getElementById('app-container');
-    const resizerLeft = document.getElementById('resizer-left');
-    const resizerRight = document.getElementById('resizer-right');
-
     // Fix initial layout glitch by setting explicit columns
     if (window.innerWidth > 900) {
-        appContainer.style.gridTemplateColumns = "350px 8px 1fr 8px 320px";
+        const savedLayout = localStorage.getItem('ha_simulator_layout');
+        appContainer.style.gridTemplateColumns = savedLayout || "350px 8px 1fr 8px 320px";
+        
+        // WICHTIG: Canvas nach Layout-Wiederherstellung neu berechnen
+        setTimeout(resizeCanvas, 50); 
     }
 
     let isResizingLeft = false;
@@ -311,6 +333,10 @@ function init() {
     document.addEventListener('mouseup', () => {
         if (isResizingLeft) resizerLeft.classList.remove('dragging');
         if (isResizingRight) resizerRight.classList.remove('dragging');
+        if (isResizingLeft || isResizingRight) {
+            // Layout speichern
+            localStorage.setItem('ha_simulator_layout', appContainer.style.gridTemplateColumns);
+        }
         isResizingLeft = false;
         isResizingRight = false;
     });
@@ -337,7 +363,60 @@ function init() {
         if (!isPlaying) {
             validateAndSync();
         }
+        // Persistenz: Script speichern
+        localStorage.setItem('ha_animation_script', editor.getValue());
     });
+
+    // 6. New Script Dropdown Logic
+    const btnNewScript = document.getElementById('btn-new-script');
+    const newScriptMenu = document.getElementById('new-script-menu');
+
+    if (btnNewScript && newScriptMenu) {
+        // Toggle Menu
+        btnNewScript.addEventListener('click', (e) => {
+            e.stopPropagation();
+            newScriptMenu.classList.toggle('active');
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', () => {
+            newScriptMenu.classList.remove('active');
+        });
+
+        // Handle Item Clicks
+        newScriptMenu.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.action;
+                
+                if (action === 'scratch' || action === 'template') {
+                    let content = "";
+                    if (action === 'scratch') {
+                        content = `alias: New Animation\ndescription: "Clean slate"\nmode: single\nsequence:\n  - `;
+                    } else {
+                        content = `alias: New Animation\ndescription: "A fresh start"\nmode: single\nsequence:\n  - service: light.turn_on\n    target:\n      entity_id: light.living_room\n    data:\n      rgb_color: [255, 255, 255]\n      brightness_pct: 100`;
+                    }
+
+                    // Editor leeren und Template setzen
+                    editor.setValue(content);
+                    
+                    // Lokalen Speicher bereinigen
+                    localStorage.setItem('ha_animation_script', content);
+                    localStorage.removeItem('ha_simulator_breakpoints');
+                    
+                    // Simulator State resetten
+                    if (breakpoints) breakpoints.clear();
+                    refreshBreakpointMarkers();
+                    
+                    // UI Sync
+                    if (typeof validateAndSync === 'function') validateAndSync();
+                    
+                    showToast(t('new_script_created') || "Neues Skript erstellt", "success");
+                }
+                
+                newScriptMenu.classList.remove('active');
+            });
+        });
+    }
 
     // 6. Toggle Play/Stop/Pause
     function setUIRunning(running, paused = false) {
@@ -441,7 +520,9 @@ function init() {
 
     // 8. Color Curve Selector
     selColorCurve.addEventListener('change', (e) => {
-        setColorCurve(e.target.value);
+        const val = e.target.value;
+        setColorCurve(val);
+        localStorage.setItem('ha_simulator_color_curve', val);
         if (!isPlaying) {
             validateAndSync();
         }
@@ -461,12 +542,44 @@ function init() {
         btnToggleLabels.style.color = isVisible ? '#f8f8f2' : '#555';
     });
 
-    // 11. Background Image Upload
-    const btnUploadBg = document.getElementById('btn-upload-bg');
+    // 11. Background Menu Logic
+    const btnBgMenu = document.getElementById('btn-bg-menu');
+    const bgDropdownMenu = document.getElementById('bg-dropdown-menu');
     const inputRoomImage = document.getElementById('input-room-image');
 
-    if (btnUploadBg && inputRoomImage) {
-        btnUploadBg.addEventListener('click', () => inputRoomImage.click());
+    if (btnBgMenu && bgDropdownMenu) {
+        // Toggle Menu
+        btnBgMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            bgDropdownMenu.classList.toggle('active');
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', () => {
+            bgDropdownMenu.classList.remove('active');
+        });
+
+        // Handle Item Clicks
+        bgDropdownMenu.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.action;
+                const bgUrl = item.dataset.bg;
+                
+                if (bgUrl) {
+                    // Demo-Bild laden
+                    setBackgroundImage(bgUrl);
+                    bgDropdownMenu.classList.remove('active');
+                } else if (action === 'upload') {
+                    // Eigenes Bild Trigger
+                    inputRoomImage.click();
+                    bgDropdownMenu.classList.remove('active');
+                } else if (action === 'cancel') {
+                    bgDropdownMenu.classList.remove('active');
+                }
+            });
+        });
+
+        // Handle Custom Upload Input
         inputRoomImage.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -490,6 +603,11 @@ function init() {
             const doc = jsyaml.load(code);
             if (doc && doc.alias) {
                 filename = doc.alias.replace(/[^a-z0-9_]/gi, '_').toLowerCase() + ".yaml";
+            } else {
+                // Zeitstempel als Backup
+                const now = new Date();
+                const ts = now.toISOString().split('T')[0] + "_" + now.getHours() + now.getMinutes();
+                filename = `animation_${ts}.yaml`;
             }
         } catch (e) { }
 

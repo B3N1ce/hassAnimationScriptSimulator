@@ -44,7 +44,9 @@ const translations = {
         gamma_28: "Gamma 2.8",
         gamma_cie: "CIE L* (Wahrnehmung)",
         fav_tooltip: "Klicken zum Anwenden, Doppelklick zum Löschen",
-        node_editor: "Nodes"
+        node_editor: "Nodes",
+        new_script: "Neues Skript",
+        confirm_new_script: "Möchtest du ein neues Skript starten? Deine aktuellen Änderungen werden überschrieben."
     },
     en: {
         title: "Aurora Studio",
@@ -89,7 +91,9 @@ const translations = {
         gamma_28: "Gamma 2.8",
         gamma_cie: "CIE L* (Perceptual)",
         fav_tooltip: "Click to apply, double-click to delete",
-        node_editor: "Nodes"
+        node_editor: "Nodes",
+        new_script: "New Script",
+        confirm_new_script: "Do you want to start a new script? Your current changes will be overwritten."
     }
 };
 
