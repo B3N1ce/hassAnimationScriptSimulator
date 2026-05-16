@@ -1,9 +1,9 @@
 // js/entityManager.js
 
-const lamps = {};
-const otherEntities = {};
-const lampStates = {}; // Speichert die rohen Werte für sofortiges Curve-Switching
 import { t } from './i18n.js';
+
+const lamps = new Map();
+const otherEntities = {};
 let selectedEntityCallback = null;
 let currentColorCurve = 'linear';
 
@@ -11,33 +11,83 @@ let currentColorCurve = 'linear';
 let groups = JSON.parse(localStorage.getItem('ha_simulator_groups')) || {};
 let hiddenEntities = JSON.parse(localStorage.getItem('ha_simulator_hidden')) || {};
 
+// Canvas State
+let canvas, ctx;
+let lastFrameTime = performance.now();
+let dragTarget = null;
+let dragOffset = { x: 0, y: 0 };
+
+export function getGroups() { return groups; }
+export function getAvailableEntities() { return Array.from(lamps.keys()); }
+
 function saveGroups() { localStorage.setItem('ha_simulator_groups', JSON.stringify(groups)); }
 function saveHidden() { localStorage.setItem('ha_simulator_hidden', JSON.stringify(hiddenEntities)); }
 
-export function getGroups() { return groups; }
-export function getAvailableEntities() { return Object.keys(lamps); }
-
 export function initEntityManager(callback) {
     selectedEntityCallback = callback;
+    
+    canvas = document.getElementById('simulation-canvas');
+    if (canvas) {
+        ctx = canvas.getContext('2d');
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        canvas.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        
+        requestAnimationFrame(drawLoop);
+    }
+}
+
+function resizeCanvas() {
+    if (!canvas) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+}
+
+function handleMouseDown(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    dragTarget = null;
+    
+    // Hit test from top to bottom (reverse order of drawing)
+    const lampList = Array.from(lamps.values()).reverse();
+    for (const lamp of lampList) {
+        const dx = x - lamp.x;
+        const dy = y - lamp.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 35) { // Lamp radius hit box
+            dragTarget = lamp;
+            dragOffset.x = dx;
+            dragOffset.y = dy;
+            
+            if (selectedEntityCallback) {
+                const rgb = lamp.currentRgb;
+                const rgbString = `rgb(${Math.round(rgb[0])}, ${Math.round(rgb[1])}, ${Math.round(rgb[2])})`;
+                selectedEntityCallback(lamp.id, rgbString);
+            }
+            break;
+        }
+    }
+}
+
+function handleMouseMove(e) {
+    if (dragTarget && canvas) {
+        const rect = canvas.getBoundingClientRect();
+        dragTarget.x = e.clientX - rect.left - dragOffset.x;
+        dragTarget.y = e.clientY - rect.top - dragOffset.y;
+    }
+}
+
+function handleMouseUp() {
+    dragTarget = null;
 }
 
 export function setColorCurve(curve) {
     currentColorCurve = curve;
-
-    // Allen Lampen sofort das neue Farbprofil überstülpen (ohne Transition)
-    Object.keys(lampStates).forEach(id => {
-        const state = lampStates[id];
-        if (lamps[id]) {
-            const el = lamps[id];
-            let r = applyCurve(state.rgbArray[0], currentColorCurve);
-            let g = applyCurve(state.rgbArray[1], currentColorCurve);
-            let b = applyCurve(state.rgbArray[2], currentColorCurve);
-            const rgbString = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
-            el.style.transition = `background-color 0s linear, box-shadow 0s linear`;
-            el.style.backgroundColor = state.isOff ? '#222' : rgbString;
-            el.style.boxShadow = state.isOff ? 'none' : `0 0 ${20 + state.brightness / 2}px ${state.brightness / 5}px ${rgbString}`;
-        }
-    });
 }
 
 function applyCurve(c, curve) {
@@ -52,29 +102,97 @@ function applyCurve(c, curve) {
     return c;
 }
 
-function updateRoomVisibility() {
-    Object.keys(lamps).forEach(id => {
-        const el = lamps[id];
-        const isGroup = !!groups[id];
-        const isHidden = !!hiddenEntities[id];
-
-        el.classList.toggle('is-group-master', isGroup);
-        el.classList.toggle('is-hidden-ghost', isHidden);
-        
-        // We no longer use display: none, but CSS classes for transparency
-        el.style.display = 'flex';
-    });
+function lerp(a, b, t) {
+    return a + (b - a) * t;
 }
 
-/**
- * Prüft, ob mindestens eine Lampe existiert und diese NICHT im Initialzustand (aus) ist.
- */
-export function hasModifiedLamps() {
-    const ids = Object.keys(lamps);
-    if (ids.length === 0) return false;
+function drawLoop(now) {
+    if (!ctx) return;
+    const dt = (now - lastFrameTime) / 1000;
+    lastFrameTime = now;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Eine Lampe gilt als "modifiziert", wenn sie nicht aus ist (isOff ist false)
-    return ids.some(id => !lampStates[id].isOff);
+    // Update State
+    lamps.forEach(lamp => {
+        if (lamp.transitionEnd > now) {
+            const total = lamp.transitionEnd - lamp.transitionStart;
+            const elapsed = now - lamp.transitionStart;
+            const t = Math.min(1, elapsed / total);
+            
+            lamp.currentRgb[0] = lerp(lamp.startRgb[0], lamp.targetRgb[0], t);
+            lamp.currentRgb[1] = lerp(lamp.startRgb[1], lamp.targetRgb[1], t);
+            lamp.currentRgb[2] = lerp(lamp.startRgb[2], lamp.targetRgb[2], t);
+            lamp.currentBrightness = lerp(lamp.startBrightness, lamp.targetBrightness, t);
+        } else {
+            lamp.currentRgb = [...lamp.targetRgb];
+            lamp.currentBrightness = lamp.targetBrightness;
+        }
+    });
+
+    // 1. Draw Glow (Additive)
+    ctx.globalCompositeOperation = 'lighter';
+    lamps.forEach(lamp => {
+        if (lamp.isOff || hiddenEntities[lamp.id]) return;
+
+        const r = applyCurve(lamp.currentRgb[0], currentColorCurve);
+        const g = applyCurve(lamp.currentRgb[1], currentColorCurve);
+        const b = applyCurve(lamp.currentRgb[2], currentColorCurve);
+        
+        const baseRadius = 30 + (lamp.currentBrightness / 5);
+        const glowRadius = baseRadius * 6; // Grösserer Radius für sanfteren Ausklang
+        
+        const grad = ctx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, glowRadius);
+        const colorFull = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, 0.3)`;
+        const colorMid = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, 0.08)`;
+        const transparent = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, 0)`;
+        
+        grad.addColorStop(0, colorFull);
+        grad.addColorStop(0.15, colorFull); // Kleiner Kern
+        grad.addColorStop(0.4, colorMid);   // Sanfter Übergang im Mittelfeld
+        grad.addColorStop(1, transparent);  // Ganz weiches Auslaufen am Rand
+        
+        ctx.fillStyle = grad;
+        ctx.fillRect(lamp.x - glowRadius, lamp.y - glowRadius, glowRadius * 2, glowRadius * 2);
+    });
+
+    // 2. Draw Lamp Bodies (Normal)
+    ctx.globalCompositeOperation = 'source-over';
+    lamps.forEach(lamp => {
+        const isHidden = hiddenEntities[lamp.id];
+        ctx.save();
+        if (isHidden) ctx.globalAlpha = 0.3;
+
+        const r = applyCurve(lamp.currentRgb[0], currentColorCurve);
+        const g = applyCurve(lamp.currentRgb[1], currentColorCurve);
+        const b = applyCurve(lamp.currentRgb[2], currentColorCurve);
+        
+        // Body
+        ctx.beginPath();
+        ctx.arc(lamp.x, lamp.y, 25, 0, Math.PI * 2);
+        ctx.fillStyle = lamp.isOff ? '#222' : `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+        ctx.fill();
+        
+        // Border
+        ctx.strokeStyle = groups[lamp.id] ? '#bd93f9' : '#444';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = '#888';
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(lamp.id.replace('light.', ''), lamp.x, lamp.y + 40);
+
+        // Group Icon
+        if (groups[lamp.id]) {
+            ctx.fillText('📁', lamp.x + 20, lamp.y - 20);
+        }
+
+        ctx.restore();
+    });
+
+    requestAnimationFrame(drawLoop);
 }
 
 export function updateLampEntities(doc, roomElement) {
@@ -82,8 +200,6 @@ export function updateLampEntities(doc, roomElement) {
 
     function findEntities(obj) {
         if (!obj || typeof obj !== 'object') return;
-
-        // Check for entity_id key
         if (obj.entity_id) {
             const ids = Array.isArray(obj.entity_id) ? obj.entity_id : [obj.entity_id];
             ids.forEach(id => {
@@ -94,90 +210,61 @@ export function updateLampEntities(doc, roomElement) {
                 }
             });
         }
-        
-        // Also check if the object itself looks like an entity ID (e.g. in shorthand lists)
         if (typeof obj === 'string' && obj.includes('.') && !obj.includes('{{') && !obj.includes(' ')) {
             const parts = obj.split('.');
             if (parts.length === 2 && !['action', 'service', 'condition'].includes(parts[1])) {
                  foundIds.add(obj.trim());
             }
         }
-
-        // Recurse
         Object.values(obj).forEach(val => findEntities(val));
     }
 
     findEntities(doc);
-
     const uniqueIds = Array.from(foundIds).filter(id => id.startsWith('light.'));
 
-    Object.keys(lamps).forEach(id => {
-        if (!uniqueIds.includes(id)) {
-            lamps[id].remove();
-            delete lamps[id];
-        }
+    // Remove old lamps
+    const currentKeys = Array.from(lamps.keys());
+    currentKeys.forEach(id => {
+        if (!uniqueIds.includes(id)) lamps.delete(id);
     });
 
+    // Add new lamps
     uniqueIds.forEach((id, index) => {
-        if (id.startsWith('light.')) {
-            if (!lamps[id]) {
-                const el = document.createElement('div');
-                el.className = 'lamp';
-                el.style.left = (40 + (Object.keys(lamps).length * 100)) + 'px';
-                el.style.top = '50px';
-                el.innerHTML = `<div class="lamp-label">${id.replace('light.', '')}</div>`;
-
-                el.addEventListener('click', () => {
-                    if (selectedEntityCallback) selectedEntityCallback(id, el.style.backgroundColor);
-                });
-
-                el.onmousedown = (e) => {
-                    let ox = e.clientX - el.offsetLeft;
-                    let oy = e.clientY - el.offsetTop;
-                    const move = (ev) => {
-                        el.style.left = (ev.clientX - ox) + "px";
-                        el.style.top = (ev.clientY - oy) + "px";
-                    };
-                    const up = () => {
-                        document.removeEventListener('mousemove', move);
-                        document.removeEventListener('mouseup', up);
-                    };
-                    document.addEventListener('mousemove', move);
-                    document.addEventListener('mouseup', up);
-                };
-
-                roomElement.appendChild(el);
-                lamps[id] = el;
-                // Initialize default state
-                lampStates[id] = { rgbArray: [255, 255, 255], brightness: 100, isOff: true };
-            }
-        } else {
-            if (!otherEntities[id]) {
-                otherEntities[id] = { state: 'off' };
-            }
+        if (!lamps.has(id)) {
+            lamps.set(id, {
+                id,
+                x: 100 + (lamps.size * 120),
+                y: 100,
+                currentRgb: [255, 255, 255],
+                startRgb: [255, 255, 255],
+                targetRgb: [255, 255, 255],
+                currentBrightness: 0,
+                startBrightness: 0,
+                targetBrightness: 0,
+                transitionStart: 0,
+                transitionEnd: 0,
+                isOff: true
+            });
         }
     });
 
-    updateRoomVisibility();
     renderEntityBrowser(uniqueIds);
 }
 
 export function setLampColor(id, rgbArray, transition, brightness, isOff) {
-    if (lamps[id]) {
-        const el = lamps[id];
-        lampStates[id] = { rgbArray, brightness, isOff };
-
-        let r = applyCurve(rgbArray[0], currentColorCurve);
-        let g = applyCurve(rgbArray[1], currentColorCurve);
-        let b = applyCurve(rgbArray[2], currentColorCurve);
-
-        const rgbString = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
-
-        el.style.transition = `background-color ${transition}s linear, box-shadow ${transition}s linear`;
-        el.style.backgroundColor = isOff ? '#222' : rgbString;
-        el.style.boxShadow = isOff ? 'none' : `0 0 ${20 + brightness / 2}px ${brightness / 5}px ${rgbString}`;
+    const lamp = lamps.get(id);
+    if (lamp) {
+        const now = performance.now();
+        lamp.startRgb = [...lamp.currentRgb];
+        lamp.targetRgb = [...rgbArray];
+        lamp.startBrightness = lamp.currentBrightness;
+        lamp.targetBrightness = brightness;
+        lamp.transitionStart = now;
+        lamp.transitionEnd = now + (transition * 1000);
+        lamp.isOff = isOff;
 
         // Update Browser Badge
+        const rgbString = `rgb(${Math.round(rgbArray[0])}, ${Math.round(rgbArray[1])}, ${Math.round(rgbArray[2])})`;
         const stateBody = document.getElementById('state-' + id.replace(/\./g, '-'));
         if (stateBody) {
             const badge = stateBody.querySelector('.entity-badge');
@@ -190,16 +277,11 @@ export function setLampColor(id, rgbArray, transition, brightness, isOff) {
 }
 
 export function resetLamps() {
-    Object.values(lamps).forEach(l => {
-        l.style.backgroundColor = '#222';
-        l.style.boxShadow = 'none';
-        l.style.transition = 'background-color 0s linear, box-shadow 0s linear';
-    });
-
-    // Wichtig: Auch den gespeicherten Zustand zurücksetzen!
-    Object.keys(lampStates).forEach(id => {
-        lampStates[id].isOff = true;
-        lampStates[id].brightness = 0;
+    lamps.forEach(lamp => {
+        lamp.targetRgb = [255, 255, 255];
+        lamp.targetBrightness = 0;
+        lamp.transitionEnd = 0;
+        lamp.isOff = true;
     });
 
     // Reset browser states
@@ -210,12 +292,15 @@ export function resetLamps() {
     });
 }
 
-export function snapLampsToTarget() {
-    Object.values(lamps).forEach(l => {
-        l.style.transition = 'background-color 0s linear, box-shadow 0s linear';
-    });
+export function hasModifiedLamps() {
+    return Array.from(lamps.values()).some(l => !l.isOff);
 }
 
+export function snapLampsToTarget() {
+    lamps.forEach(l => l.transitionEnd = 0);
+}
+
+// Entity Browser rendering logic (remains mostly same, but uses Map keys)
 function renderEntityBrowser(uniqueIds) {
     const list = document.getElementById('entity-list');
     if (!list) return;
@@ -270,7 +355,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
     item.dataset.id = id;
     if (isGroup) item.dataset.isGroup = 'true';
     if (isChild) item.dataset.parentId = parentId;
-    item.draggable = !isGroup; // Gruppen können nicht gedraggt werden
+    item.draggable = !isGroup;
 
     const header = document.createElement('div');
     header.className = 'entity-header';
@@ -287,7 +372,6 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         hiddenEntities[id] = !hiddenEntities[id];
         saveHidden();
         btnVis.classList.toggle('active', !hiddenEntities[id]);
-        updateRoomVisibility();
     };
     actions.appendChild(btnVis);
 
@@ -299,8 +383,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         btnMakeGroup.onclick = () => {
             groups[id] = [];
             saveGroups();
-            updateRoomVisibility();
-            renderEntityBrowser(Object.keys(lamps));
+            renderEntityBrowser(Array.from(lamps.keys()));
         };
         actions.appendChild(btnMakeGroup);
     }
@@ -313,8 +396,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         btnRemove.onclick = () => {
             groups[parentId] = groups[parentId].filter(c => c !== id);
             saveGroups();
-            updateRoomVisibility();
-            renderEntityBrowser(Object.keys(lamps));
+            renderEntityBrowser(Array.from(lamps.keys()));
         };
         actions.appendChild(btnRemove);
     }
@@ -327,8 +409,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         btnUngroup.onclick = () => {
             delete groups[id];
             saveGroups();
-            updateRoomVisibility();
-            renderEntityBrowser(Object.keys(lamps));
+            renderEntityBrowser(Array.from(lamps.keys()));
         };
         actions.appendChild(btnUngroup);
     }
@@ -336,7 +417,6 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
     header.appendChild(actions);
     item.appendChild(header);
 
-    // Body (State)
     const body = document.createElement('div');
     body.className = 'entity-body';
     body.id = 'state-' + id.replace(/\./g, '-');
@@ -346,106 +426,34 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
     `;
     item.appendChild(body);
 
-    // Aktuellen Status wiederherstellen falls er schon existiert
-    if (lampStates[id] && !lampStates[id].isOff) {
-        setTimeout(() => setLampColor(id, lampStates[id].rgbArray, 0, lampStates[id].brightness, false), 10);
+    const lamp = lamps.get(id);
+    if (lamp && !lamp.isOff) {
+        setTimeout(() => setLampColor(id, lamp.currentRgb, 0, lamp.currentBrightness, false), 10);
     }
 
     return item;
 }
 
-let draggedId = null;
-let touchTimer = null;
-let touchDraggedEl = null;
-
 function setupDragAndDrop() {
     const items = document.querySelectorAll('.entity-item');
-    const lampsList = Object.keys(lamps);
+    const lampsList = Array.from(lamps.keys());
 
     items.forEach(item => {
-        // --- Desktop Mouse Drag ---
         if (item.draggable) {
             item.addEventListener('dragstart', (e) => {
-                draggedId = item.dataset.id;
-                e.dataTransfer.setData('text/plain', draggedId);
+                e.dataTransfer.setData('text/plain', item.dataset.id);
                 item.style.opacity = '0.5';
             });
             item.addEventListener('dragend', () => {
                 item.style.opacity = '1';
-                draggedId = null;
                 document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
             });
         }
-
-        // --- Mobile Touch Drag (Long Press) ---
-        item.addEventListener('touchstart', (e) => {
-            if (item.dataset.isGroup === 'true') return; // Nur Entities draggbar
-
-            touchTimer = setTimeout(() => {
-                draggedId = item.dataset.id;
-                touchDraggedEl = item;
-                item.style.opacity = '0.5';
-                if (navigator.vibrate) navigator.vibrate(50); // Feedback
-            }, 500);
-        }, { passive: true });
-
-        item.addEventListener('touchmove', (e) => {
-            if (draggedId) {
-                // Verhindere Scrollen während des Draggens
-                if (e.cancelable) e.preventDefault();
-
-                const touch = e.touches[0];
-                const target = document.elementFromPoint(touch.clientX, touch.clientY);
-
-                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-                const group = target?.closest('.entity-group');
-                if (group && group.dataset.id !== draggedId) {
-                    group.classList.add('drag-over');
-                }
-            } else {
-                clearTimeout(touchTimer);
-            }
-        }, { passive: false });
-
-        item.addEventListener('touchend', (e) => {
-            clearTimeout(touchTimer);
-            if (draggedId && touchDraggedEl) {
-                const touch = e.changedTouches[0];
-                const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                const group = target?.closest('.entity-group');
-
-                if (group) {
-                    const groupId = group.dataset.id;
-                    const childId = draggedId;
-
-                    if (childId && groupId && childId !== groupId) {
-                        // Von alten Gruppen entfernen
-                        Object.keys(groups).forEach(g => {
-                            groups[g] = groups[g].filter(c => c !== childId);
-                        });
-
-                        if (!groups[groupId].includes(childId)) {
-                            groups[groupId].push(childId);
-                            saveGroups();
-                            renderEntityBrowser(lampsList);
-                        }
-                    }
-                }
-
-                touchDraggedEl.style.opacity = '1';
-                draggedId = null;
-                touchDraggedEl = null;
-                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-            }
-        });
-
-        // --- Drop Zone (Desktop) ---
+        
         if (item.dataset.isGroup === 'true') {
             item.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                if (draggedId && draggedId !== item.dataset.id) {
-                    item.classList.add('drag-over');
-                }
+                item.classList.add('drag-over');
             });
             item.addEventListener('dragleave', () => {
                 item.classList.remove('drag-over');
@@ -453,32 +461,17 @@ function setupDragAndDrop() {
             item.addEventListener('drop', (e) => {
                 e.preventDefault();
                 item.classList.remove('drag-over');
-                const childId = draggedId || e.dataTransfer.getData('text/plain');
+                const childId = e.dataTransfer.getData('text/plain');
                 const groupId = item.dataset.id;
-
                 if (childId && groupId && childId !== groupId) {
-                    // Von alten Gruppen entfernen
-                    Object.keys(groups).forEach(g => {
-                        groups[g] = groups[g].filter(c => c !== childId);
-                    });
-
+                    Object.keys(groups).forEach(g => groups[g] = groups[g].filter(c => c !== childId));
                     if (!groups[groupId].includes(childId)) {
                         groups[groupId].push(childId);
                         saveGroups();
-                        renderEntityBrowser(Object.keys(lamps));
+                        renderEntityBrowser(Array.from(lamps.keys()));
                     }
                 }
             });
         }
     });
 }
-
-// Variables rendering moved to nodeEditor.js (updateVariablePanel)
-
-// Re-render when language changes
-document.addEventListener('languageChanged', () => {
-    // We need the last uniqueIds to re-render. 
-    // For simplicity, we just clear and wait for next sync or use a hack.
-    // Actually, since app.js calls validateAndSync() which calls this, 
-    // we can just wait for the next call or manually trigger it.
-});

@@ -1577,10 +1577,16 @@ document.addEventListener('mousemove', (e) => {
         if (typeof val === 'string' && val.includes('{{')) {
             try {
                 const resolved = resolveTemplate(val, _currentRuntimeVars);
+                let repeatText = "";
+                if (_currentRuntimeVars && _currentRuntimeVars.repeat) {
+                    const idx = (_currentRuntimeVars.repeat.index !== undefined) ? (_currentRuntimeVars.repeat.index + 1) : "?";
+                    repeatText = `[Iter: ${idx}] `;
+                }
+
                 if (String(resolved) !== String(val)) {
-                    tooltip.textContent = `↳ ${typeof resolved === 'object' ? JSON.stringify(resolved) : String(resolved)}`;
+                    tooltip.textContent = `↳ ${repeatText}${typeof resolved === 'object' ? JSON.stringify(resolved) : String(resolved)}`;
                 } else {
-                    tooltip.textContent = `↳ (Vorschau: Keine Laufzeitdaten)`;
+                    tooltip.textContent = `↳ ${repeatText}(Vorschau: Keine Laufzeitdaten)`;
                 }
                 tooltip.style.display = 'block';
                 

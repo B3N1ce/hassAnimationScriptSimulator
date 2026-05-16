@@ -203,10 +203,16 @@ function init() {
                     if (pos.ch >= match.index && pos.ch <= match.index + match[0].length) {
                         try {
                             const resolved = resolveTemplate(match[0], vars);
+                            let repeatText = "";
+                            if (vars.repeat) {
+                                const idx = (vars.repeat.index !== undefined) ? (vars.repeat.index + 1) : "?";
+                                repeatText = `[Iter: ${idx}] `;
+                            }
+
                             if (String(resolved) !== String(match[0])) {
-                                tooltip.textContent = `↳ ${typeof resolved === 'object' ? JSON.stringify(resolved) : String(resolved)}`;
+                                tooltip.textContent = `↳ ${repeatText}${typeof resolved === 'object' ? JSON.stringify(resolved) : String(resolved)}`;
                             } else {
-                                tooltip.textContent = `↳ (Vorschau: Keine Laufzeitdaten)`;
+                                tooltip.textContent = `↳ ${repeatText}(Vorschau: Keine Laufzeitdaten)`;
                             }
                             tooltip.style.display = 'block';
                             tooltip.style.left = (e.clientX + 15) + 'px';
