@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -457,11 +457,8 @@ function init() {
     // 10. Label Toggle
     const btnToggleLabels = document.getElementById('btn-toggle-labels');
     btnToggleLabels.addEventListener('click', () => {
-        labelsVisible = !labelsVisible;
-        document.querySelectorAll('.lamp-label').forEach(l => {
-            l.classList.toggle('hidden', !labelsVisible);
-        });
-        btnToggleLabels.style.color = labelsVisible ? '#f8f8f2' : '#555';
+        const isVisible = toggleLabels();
+        btnToggleLabels.style.color = isVisible ? '#f8f8f2' : '#555';
     });
 
     btnSaveCode.addEventListener('click', () => {

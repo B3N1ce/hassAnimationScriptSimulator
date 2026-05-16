@@ -17,6 +17,7 @@ let lastFrameTime = performance.now();
 let dragTarget = null;
 let dragOffset = { x: 0, y: 0 };
 let wallColor = { r: 255, g: 255, b: 255 };
+let labelsVisible = true;
 
 export function getGroups() { return groups; }
 export function getAvailableEntities() { return Array.from(lamps.keys()); }
@@ -50,6 +51,11 @@ export function initEntityManager(callback) {
         
         requestAnimationFrame(drawLoop);
     }
+}
+
+export function toggleLabels() {
+    labelsVisible = !labelsVisible;
+    return labelsVisible;
 }
 
 export function resizeCanvas() {
@@ -87,10 +93,28 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
-    if (dragTarget && canvas) {
-        const rect = canvas.getBoundingClientRect();
-        dragTarget.x = e.clientX - rect.left - dragOffset.x;
-        dragTarget.y = e.clientY - rect.top - dragOffset.y;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (dragTarget) {
+        dragTarget.x = mx - dragOffset.x;
+        dragTarget.y = my - dragOffset.y;
+        canvas.style.cursor = 'grabbing';
+    } else {
+        // Hover cursor logic
+        let isHovering = false;
+        const lampList = Array.from(lamps.values());
+        for (const lamp of lampList) {
+            const dx = mx - lamp.x;
+            const dy = my - lamp.y;
+            if (Math.sqrt(dx*dx + dy*dy) < 35) {
+                isHovering = true;
+                break;
+            }
+        }
+        canvas.style.cursor = isHovering ? 'move' : 'default';
     }
 }
 
@@ -205,10 +229,12 @@ function drawLoop(now) {
         ctx.stroke();
 
         // Label
-        ctx.fillStyle = '#888';
-        ctx.font = 'bold 10px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(lamp.id.replace('light.', ''), lamp.x, lamp.y + 40);
+        if (labelsVisible) {
+            ctx.fillStyle = '#888';
+            ctx.font = 'bold 10px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(lamp.id.replace('light.', ''), lamp.x, lamp.y + 40);
+        }
 
         // Group Icon
         if (groups[lamp.id]) {
