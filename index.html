@@ -113,15 +113,25 @@
             <div class="panel-header">
                 <span class="panel-title" data-i18n="simulation">Simulation</span>
                 <div class="panel-tools">
-                    <div class="wall-color-picker" title="Wandfarbe / Wall Color" style="display: flex; align-items: center; gap: 5px; margin-right: 5px;">
-                        <input type="color" id="picker-wall-color" value="#ffffff" style="width: 20px; height: 20px; padding: 0; border: 1px solid #444; background: none; cursor: pointer; border-radius: 3px;">
+                    <div class="panel-tools-group" style="display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 2px 5px; border-radius: 4px; border: 1px solid #444;" title="Raum-Hintergrund (Farbe oder Foto)">
+                        <input type="color" id="picker-wall-color" value="#ffffff" style="width: 18px; height: 18px; padding: 0; border: 1px solid #666; background: none; cursor: pointer; border-radius: 2px;">
+                        <button id="btn-upload-bg" class="btn-editor-icon" style="background: none; border: none; padding: 0;" title="Hintergrundbild hochladen / Upload Background" data-i18n-title="upload_bg">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                        </button>
                     </div>
+                    <input type="file" id="input-room-image" accept="image/*" style="display: none;">
+
                     <select id="sel-color-curve" class="dropdown-small">
                         <option value="linear" data-i18n="gamma_linear">Linear (Raw)</option>
                         <option value="gamma22" data-i18n="gamma_22">Gamma 2.2</option>
                         <option value="gamma28" data-i18n="gamma_28">Gamma 2.8</option>
                         <option value="cie" data-i18n="gamma_cie">CIE L* (Perceptual)</option>
                     </select>
+
                     <button id="btn-toggle-labels" class="btn-editor-icon" data-i18n-title="toggle_labels"
                         title="Labels ein/ausblenden">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"

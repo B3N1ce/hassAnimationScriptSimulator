@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -460,6 +460,28 @@ function init() {
         const isVisible = toggleLabels();
         btnToggleLabels.style.color = isVisible ? '#f8f8f2' : '#555';
     });
+
+    // 11. Background Image Upload
+    const btnUploadBg = document.getElementById('btn-upload-bg');
+    const inputRoomImage = document.getElementById('input-room-image');
+
+    if (btnUploadBg && inputRoomImage) {
+        btnUploadBg.addEventListener('click', () => inputRoomImage.click());
+        inputRoomImage.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    setBackgroundImage(ev.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Restore from localStorage
+        const savedBg = localStorage.getItem('ha_simulator_bg');
+        if (savedBg) setBackgroundImage(savedBg);
+    }
 
     btnSaveCode.addEventListener('click', () => {
         const code = editor.getValue();

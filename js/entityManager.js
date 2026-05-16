@@ -13,11 +13,13 @@ let hiddenEntities = JSON.parse(localStorage.getItem('ha_simulator_hidden')) || 
 
 // Canvas State
 let canvas, ctx;
+let lightMapCanvas, lmCtx;
 let lastFrameTime = performance.now();
 let dragTarget = null;
 let dragOffset = { x: 0, y: 0 };
 let wallColor = { r: 255, g: 255, b: 255 };
 let labelsVisible = true;
+let backgroundImage = null;
 
 export function getGroups() { return groups; }
 export function getAvailableEntities() { return Array.from(lamps.keys()); }
@@ -31,6 +33,11 @@ export function initEntityManager(callback) {
     canvas = document.getElementById('simulation-canvas');
     if (canvas) {
         ctx = canvas.getContext('2d');
+        
+        // LightMap Buffer für Beleuchtungseffekte
+        lightMapCanvas = document.createElement('canvas');
+        lmCtx = lightMapCanvas.getContext('2d');
+        
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
@@ -46,11 +53,30 @@ export function initEntityManager(callback) {
                 wallColor.r = parseInt(hex.slice(1, 3), 16);
                 wallColor.g = parseInt(hex.slice(3, 5), 16);
                 wallColor.b = parseInt(hex.slice(5, 7), 16);
+                
+                // Zurück zur Farbe wechseln: Bild entfernen
+                if (backgroundImage) {
+                    setBackgroundImage(null);
+                }
             });
         }
         
         requestAnimationFrame(drawLoop);
     }
+}
+
+export function setBackgroundImage(url) {
+    if (!url) {
+        backgroundImage = null;
+        localStorage.removeItem('ha_simulator_bg');
+        return;
+    }
+    const img = new Image();
+    img.onload = () => {
+        backgroundImage = img;
+        localStorage.setItem('ha_simulator_bg', url);
+    };
+    img.src = url;
 }
 
 export function toggleLabels() {
@@ -66,6 +92,11 @@ export function resizeCanvas() {
     
     canvas.width = rect.width;
     canvas.height = rect.height;
+    
+    if (lightMapCanvas) {
+        lightMapCanvas.width = canvas.width;
+        lightMapCanvas.height = canvas.height;
+    }
     
     // Lampen im Sichtfeld halten
     const margin = 40;
@@ -163,13 +194,8 @@ function drawLoop(now) {
     lastFrameTime = now;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // 0. Draw Background (Wall with Ambient Light)
-    ctx.globalCompositeOperation = 'source-over';
-    const amb = 0.03; // 3% Ambient brightness
-    ctx.fillStyle = `rgb(${Math.round(wallColor.r * amb)}, ${Math.round(wallColor.g * amb)}, ${Math.round(wallColor.b * amb)})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+    if (lightMapCanvas) lmCtx.clearRect(0, 0, canvas.width, canvas.height);
+
     // Update State
     lamps.forEach(lamp => {
         if (lamp.transitionEnd > now) {
@@ -187,8 +213,18 @@ function drawLoop(now) {
         }
     });
 
-    // 1. Draw Glow (Additive)
-    ctx.globalCompositeOperation = 'lighter';
+    // 1. Light Map generieren (Beleuchtungsstärke)
+    lmCtx.globalCompositeOperation = 'source-over';
+    const amb = 0.02; // 2% Grundhelligkeit (Ambient)
+    
+    if (backgroundImage) {
+        lmCtx.fillStyle = `rgb(${Math.round(255 * amb)}, ${Math.round(255 * amb)}, ${Math.round(255 * amb)})`;
+    } else {
+        lmCtx.fillStyle = `rgb(${Math.round(wallColor.r * amb)}, ${Math.round(wallColor.g * amb)}, ${Math.round(wallColor.b * amb)})`;
+    }
+    lmCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+    lmCtx.globalCompositeOperation = 'lighter';
     lamps.forEach(lamp => {
         if (lamp.isOff || hiddenEntities[lamp.id]) return;
 
@@ -196,32 +232,61 @@ function drawLoop(now) {
         let g = applyCurve(lamp.currentRgb[1], currentColorCurve);
         let b = applyCurve(lamp.currentRgb[2], currentColorCurve);
 
-        // Global Illumination: Multiply Light with Wall Color
-        r = (r * wallColor.r) / 255;
-        g = (g * wallColor.g) / 255;
-        b = (b * wallColor.b) / 255;
+        if (!backgroundImage) {
+            r = (r * wallColor.r) / 255;
+            g = (g * wallColor.g) / 255;
+            b = (b * wallColor.b) / 255;
+        }
         
         const baseRadius = 35 + (lamp.currentBrightness / 4);
         const glowRadius = baseRadius * 15; 
+        const grad = lmCtx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, glowRadius);
+        const maxAlpha = 0.6; 
+        const scale = 6; 
         
-        const grad = ctx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, glowRadius);
+        // Erhöhte Präzision: 20 Stopps mit nicht-linearer Verteilung
+        // Wir setzen mehr Stopps in die Nähe des Zentrums, da dort die Kurve am steilsten ist
+        for (let i = 0; i <= 20; i++) {
+            const ratio = i / 20;
+            const d = Math.pow(ratio, 1.5); // Mehr Stopps im kritischen inneren Bereich
+            
+            const val = (1 / Math.pow(1 + d * scale, 2) - 1 / Math.pow(1 + scale, 2)) * maxAlpha;
+            const alpha = Math.max(0, val);
+            grad.addColorStop(d, `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`);
+        }
         
-        // Exponentiellerer Falloff für weichere Übergänge
-        const c = (alpha) => `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`;
-        
-        grad.addColorStop(0, c(0.6));
-        grad.addColorStop(0.05, c(0.6));
-        grad.addColorStop(0.15, c(0.35));
-        grad.addColorStop(0.3, c(0.15));
-        grad.addColorStop(0.5, c(0.06));
-        grad.addColorStop(0.8, c(0.02));
-        grad.addColorStop(1, c(0));  
-        
-        ctx.fillStyle = grad;
-        ctx.fillRect(lamp.x - glowRadius, lamp.y - glowRadius, glowRadius * 2, glowRadius * 2);
+        lmCtx.fillStyle = grad;
+        lmCtx.fillRect(lamp.x - glowRadius, lamp.y - glowRadius, glowRadius * 2, glowRadius * 2);
     });
 
-    // 2. Draw Lamp Bodies (Normal)
+    // 2. Hintergrund zeichnen (Image oder Wall)
+    ctx.globalCompositeOperation = 'source-over';
+    if (backgroundImage) {
+        const canvasAspect = canvas.width / canvas.height;
+        const imgAspect = backgroundImage.width / backgroundImage.height;
+        let drawW, drawH, drawX, drawY;
+        if (canvasAspect > imgAspect) {
+            drawW = canvas.width; drawH = canvas.width / imgAspect;
+            drawX = 0; drawY = (canvas.height - drawH) / 2;
+        } else {
+            drawH = canvas.height; drawW = canvas.height * imgAspect;
+            drawX = (canvas.width - drawW) / 2; drawY = 0;
+        }
+        ctx.drawImage(backgroundImage, drawX, drawY, drawW, drawH);
+    } else {
+        ctx.fillStyle = `rgb(${wallColor.r}, ${wallColor.g}, ${wallColor.b})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // 3. Beleuchtung anwenden (Multiply-Pass)
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(lightMapCanvas, 0, 0);
+
+    // 4. Glow hinzufügen (Lighter-Pass für Überstrahlung / Bloom)
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.drawImage(lightMapCanvas, 0, 0);
+
+    // 5. Lampen-Körper zeichnen
     ctx.globalCompositeOperation = 'source-over';
     lamps.forEach(lamp => {
         const isHidden = hiddenEntities[lamp.id];
