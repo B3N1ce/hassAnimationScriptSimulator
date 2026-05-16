@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -299,10 +299,12 @@ function init() {
             newLeftW = Math.max(200, Math.min(newLeftW, containerRect.width - rightW - 100));
             appContainer.style.gridTemplateColumns = `${newLeftW}px 8px 1fr 8px ${rightW}px`;
             editor.refresh();
+            resizeCanvas();
         } else if (isResizingRight) {
             let newRightW = containerRect.right - e.clientX;
             newRightW = Math.max(200, Math.min(newRightW, containerRect.width - leftW - 100));
             appContainer.style.gridTemplateColumns = `${leftW}px 8px 1fr 8px ${newRightW}px`;
+            resizeCanvas();
         }
     });
 

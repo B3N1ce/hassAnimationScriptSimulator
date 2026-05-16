@@ -40,7 +40,7 @@ export function initEntityManager(callback) {
     }
 }
 
-function resizeCanvas() {
+export function resizeCanvas() {
     if (!canvas) return;
     const rect = canvas.parentElement.getBoundingClientRect();
     canvas.width = rect.width;
