@@ -77,7 +77,7 @@ body {
     background-image: url('../Icon.png');
     background-size: contain;
     background-repeat: no-repeat;
-    filter: blur(8px) brightness(1.8) saturate(1.8);
+    filter: blur(7px) brightness(1.4) saturate(1.8);
     /* Stärkerer Blur und Leuchtkraft */
     opacity: 0.9;
     z-index: 0;
