@@ -59,19 +59,38 @@ body {
 .header-logo-container {
     display: flex;
     flex-direction: row;
-    /* Richtet Logo und Text-Gruppe nebeneinander aus */
     align-items: center;
-    /* Zentriert das Logo vertikal zur Texthöhe */
     gap: 12px;
-    /* Abstand zwischen Logo und Text */
+    position: relative;
+    /* Für den Glow-Effekt */
+}
+
+.header-logo-container::before {
+    content: "";
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    /* Grösser als das Logo (32px) für mehr Ausstrahlung */
+    height: 40px;
+    background-image: url('../Icon.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    filter: blur(8px) brightness(1.8) saturate(1.8);
+    /* Stärkerer Blur und Leuchtkraft */
+    opacity: 0.9;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .header-logo-img {
     width: 32px;
     height: 32px;
     flex-shrink: 0;
-    /* Verhindert, dass das Logo gestaucht wird */
-    filter: drop-shadow(0 0 6px rgba(189, 147, 249, 0.8));
+    position: relative;
+    z-index: 1;
+    /* Über dem Glow */
 }
 
 .header-text-group {
@@ -860,7 +879,8 @@ button {
 
 /* Gutter & Breakpoint Column Styling */
 .CodeMirror-gutters {
-    background-color: #21222c !important; /* Etwas dunkler als Dracula bg #282a36 */
+    background-color: #21222c !important;
+    /* Etwas dunkler als Dracula bg #282a36 */
     border-right: 1px solid #44475a !important;
     min-width: 50px;
 }
