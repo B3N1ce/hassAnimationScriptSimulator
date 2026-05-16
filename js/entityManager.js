@@ -16,6 +16,7 @@ let canvas, ctx;
 let lastFrameTime = performance.now();
 let dragTarget = null;
 let dragOffset = { x: 0, y: 0 };
+let wallColor = { r: 255, g: 255, b: 255 };
 
 export function getGroups() { return groups; }
 export function getAvailableEntities() { return Array.from(lamps.keys()); }
@@ -35,6 +36,17 @@ export function initEntityManager(callback) {
         canvas.addEventListener('mousedown', handleMouseDown);
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
+
+        // Wall color picker init
+        const wallPicker = document.getElementById('picker-wall-color');
+        if (wallPicker) {
+            wallPicker.addEventListener('input', (e) => {
+                const hex = e.target.value;
+                wallColor.r = parseInt(hex.slice(1, 3), 16);
+                wallColor.g = parseInt(hex.slice(3, 5), 16);
+                wallColor.b = parseInt(hex.slice(5, 7), 16);
+            });
+        }
         
         requestAnimationFrame(drawLoop);
     }
@@ -113,6 +125,12 @@ function drawLoop(now) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // 0. Draw Background (Wall with Ambient Light)
+    ctx.globalCompositeOperation = 'source-over';
+    const amb = 0.03; // 3% Ambient brightness
+    ctx.fillStyle = `rgb(${Math.round(wallColor.r * amb)}, ${Math.round(wallColor.g * amb)}, ${Math.round(wallColor.b * amb)})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
     // Update State
     lamps.forEach(lamp => {
         if (lamp.transitionEnd > now) {
@@ -135,22 +153,30 @@ function drawLoop(now) {
     lamps.forEach(lamp => {
         if (lamp.isOff || hiddenEntities[lamp.id]) return;
 
-        const r = applyCurve(lamp.currentRgb[0], currentColorCurve);
-        const g = applyCurve(lamp.currentRgb[1], currentColorCurve);
-        const b = applyCurve(lamp.currentRgb[2], currentColorCurve);
+        let r = applyCurve(lamp.currentRgb[0], currentColorCurve);
+        let g = applyCurve(lamp.currentRgb[1], currentColorCurve);
+        let b = applyCurve(lamp.currentRgb[2], currentColorCurve);
+
+        // Global Illumination: Multiply Light with Wall Color
+        r = (r * wallColor.r) / 255;
+        g = (g * wallColor.g) / 255;
+        b = (b * wallColor.b) / 255;
         
-        const baseRadius = 30 + (lamp.currentBrightness / 5);
-        const glowRadius = baseRadius * 6; // Grösserer Radius für sanfteren Ausklang
+        const baseRadius = 35 + (lamp.currentBrightness / 4);
+        const glowRadius = baseRadius * 15; 
         
         const grad = ctx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, glowRadius);
-        const colorFull = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, 0.3)`;
-        const colorMid = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, 0.08)`;
-        const transparent = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, 0)`;
         
-        grad.addColorStop(0, colorFull);
-        grad.addColorStop(0.15, colorFull); // Kleiner Kern
-        grad.addColorStop(0.4, colorMid);   // Sanfter Übergang im Mittelfeld
-        grad.addColorStop(1, transparent);  // Ganz weiches Auslaufen am Rand
+        // Exponentiellerer Falloff für weichere Übergänge
+        const c = (alpha) => `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`;
+        
+        grad.addColorStop(0, c(0.6));
+        grad.addColorStop(0.05, c(0.6));
+        grad.addColorStop(0.15, c(0.35));
+        grad.addColorStop(0.3, c(0.15));
+        grad.addColorStop(0.5, c(0.06));
+        grad.addColorStop(0.8, c(0.02));
+        grad.addColorStop(1, c(0));  
         
         ctx.fillStyle = grad;
         ctx.fillRect(lamp.x - glowRadius, lamp.y - glowRadius, glowRadius * 2, glowRadius * 2);
