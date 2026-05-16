@@ -858,6 +858,29 @@ button {
     transition: opacity 0.3s ease;
 }
 
+/* Gutter & Breakpoint Column Styling */
+.CodeMirror-gutters {
+    background-color: #21222c !important; /* Etwas dunkler als Dracula bg #282a36 */
+    border-right: 1px solid #44475a !important;
+    min-width: 50px;
+}
+
+.CodeMirror-gutter.breakpoints {
+    width: 24px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.CodeMirror-linenumber {
+    min-width: 25px !important;
+    text-align: right;
+    color: #6272a4 !important;
+    padding-right: 10px !important;
+}
+
+.CodeMirror-activeline-gutter {
+    background: rgba(68, 71, 90, 0.4) !important;
+}
+
 /* Preview Specific */
 #room {
     flex-grow: 1;
@@ -1691,7 +1714,7 @@ body.simulation-running .favorite-add {
 }
 
 .breakpoints {
-    width: 20px;
+    width: 24px;
     cursor: pointer;
 }
 
