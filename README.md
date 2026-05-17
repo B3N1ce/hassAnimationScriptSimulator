@@ -19,7 +19,7 @@ Aurora Studio is a modern IDE for creating and simulating complex Home Assistant
 - **Debug Mode:** Integrated error tracking and notification system for script debugging, support for breakpoints and inspection of variables.
 - **Support for other device types:** While Aurora Studio is mainly made for light simulations, it also supports some other devices like shutters and fans with simple animations.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Core:** HTML5, CSS3 (Vanilla), JavaScript (ES6 Modules)
 - **Parser:** [js-yaml](https://github.com/nodeca/js-yaml) & [Nunjucks](https://mozilla.github.io/nunjucks/) (for Jinja2 templates)
