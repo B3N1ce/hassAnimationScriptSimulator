@@ -7,7 +7,7 @@ Aurora Studio is a modern IDE for creating and simulating complex Home Assistant
 
 ![Aurora Studio Preview](preview.png)
 
-### Features
+## Features
 
 - **Real-time Simulation:** Experience your YAML scripts visually and instantly. Supports `Nunjucks/Jinja2` for variables and logic.
 - **Color Picker:** Precise color selection in **RGB**, **XY** (Zigbee/Philips Hue standard), and **HS** (Hue-Saturation).
@@ -19,20 +19,20 @@ Aurora Studio is a modern IDE for creating and simulating complex Home Assistant
 - **Debug Mode:** Integrated error tracking and notification system for script debugging, support for breakpoints and inspection of variables.
 - **Support for other device types:** While Aurora Studio is mainly made for light simulations, it also supports some other devices like shutters and fans with simple animations.
 
-### 🛠️ Tech Stack
+## 🛠️ Tech Stack
 
 - **Core:** HTML5, CSS3 (Vanilla), JavaScript (ES6 Modules)
 - **Parser:** [js-yaml](https://github.com/nodeca/js-yaml) & [Nunjucks](https://mozilla.github.io/nunjucks/) (for Jinja2 templates)
 - **Editor:** [CodeMirror 5](https://codemirror.net/5/)
 - **Branding:** Independent design system (Dracula-inspired) to ensure legal separation from Home Assistant.
 
-### Installation & Getting Started
+## Installation & Getting Started
 
 Since Aurora Studio is designed as a pure client-side web app, no complex installation is required.
 
 **Launch the Web App directly via GitHub Pages:** [Aurora Studio](https://b3n1ce.github.io/AuroraStudio/)
 
-#### Running Locally
+### Running Locally
 Alternatively, you can clone the repository and host a local webserver (running the `index.html` directly from your file system does not work due to security limitations/CORS in modern browsers).
 
 You can easily spin up a local server using Python or Node.js:
@@ -47,7 +47,7 @@ python -m http.server 8000
 npx serve .
 ```
 
-### Usage
+## Usage
 The Workflow
 
 **Scripting:** Write your YAML script in the left panel.
@@ -61,7 +61,7 @@ Pro Tips
 **Color Curves:** Choose between _Linear_, _Gamma 2.2_, _Gamma 2.8_, or _CIE L*_ profiles for realistic color reproduction.
 **Ambient Light & Intensity:** The two sliders in the header control the amount of ambient light affecting the background and the general intensity of the light outputs.
 
-###Built with AI (Vibe Coded)
+## Built with AI (Vibe Coded)
 
 This project is built with heavy usage of AI. While it has been tested and refined to simulate Home Assistant scripts as accurately as possible, there might still be some edge cases, unhandled Jinja2 templates, or performance bottlenecks.
 
