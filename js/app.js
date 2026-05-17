@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode, setAmbientLevel, getAmbientLevel, hasBackgroundImage, setOnBackgroundChange } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -377,6 +377,13 @@ function init() {
         localStorage.setItem('ha_animation_script', editor.getValue());
     });
 
+    // Helper: position a fixed dropdown below its trigger button
+    function positionDropdown(triggerBtn, menu) {
+        const rect = triggerBtn.getBoundingClientRect();
+        menu.style.top = (rect.bottom + 4) + 'px';
+        menu.style.left = Math.max(0, rect.right - menu.offsetWidth) + 'px';
+    }
+
     // 6. New Script Dropdown Logic
     const btnNewScript = document.getElementById('btn-new-script');
     const newScriptMenu = document.getElementById('new-script-menu');
@@ -386,6 +393,9 @@ function init() {
         btnNewScript.addEventListener('click', (e) => {
             e.stopPropagation();
             newScriptMenu.classList.toggle('active');
+            if (newScriptMenu.classList.contains('active')) {
+                positionDropdown(btnNewScript, newScriptMenu);
+            }
         });
 
         // Close when clicking outside
@@ -577,18 +587,60 @@ function init() {
         });
     }
 
-    // 10.2 Light Influence Slider
+    // 10.2 Light Influence Slider + Textbox
     const inputLightInfluence = document.getElementById('input-light-influence');
-    const labelLightInfluence = document.getElementById('label-light-influence');
-    if (inputLightInfluence && labelLightInfluence) {
+    const inputLightInfluenceText = document.getElementById('input-light-influence-text');
+    if (inputLightInfluence && inputLightInfluenceText) {
         const initVal = getLightInfluence();
-        inputLightInfluence.value = initVal;
-        labelLightInfluence.innerText = parseFloat(initVal).toFixed(1) + "x";
+        inputLightInfluence.value = Math.min(5.0, Math.max(0.1, initVal));
+        inputLightInfluenceText.value = parseFloat(initVal).toFixed(1);
 
         inputLightInfluence.addEventListener('input', (e) => {
-            const val = e.target.value;
+            const val = parseFloat(e.target.value);
             setLightInfluence(val);
-            labelLightInfluence.innerText = parseFloat(val).toFixed(1) + "x";
+            inputLightInfluenceText.value = val.toFixed(1);
+        });
+
+        inputLightInfluenceText.addEventListener('change', (e) => {
+            let val = parseFloat(e.target.value);
+            if (isNaN(val) || val <= 0) val = 1.0;
+            setLightInfluence(val);
+            inputLightInfluenceText.value = val.toFixed(1);
+            // Clamp slider to its range, but the actual value can exceed it
+            inputLightInfluence.value = Math.min(5.0, Math.max(0.1, val));
+        });
+
+        inputLightInfluenceText.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.target.blur(); }
+        });
+    }
+
+    // 10.3 Ambient Level Slider + Textbox
+    const inputAmbient = document.getElementById('input-ambient');
+    const inputAmbientText = document.getElementById('input-ambient-text');
+    if (inputAmbient && inputAmbientText) {
+        const initAmb = getAmbientLevel();
+        const initAmbPct = (initAmb * 100);
+        inputAmbient.value = Math.min(10, Math.max(1, initAmbPct));
+        inputAmbientText.value = initAmbPct.toFixed(1) + '%';
+
+        inputAmbient.addEventListener('input', (e) => {
+            const pct = parseFloat(e.target.value);
+            setAmbientLevel(pct / 100);
+            inputAmbientText.value = pct.toFixed(1) + '%';
+        });
+
+        inputAmbientText.addEventListener('change', (e) => {
+            let raw = e.target.value.replace('%', '').trim();
+            let pct = parseFloat(raw);
+            if (isNaN(pct) || pct < 0) pct = 2;
+            setAmbientLevel(pct / 100);
+            inputAmbientText.value = pct.toFixed(1) + '%';
+            inputAmbient.value = Math.min(10, Math.max(1, pct));
+        });
+
+        inputAmbientText.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.target.blur(); }
         });
     }
 
@@ -596,12 +648,26 @@ function init() {
     const btnBgMenu = document.getElementById('btn-bg-menu');
     const bgDropdownMenu = document.getElementById('bg-dropdown-menu');
     const inputRoomImage = document.getElementById('input-room-image');
+    const selBlendModeEl = document.getElementById('sel-blend-mode');
+
+    // Helper: show/hide blend-mode selector based on background state
+    function updatePhotoModeUI() {
+        if (selBlendModeEl) {
+            selBlendModeEl.style.display = hasBackgroundImage() ? '' : 'none';
+        }
+    }
+
+    // Register callback so ANY background change (wall color picker, menu, etc.) updates UI
+    setOnBackgroundChange(updatePhotoModeUI);
 
     if (btnBgMenu && bgDropdownMenu) {
         // Toggle Menu
         btnBgMenu.addEventListener('click', (e) => {
             e.stopPropagation();
             bgDropdownMenu.classList.toggle('active');
+            if (bgDropdownMenu.classList.contains('active')) {
+                positionDropdown(btnBgMenu, bgDropdownMenu);
+            }
         });
 
         // Close when clicking outside
@@ -616,11 +682,9 @@ function init() {
                 const bgUrl = item.dataset.bg;
                 
                 if (bgUrl) {
-                    // Demo-Bild laden
                     setBackgroundImage(bgUrl);
                     bgDropdownMenu.classList.remove('active');
                 } else if (action === 'upload') {
-                    // Eigenes Bild Trigger
                     inputRoomImage.click();
                     bgDropdownMenu.classList.remove('active');
                 } else if (action === 'cancel') {
@@ -643,7 +707,11 @@ function init() {
         
         // Restore from localStorage
         const savedBg = localStorage.getItem('ha_simulator_bg');
-        if (savedBg) setBackgroundImage(savedBg);
+        if (savedBg) {
+            setBackgroundImage(savedBg);
+        } else {
+            updatePhotoModeUI();
+        }
     }
 
     btnSaveCode.addEventListener('click', () => {

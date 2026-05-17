@@ -24,6 +24,8 @@ let entitiesVisible = localStorage.getItem('ha_simulator_entities_visible') !== 
 let backgroundImage = null;
 let lightInfluence = parseFloat(localStorage.getItem('ha_simulator_light_influence')) || 1.0;
 let blendMode = localStorage.getItem('ha_simulator_blend_mode') || 'multiply-glow';
+let ambientLevel = parseFloat(localStorage.getItem('ha_simulator_ambient')) || 0.02;
+let backgroundChangeCallback = null;
 
 function drawSingleGlow(targetCtx, lamp, r, g, b, glowRadius, maxAlpha) {
     const grad = targetCtx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, glowRadius);
@@ -94,14 +96,20 @@ export function setBackgroundImage(url) {
     if (!url) {
         backgroundImage = null;
         localStorage.removeItem('ha_simulator_bg');
+        if (backgroundChangeCallback) backgroundChangeCallback();
         return;
     }
     const img = new Image();
     img.onload = () => {
         backgroundImage = img;
         localStorage.setItem('ha_simulator_bg', url);
+        if (backgroundChangeCallback) backgroundChangeCallback();
     };
     img.src = url;
+}
+
+export function setOnBackgroundChange(cb) {
+    backgroundChangeCallback = cb;
 }
 
 export function toggleLabels() {
@@ -140,6 +148,19 @@ export function setBlendMode(mode) {
 
 export function getBlendMode() {
     return blendMode;
+}
+
+export function setAmbientLevel(val) {
+    ambientLevel = parseFloat(val);
+    localStorage.setItem('ha_simulator_ambient', val);
+}
+
+export function getAmbientLevel() {
+    return ambientLevel;
+}
+
+export function hasBackgroundImage() {
+    return backgroundImage !== null;
 }
 
 export function resizeCanvas() {
@@ -282,7 +303,7 @@ function drawLoop(now) {
 
     // 1. Light Map generieren (Beleuchtungsstärke)
     lmCtx.globalCompositeOperation = 'source-over';
-    const amb = 0.02; // 2% Grundhelligkeit (Ambient)
+    const amb = ambientLevel;
     
     if (backgroundImage) {
         lmCtx.fillStyle = `rgb(${Math.round(255 * amb)}, ${Math.round(255 * amb)}, ${Math.round(255 * amb)})`;
