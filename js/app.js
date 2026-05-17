@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -135,6 +135,16 @@ function init() {
         if (selColorCurve) {
             selColorCurve.value = savedCurve;
             setColorCurve(savedCurve);
+        }
+    }
+
+    // 1.4 Persistenz: Mischmodus laden
+    const savedBlendMode = localStorage.getItem('ha_simulator_blend_mode');
+    if (savedBlendMode) {
+        const selBlendMode = document.getElementById('sel-blend-mode');
+        if (selBlendMode) {
+            selBlendMode.value = savedBlendMode;
+            setBlendMode(savedBlendMode);
         }
     }
 
@@ -528,6 +538,18 @@ function init() {
         }
     });
 
+    // 8.1 Blend Mode Selector
+    const selBlendMode = document.getElementById('sel-blend-mode');
+    if (selBlendMode) {
+        selBlendMode.addEventListener('change', (e) => {
+            const val = e.target.value;
+            setBlendMode(val);
+            if (!isPlaying) {
+                validateAndSync();
+            }
+        });
+    }
+
     // 9. Copy & Save
     btnCopyCode.addEventListener('click', () => {
         navigator.clipboard.writeText(editor.getValue()).then(() => {
@@ -537,10 +559,38 @@ function init() {
 
     // 10. Label Toggle
     const btnToggleLabels = document.getElementById('btn-toggle-labels');
-    btnToggleLabels.addEventListener('click', () => {
-        const isVisible = toggleLabels();
-        btnToggleLabels.style.color = isVisible ? '#f8f8f2' : '#555';
-    });
+    if (btnToggleLabels) {
+        btnToggleLabels.style.color = getLabelsVisible() ? '#f8f8f2' : '#555';
+        btnToggleLabels.addEventListener('click', () => {
+            const isVisible = toggleLabels();
+            btnToggleLabels.style.color = isVisible ? '#f8f8f2' : '#555';
+        });
+    }
+
+    // 10.1 Entity Visibility Toggle
+    const btnToggleEntities = document.getElementById('btn-toggle-entities');
+    if (btnToggleEntities) {
+        btnToggleEntities.style.color = getEntitiesVisible() ? '#f8f8f2' : '#555';
+        btnToggleEntities.addEventListener('click', () => {
+            const isVisible = toggleEntities();
+            btnToggleEntities.style.color = isVisible ? '#f8f8f2' : '#555';
+        });
+    }
+
+    // 10.2 Light Influence Slider
+    const inputLightInfluence = document.getElementById('input-light-influence');
+    const labelLightInfluence = document.getElementById('label-light-influence');
+    if (inputLightInfluence && labelLightInfluence) {
+        const initVal = getLightInfluence();
+        inputLightInfluence.value = initVal;
+        labelLightInfluence.innerText = parseFloat(initVal).toFixed(1) + "x";
+
+        inputLightInfluence.addEventListener('input', (e) => {
+            const val = e.target.value;
+            setLightInfluence(val);
+            labelLightInfluence.innerText = parseFloat(val).toFixed(1) + "x";
+        });
+    }
 
     // 11. Background Menu Logic
     const btnBgMenu = document.getElementById('btn-bg-menu');

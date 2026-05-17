@@ -180,6 +180,38 @@
                         <option value="cie" data-i18n="gamma_cie">CIE L* (Perceptual)</option>
                     </select>
 
+                    <select id="sel-blend-mode" class="dropdown-small" title="Mischmodus / Blend Mode" data-i18n-title="blend_mode_title">
+                        <option value="multiply-glow" data-i18n="blend_realistic">Realistisch (Multi + Glow)</option>
+                        <option value="multiply" data-i18n="blend_multiply">Multiplizieren (Schatten)</option>
+                        <option value="overlay" data-i18n="blend_overlay">Overlay (Kontrastreich)</option>
+                        <option value="color-dodge" data-i18n="blend_dodge">Farbig abwedeln (Neon)</option>
+                    </select>
+ 
+                    <div class="slider-container" title="Licht-Einfluss auf Hintergrund" data-i18n-title="light_influence">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="slider-icon">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <input type="range" id="input-light-influence" min="0.5" max="3.0" step="0.1" value="1.0" class="premium-slider">
+                        <span id="label-light-influence" class="slider-value">1.0x</span>
+                    </div>
+
+                    <button id="btn-toggle-entities" class="btn-editor-icon" data-i18n-title="toggle_entities"
+                        title="Lampen-Körper ein/ausblenden">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
+
                     <button id="btn-toggle-labels" class="btn-editor-icon" data-i18n-title="toggle_labels"
                         title="Labels ein/ausblenden">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"

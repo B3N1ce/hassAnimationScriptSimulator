@@ -19,8 +19,25 @@ let lastFrameTime = performance.now();
 let dragTarget = null;
 let dragOffset = { x: 0, y: 0 };
 let wallColor = { r: 255, g: 255, b: 255 };
-let labelsVisible = true;
+let labelsVisible = localStorage.getItem('ha_simulator_labels_visible') !== 'false';
+let entitiesVisible = localStorage.getItem('ha_simulator_entities_visible') !== 'false';
 let backgroundImage = null;
+let lightInfluence = parseFloat(localStorage.getItem('ha_simulator_light_influence')) || 1.0;
+let blendMode = localStorage.getItem('ha_simulator_blend_mode') || 'multiply-glow';
+
+function drawSingleGlow(targetCtx, lamp, r, g, b, glowRadius, maxAlpha) {
+    const grad = targetCtx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, glowRadius);
+    const scale = 6;
+    for (let i = 0; i <= 20; i++) {
+        const ratio = i / 20;
+        const d = Math.pow(ratio, 1.5);
+        const val = (1 / Math.pow(1 + d * scale, 2) - 1 / Math.pow(1 + scale, 2)) * maxAlpha;
+        const alpha = Math.max(0, val);
+        grad.addColorStop(d, `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`);
+    }
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(lamp.x - glowRadius, lamp.y - glowRadius, glowRadius * 2, glowRadius * 2);
+}
 
 export function getGroups() { return groups; }
 export function getAvailableEntities() { return Array.from(lamps.keys()); }
@@ -89,7 +106,40 @@ export function setBackgroundImage(url) {
 
 export function toggleLabels() {
     labelsVisible = !labelsVisible;
+    localStorage.setItem('ha_simulator_labels_visible', labelsVisible);
     return labelsVisible;
+}
+
+export function getLabelsVisible() {
+    return labelsVisible;
+}
+
+export function toggleEntities() {
+    entitiesVisible = !entitiesVisible;
+    localStorage.setItem('ha_simulator_entities_visible', entitiesVisible);
+    return entitiesVisible;
+}
+
+export function getEntitiesVisible() {
+    return entitiesVisible;
+}
+
+export function setLightInfluence(val) {
+    lightInfluence = parseFloat(val);
+    localStorage.setItem('ha_simulator_light_influence', val);
+}
+
+export function getLightInfluence() {
+    return lightInfluence;
+}
+
+export function setBlendMode(mode) {
+    blendMode = mode;
+    localStorage.setItem('ha_simulator_blend_mode', mode);
+}
+
+export function getBlendMode() {
+    return blendMode;
 }
 
 export function resizeCanvas() {
@@ -119,6 +169,7 @@ export function keepLampsInBounds() {
 }
 
 function handleMouseDown(e) {
+    if (!entitiesVisible) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -147,6 +198,12 @@ function handleMouseDown(e) {
 
 function handleMouseMove(e) {
     if (!canvas) return;
+    if (!entitiesVisible) {
+        if (canvas.style.cursor !== 'default') {
+            canvas.style.cursor = 'default';
+        }
+        return;
+    }
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
@@ -249,29 +306,15 @@ function drawLoop(now) {
         }
         
         const baseRadius = 35 + (lamp.currentBrightness / 4);
-        const glowRadius = baseRadius * 15; 
-        const grad = lmCtx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, glowRadius);
-        const maxAlpha = 0.6; 
-        const scale = 6; 
-        
-        // Erhöhte Präzision: 20 Stopps mit nicht-linearer Verteilung
-        // Wir setzen mehr Stopps in die Nähe des Zentrums, da dort die Kurve am steilsten ist
-        for (let i = 0; i <= 20; i++) {
-            const ratio = i / 20;
-            const d = Math.pow(ratio, 1.5); // Mehr Stopps im kritischen inneren Bereich
-            
-            const val = (1 / Math.pow(1 + d * scale, 2) - 1 / Math.pow(1 + scale, 2)) * maxAlpha;
-            const alpha = Math.max(0, val);
-            grad.addColorStop(d, `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`);
-        }
-        
-        lmCtx.fillStyle = grad;
-        lmCtx.fillRect(lamp.x - glowRadius, lamp.y - glowRadius, glowRadius * 2, glowRadius * 2);
+        const glowRadius = baseRadius * 15 * Math.sqrt(lightInfluence); 
+        const maxAlpha = Math.min(1.0, 0.6 * lightInfluence); 
+
+        drawSingleGlow(lmCtx, lamp, r, g, b, glowRadius, maxAlpha);
     });
 
     // 2. Hintergrund zeichnen (Image oder Wall)
-    ctx.globalCompositeOperation = 'source-over';
     if (backgroundImage) {
+        // Draw background photo
         const canvasAspect = canvas.width / canvas.height;
         const imgAspect = backgroundImage.width / backgroundImage.height;
         let drawW, drawH, drawX, drawY;
@@ -282,57 +325,92 @@ function drawLoop(now) {
             drawH = canvas.height; drawW = canvas.height * imgAspect;
             drawX = (canvas.width - drawW) / 2; drawY = 0;
         }
+        ctx.globalCompositeOperation = 'source-over';
         ctx.drawImage(backgroundImage, drawX, drawY, drawW, drawH);
+
+        // Blending nach gewähltem Mischmodus
+        if (blendMode === 'multiply-glow') {
+            // Pass 1: Multiply lightmap (with baseline) to illuminate photo
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.drawImage(lightMapCanvas, 0, 0);
+
+            // Pass 2: Add pure glow (no baseline!) on top
+            ctx.globalCompositeOperation = 'lighter';
+            lamps.forEach(lamp => {
+                if (lamp.isOff || hiddenEntities[lamp.id]) return;
+
+                const r = applyCurve(lamp.currentRgb[0], currentColorCurve);
+                const g = applyCurve(lamp.currentRgb[1], currentColorCurve);
+                const b = applyCurve(lamp.currentRgb[2], currentColorCurve);
+                
+                const baseRadius = 35 + (lamp.currentBrightness / 4);
+                const glowRadius = baseRadius * 15 * Math.sqrt(lightInfluence); 
+                const maxAlpha = Math.min(1.0, 0.6 * lightInfluence) * 0.8; // slightly softer additive glow to maintain contrast
+
+                drawSingleGlow(ctx, lamp, r, g, b, glowRadius, maxAlpha);
+            });
+        } else if (blendMode === 'multiply') {
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.drawImage(lightMapCanvas, 0, 0);
+        } else if (blendMode === 'overlay') {
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.drawImage(lightMapCanvas, 0, 0);
+        } else if (blendMode === 'color-dodge') {
+            ctx.globalCompositeOperation = 'color-dodge';
+            ctx.drawImage(lightMapCanvas, 0, 0);
+        }
     } else {
+        // Simple background color fallback (remains completely unchanged!)
+        ctx.globalCompositeOperation = 'source-over';
         ctx.fillStyle = `rgb(${wallColor.r}, ${wallColor.g}, ${wallColor.b})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.drawImage(lightMapCanvas, 0, 0);
+
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.drawImage(lightMapCanvas, 0, 0);
     }
-
-    // 3. Beleuchtung anwenden (Multiply-Pass)
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.drawImage(lightMapCanvas, 0, 0);
-
-    // 4. Glow hinzufügen (Lighter-Pass für Überstrahlung / Bloom)
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.drawImage(lightMapCanvas, 0, 0);
 
     // 5. Lampen-Körper zeichnen
     ctx.globalCompositeOperation = 'source-over';
-    lamps.forEach(lamp => {
-        const isHidden = hiddenEntities[lamp.id];
-        ctx.save();
-        if (isHidden) ctx.globalAlpha = 0.3;
-
-        const r = applyCurve(lamp.currentRgb[0], currentColorCurve);
-        const g = applyCurve(lamp.currentRgb[1], currentColorCurve);
-        const b = applyCurve(lamp.currentRgb[2], currentColorCurve);
-        
-        // Body
-        ctx.beginPath();
-        ctx.arc(lamp.x, lamp.y, 25, 0, Math.PI * 2);
-        ctx.fillStyle = lamp.isOff ? '#222' : `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
-        ctx.fill();
-        
-        // Border
-        ctx.strokeStyle = groups[lamp.id] ? '#bd93f9' : '#444';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Label
-        if (labelsVisible) {
-            ctx.fillStyle = '#888';
-            ctx.font = 'bold 10px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(lamp.id.replace('light.', ''), lamp.x, lamp.y + 40);
-        }
-
-        // Group Icon
-        if (groups[lamp.id]) {
-            ctx.fillText('📁', lamp.x + 20, lamp.y - 20);
-        }
-
-        ctx.restore();
-    });
+    if (entitiesVisible) {
+        lamps.forEach(lamp => {
+            const isHidden = hiddenEntities[lamp.id];
+            ctx.save();
+            if (isHidden) ctx.globalAlpha = 0.3;
+ 
+            const r = applyCurve(lamp.currentRgb[0], currentColorCurve);
+            const g = applyCurve(lamp.currentRgb[1], currentColorCurve);
+            const b = applyCurve(lamp.currentRgb[2], currentColorCurve);
+            
+            // Body
+            ctx.beginPath();
+            ctx.arc(lamp.x, lamp.y, 25, 0, Math.PI * 2);
+            ctx.fillStyle = lamp.isOff ? '#222' : `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+            ctx.fill();
+            
+            // Border
+            ctx.strokeStyle = groups[lamp.id] ? '#bd93f9' : '#444';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+ 
+            // Label
+            if (labelsVisible) {
+                ctx.fillStyle = '#888';
+                ctx.font = 'bold 10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(lamp.id.replace('light.', ''), lamp.x, lamp.y + 40);
+            }
+ 
+            // Group Icon
+            if (groups[lamp.id]) {
+                ctx.fillText('📁', lamp.x + 20, lamp.y - 20);
+            }
+ 
+            ctx.restore();
+        });
+    }
 
     requestAnimationFrame(drawLoop);
 }
