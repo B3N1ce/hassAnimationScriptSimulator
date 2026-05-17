@@ -1,6 +1,5 @@
 # Aurora Studio
-**Design and simulate light animations – tailor-made for Home Assistant.**  
-*Licht-Animationen entwerfen und simulieren – maßgeschneidert für Home Assistant.*
+**Design and simulate light animations – for Home Assistant.**
 
 ---
 
