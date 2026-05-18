@@ -54,7 +54,25 @@ const translations = {
         fav_tooltip: "Klicken zum Anwenden, Doppelklick zum Löschen",
         node_editor: "Nodes",
         new_script: "Neues Skript",
-        confirm_new_script: "Möchtest du ein neues Skript starten? Deine aktuellen Änderungen werden überschrieben."
+        confirm_new_script: "Möchtest du ein neues Skript starten? Deine aktuellen Änderungen werden überschrieben.",
+        new_from_scratch: "From Scratch",
+        new_from_scratch_desc: "Leeres Skript starten",
+        new_template: "Beginner Template",
+        new_template_desc: "Mit Beispiel-Code starten",
+        cancel: "Abbrechen",
+        choose_bg: "Hintergrund wählen",
+        bg_living_room: "Wohnzimmer",
+        bg_living_room_desc: "Moderner Loft-Style",
+        bg_bedroom: "Schlafzimmer",
+        bg_bedroom_desc: "Gemütliches Ambiente",
+        bg_office: "Home Office",
+        bg_office_desc: "Arbeitszimmer bei Nacht",
+        bg_lightstudio: "Light Studio",
+        bg_lightstudio_desc: "Neutral dunkler Testraum",
+        bg_upload: "Eigenes Foto...",
+        bg_upload_desc: "Bild von deinem Raum laden",
+        bg_reset: "Einfarbig (Zurücksetzen)",
+        bg_reset_desc: "Hintergrundbild entfernen"
     },
     en: {
         title: "Aurora Studio",
@@ -109,7 +127,25 @@ const translations = {
         fav_tooltip: "Click to apply, double-click to delete",
         node_editor: "Nodes",
         new_script: "New Script",
-        confirm_new_script: "Do you want to start a new script? Your current changes will be overwritten."
+        confirm_new_script: "Do you want to start a new script? Your current changes will be overwritten.",
+        new_from_scratch: "From Scratch",
+        new_from_scratch_desc: "Start with a blank script",
+        new_template: "Beginner Template",
+        new_template_desc: "Start with example code",
+        cancel: "Cancel",
+        choose_bg: "Choose Background",
+        bg_living_room: "Living Room",
+        bg_living_room_desc: "Modern loft style",
+        bg_bedroom: "Bedroom",
+        bg_bedroom_desc: "Cozy atmosphere",
+        bg_office: "Home Office",
+        bg_office_desc: "Study at night",
+        bg_lightstudio: "Light Studio",
+        bg_lightstudio_desc: "Neutral dark test room",
+        bg_upload: "Custom photo...",
+        bg_upload_desc: "Load an image of your room",
+        bg_reset: "Solid Color (Reset)",
+        bg_reset_desc: "Remove background image"
     }
 };
 
