@@ -12,10 +12,26 @@ let groups = JSON.parse(localStorage.getItem('ha_simulator_groups')) || {};
 let hiddenEntities = JSON.parse(localStorage.getItem('ha_simulator_hidden')) || {};
 let storedPositions = JSON.parse(localStorage.getItem('ha_simulator_lamp_positions')) || {};
 
+// Lightmap renders at this fraction of the main canvas resolution.
+// Lower = faster gradient rendering, slightly softer lighting.
+const LM_SCALE = 0.5;
+
 // Canvas State
 let canvas, ctx;
 let lightMapCanvas, lmCtx;
+let glowCanvas, glowCtx;
+let bgOffscreenCanvas = null;
+let canvasRect = null;
+let bgDrawParams = null;
+let isDirty = true;
 let lastFrameTime = performance.now();
+
+// FPS tracking (rendered frames only — skipped frames don't count)
+let _fpsFrames = 0;
+let _fpsWindowStart = 0;
+let _lastFrameRenderTime = 0;
+let _statFps = 0;
+let _statFrameMs = 0;
 let dragTarget = null;
 let dragOffset = { x: 0, y: 0 };
 let wallColor = { r: 255, g: 255, b: 255 };
@@ -27,18 +43,40 @@ let blendMode = localStorage.getItem('ha_simulator_blend_mode') || 'multiply-glo
 let ambientLevel = parseFloat(localStorage.getItem('ha_simulator_ambient')) || 0.02;
 let backgroundChangeCallback = null;
 
-function drawSingleGlow(targetCtx, lamp, r, g, b, glowRadius, maxAlpha) {
-    const grad = targetCtx.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, glowRadius);
-    const scale = 6;
-    for (let i = 0; i <= 20; i++) {
-        const ratio = i / 20;
-        const d = Math.pow(ratio, 1.5);
-        const val = (1 / Math.pow(1 + d * scale, 2) - 1 / Math.pow(1 + scale, 2)) * maxAlpha;
-        const alpha = Math.max(0, val);
-        grad.addColorStop(d, `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`);
+function drawSingleGlow(targetCtx, x, y, r, g, b, glowRadius, maxAlpha) {
+    const grad = targetCtx.createRadialGradient(x, y, 0, x, y, glowRadius);
+    // Normalized inverse-square falloff: f(0)=1, f(1)=0, physically accurate light decay.
+    // k controls tightness; stops are denser near the center where curvature is highest
+    // to keep interpolation error < 2 gray levels everywhere (imperceptible banding).
+    const k = 18;
+    const edgeVal = 1 / (1 + k);
+    const norm = 1 - edgeVal;
+    const rr = Math.round(r), gg = Math.round(g), bb = Math.round(b);
+    const stops = [0, 0.05, 0.10, 0.17, 0.25, 0.35, 0.50, 0.70, 1.0];
+    for (const t of stops) {
+        const alpha = maxAlpha * Math.max(0, (1 / (1 + k * t * t) - edgeVal) / norm);
+        grad.addColorStop(t, `rgba(${rr}, ${gg}, ${bb}, ${alpha.toFixed(4)})`);
     }
     targetCtx.fillStyle = grad;
-    targetCtx.fillRect(lamp.x - glowRadius, lamp.y - glowRadius, glowRadius * 2, glowRadius * 2);
+    targetCtx.fillRect(x - glowRadius, y - glowRadius, glowRadius * 2, glowRadius * 2);
+}
+
+function updateBgDrawParams() {
+    if (!backgroundImage || !canvas) { bgDrawParams = null; bgOffscreenCanvas = null; return; }
+    const ca = canvas.width / canvas.height;
+    const ia = backgroundImage.width / backgroundImage.height;
+    if (ca > ia) {
+        bgDrawParams = { x: 0, y: (canvas.height - canvas.width / ia) / 2, w: canvas.width, h: canvas.width / ia };
+    } else {
+        bgDrawParams = { x: (canvas.width - canvas.height * ia) / 2, y: 0, w: canvas.height * ia, h: canvas.height };
+    }
+    // Pre-render at display resolution: drawLoop does a fast 1:1 pixel copy each frame
+    // instead of re-scaling the (potentially large) source image every frame.
+    bgOffscreenCanvas = document.createElement('canvas');
+    bgOffscreenCanvas.width = canvas.width;
+    bgOffscreenCanvas.height = canvas.height;
+    bgOffscreenCanvas.getContext('2d').drawImage(backgroundImage, bgDrawParams.x, bgDrawParams.y, bgDrawParams.w, bgDrawParams.h);
+    isDirty = true;
 }
 
 export function getGroups() { return groups; }
@@ -64,6 +102,10 @@ export function initEntityManager(callback) {
         // LightMap Buffer für Beleuchtungseffekte
         lightMapCanvas = document.createElement('canvas');
         lmCtx = lightMapCanvas.getContext('2d');
+
+        // Half-res glow buffer for Pass 2 in multiply-glow mode
+        glowCanvas = document.createElement('canvas');
+        glowCtx = glowCanvas.getContext('2d');
         
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
@@ -80,11 +122,7 @@ export function initEntityManager(callback) {
                 wallColor.r = parseInt(hex.slice(1, 3), 16);
                 wallColor.g = parseInt(hex.slice(3, 5), 16);
                 wallColor.b = parseInt(hex.slice(5, 7), 16);
-                
-                // Zurück zur Farbe wechseln: Bild entfernen
-                if (backgroundImage) {
-                    setBackgroundImage(null);
-                }
+                isDirty = true;
             });
         }
         
@@ -95,6 +133,8 @@ export function initEntityManager(callback) {
 export function setBackgroundImage(url) {
     if (!url) {
         backgroundImage = null;
+        bgDrawParams = null;
+        bgOffscreenCanvas = null;
         localStorage.removeItem('ha_simulator_bg');
         if (backgroundChangeCallback) backgroundChangeCallback();
         return;
@@ -102,6 +142,7 @@ export function setBackgroundImage(url) {
     const img = new Image();
     img.onload = () => {
         backgroundImage = img;
+        updateBgDrawParams();
         localStorage.setItem('ha_simulator_bg', url);
         if (backgroundChangeCallback) backgroundChangeCallback();
     };
@@ -112,8 +153,28 @@ export function setOnBackgroundChange(cb) {
     backgroundChangeCallback = cb;
 }
 
+export function markDirty() { isDirty = true; }
+
+export function getDebugStats() {
+    const now = performance.now();
+    const rendering = now - _lastFrameRenderTime < 1200;
+    return {
+        fps:              rendering ? _statFps : 0,
+        frameMs:          rendering ? _statFrameMs : 0,
+        canvasW:          canvas ? canvas.width : 0,
+        canvasH:          canvas ? canvas.height : 0,
+        lmW:              lightMapCanvas ? lightMapCanvas.width : 0,
+        lmH:              lightMapCanvas ? lightMapCanvas.height : 0,
+        lampTotal:        lamps.size,
+        lampActive:       [...lamps.values()].filter(l => !l.isOff).length,
+        lampTransitioning: [...lamps.values()].filter(l => l.transitionEnd > now).length,
+        rendering,
+    };
+}
+
 export function toggleLabels() {
     labelsVisible = !labelsVisible;
+    isDirty = true;
     localStorage.setItem('ha_simulator_labels_visible', labelsVisible);
     return labelsVisible;
 }
@@ -124,6 +185,7 @@ export function getLabelsVisible() {
 
 export function toggleEntities() {
     entitiesVisible = !entitiesVisible;
+    isDirty = true;
     localStorage.setItem('ha_simulator_entities_visible', entitiesVisible);
     return entitiesVisible;
 }
@@ -134,6 +196,7 @@ export function getEntitiesVisible() {
 
 export function setLightInfluence(val) {
     lightInfluence = parseFloat(val);
+    isDirty = true;
     localStorage.setItem('ha_simulator_light_influence', val);
 }
 
@@ -143,6 +206,7 @@ export function getLightInfluence() {
 
 export function setBlendMode(mode) {
     blendMode = mode;
+    isDirty = true;
     localStorage.setItem('ha_simulator_blend_mode', mode);
 }
 
@@ -152,6 +216,7 @@ export function getBlendMode() {
 
 export function setAmbientLevel(val) {
     ambientLevel = parseFloat(val);
+    isDirty = true;
     localStorage.setItem('ha_simulator_ambient', val);
 }
 
@@ -168,16 +233,23 @@ export function resizeCanvas() {
     const rect = canvas.parentElement.getBoundingClientRect();
     const oldWidth = canvas.width;
     const oldHeight = canvas.height;
-    
+
     canvas.width = rect.width;
     canvas.height = rect.height;
-    
+    canvasRect = canvas.getBoundingClientRect();
+
     if (lightMapCanvas) {
-        lightMapCanvas.width = canvas.width;
-        lightMapCanvas.height = canvas.height;
+        lightMapCanvas.width = Math.floor(canvas.width * LM_SCALE);
+        lightMapCanvas.height = Math.floor(canvas.height * LM_SCALE);
     }
-    
+    if (glowCanvas) {
+        glowCanvas.width = Math.floor(canvas.width * LM_SCALE);
+        glowCanvas.height = Math.floor(canvas.height * LM_SCALE);
+    }
+
     keepLampsInBounds();
+    updateBgDrawParams();
+    isDirty = true;
 }
 
 export function keepLampsInBounds() {
@@ -187,22 +259,21 @@ export function keepLampsInBounds() {
         lamp.x = Math.max(margin, Math.min(lamp.x, canvas.width - margin));
         lamp.y = Math.max(margin, Math.min(lamp.y, canvas.height - margin));
     });
+    isDirty = true;
 }
 
 function handleMouseDown(e) {
-    if (!entitiesVisible) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
+    if (!entitiesVisible || !canvasRect) return;
+    const x = e.clientX - canvasRect.left;
+    const y = e.clientY - canvasRect.top;
+
     dragTarget = null;
-    
-    // Hit test from top to bottom (reverse order of drawing)
-    const lampList = Array.from(lamps.values()).reverse();
+
+    const lampList = [...lamps.values()].reverse();
     for (const lamp of lampList) {
         const dx = x - lamp.x;
         const dy = y - lamp.y;
-        if (Math.sqrt(dx*dx + dy*dy) < 35) { // Lamp radius hit box
+        if (dx * dx + dy * dy < 35 * 35) {
             dragTarget = lamp;
             dragOffset.x = dx;
             dragOffset.y = dy;
@@ -218,29 +289,26 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
-    if (!canvas) return;
+    if (!canvas || !canvasRect) return;
     if (!entitiesVisible) {
         if (canvas.style.cursor !== 'default') {
             canvas.style.cursor = 'default';
         }
         return;
     }
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+    const mx = e.clientX - canvasRect.left;
+    const my = e.clientY - canvasRect.top;
 
     if (dragTarget) {
         dragTarget.x = mx - dragOffset.x;
         dragTarget.y = my - dragOffset.y;
         canvas.style.cursor = 'grabbing';
     } else {
-        // Hover cursor logic
         let isHovering = false;
-        const lampList = Array.from(lamps.values());
-        for (const lamp of lampList) {
+        for (const lamp of lamps.values()) {
             const dx = mx - lamp.x;
             const dy = my - lamp.y;
-            if (Math.sqrt(dx*dx + dy*dy) < 35) {
+            if (dx * dx + dy * dy < 35 * 35) {
                 isHovering = true;
                 break;
             }
@@ -258,6 +326,7 @@ function handleMouseUp() {
 
 export function setColorCurve(curve) {
     currentColorCurve = curve;
+    isDirty = true;
 }
 
 function applyCurve(c, curve) {
@@ -277,12 +346,35 @@ function lerp(a, b, t) {
 }
 
 function drawLoop(now) {
-    if (!ctx) return;
+    if (!ctx) { requestAnimationFrame(drawLoop); return; }
+
+    const anyTransitioning = dragTarget !== null ||
+        (lamps.size > 0 && [...lamps.values()].some(l => l.transitionEnd > now));
+
+    if (!isDirty && !anyTransitioning) {
+        requestAnimationFrame(drawLoop);
+        return;
+    }
+    isDirty = false;
+
+    // FPS measurement (only rendered frames, not skipped ones)
+    _fpsFrames++;
+    _lastFrameRenderTime = now;
+    if (now - _fpsWindowStart >= 500) {
+        if (_fpsWindowStart > 0) {
+            const elapsed = now - _fpsWindowStart;
+            _statFps = Math.round(_fpsFrames * 1000 / elapsed);
+            _statFrameMs = Math.round(elapsed / _fpsFrames);
+        }
+        _fpsFrames = 0;
+        _fpsWindowStart = now;
+    }
+
     const dt = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (lightMapCanvas) lmCtx.clearRect(0, 0, canvas.width, canvas.height);
+    if (lightMapCanvas) lmCtx.clearRect(0, 0, lightMapCanvas.width, lightMapCanvas.height);
 
     // Update State
     lamps.forEach(lamp => {
@@ -290,7 +382,7 @@ function drawLoop(now) {
             const total = lamp.transitionEnd - lamp.transitionStart;
             const elapsed = now - lamp.transitionStart;
             const t = Math.min(1, elapsed / total);
-            
+
             lamp.currentRgb[0] = lerp(lamp.startRgb[0], lamp.targetRgb[0], t);
             lamp.currentRgb[1] = lerp(lamp.startRgb[1], lamp.targetRgb[1], t);
             lamp.currentRgb[2] = lerp(lamp.startRgb[2], lamp.targetRgb[2], t);
@@ -301,96 +393,101 @@ function drawLoop(now) {
         }
     });
 
+    // Precompute curve-corrected RGB once per frame (avoids 6-9 applyCurve calls per lamp)
+    const curvedRgb = new Map();
+    lamps.forEach((lamp, id) => {
+        curvedRgb.set(id, [
+            Math.round(applyCurve(lamp.currentRgb[0], currentColorCurve)),
+            Math.round(applyCurve(lamp.currentRgb[1], currentColorCurve)),
+            Math.round(applyCurve(lamp.currentRgb[2], currentColorCurve)),
+        ]);
+    });
+
     // 1. Light Map generieren (Beleuchtungsstärke)
     lmCtx.globalCompositeOperation = 'source-over';
     const amb = ambientLevel;
-    
+
     if (backgroundImage) {
         lmCtx.fillStyle = `rgb(${Math.round(255 * amb)}, ${Math.round(255 * amb)}, ${Math.round(255 * amb)})`;
     } else {
         lmCtx.fillStyle = `rgb(${Math.round(wallColor.r * amb)}, ${Math.round(wallColor.g * amb)}, ${Math.round(wallColor.b * amb)})`;
     }
-    lmCtx.fillRect(0, 0, canvas.width, canvas.height);
+    lmCtx.fillRect(0, 0, lightMapCanvas.width, lightMapCanvas.height);
 
     lmCtx.globalCompositeOperation = 'lighter';
     lamps.forEach(lamp => {
         if (lamp.isOff || hiddenEntities[lamp.id]) return;
 
-        let r = applyCurve(lamp.currentRgb[0], currentColorCurve);
-        let g = applyCurve(lamp.currentRgb[1], currentColorCurve);
-        let b = applyCurve(lamp.currentRgb[2], currentColorCurve);
+        let [r, g, b] = curvedRgb.get(lamp.id);
 
         if (!backgroundImage) {
             r = (r * wallColor.r) / 255;
             g = (g * wallColor.g) / 255;
             b = (b * wallColor.b) / 255;
         }
-        
-        const baseRadius = 35 + (lamp.currentBrightness / 4);
-        const glowRadius = baseRadius * 15 * Math.sqrt(lightInfluence); 
-        const maxAlpha = Math.min(1.0, 0.6 * lightInfluence); 
 
-        drawSingleGlow(lmCtx, lamp, r, g, b, glowRadius, maxAlpha);
+        const baseRadius = 35 + (lamp.currentBrightness / 4);
+        const glowRadius = baseRadius * 15 * Math.sqrt(lightInfluence);
+        const maxAlpha = Math.min(1.0, 0.6 * lightInfluence);
+
+        drawSingleGlow(lmCtx, lamp.x * LM_SCALE, lamp.y * LM_SCALE, r, g, b, glowRadius * LM_SCALE, maxAlpha);
     });
 
     // 2. Hintergrund zeichnen (Image oder Wall)
-    if (backgroundImage) {
-        // Draw background photo
-        const canvasAspect = canvas.width / canvas.height;
-        const imgAspect = backgroundImage.width / backgroundImage.height;
-        let drawW, drawH, drawX, drawY;
-        if (canvasAspect > imgAspect) {
-            drawW = canvas.width; drawH = canvas.width / imgAspect;
-            drawX = 0; drawY = (canvas.height - drawH) / 2;
-        } else {
-            drawH = canvas.height; drawW = canvas.height * imgAspect;
-            drawX = (canvas.width - drawW) / 2; drawY = 0;
-        }
+    if (backgroundImage && bgOffscreenCanvas) {
         ctx.globalCompositeOperation = 'source-over';
-        ctx.drawImage(backgroundImage, drawX, drawY, drawW, drawH);
+        // Fast 1:1 pixel copy — image was pre-scaled to canvas resolution in updateBgDrawParams
+        ctx.drawImage(bgOffscreenCanvas, 0, 0);
+
+        // Apply wall color tint: multiply blend so white = no change, any color tints the image
+        if (wallColor.r < 255 || wallColor.g < 255 || wallColor.b < 255) {
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.fillStyle = `rgb(${wallColor.r}, ${wallColor.g}, ${wallColor.b})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
         // Blending nach gewähltem Mischmodus
         if (blendMode === 'multiply-glow') {
-            // Pass 1: Multiply lightmap (with baseline) to illuminate photo
+            // Pass 1: Multiply lightmap (upscaled from half-res) to illuminate photo
             ctx.globalCompositeOperation = 'multiply';
-            ctx.drawImage(lightMapCanvas, 0, 0);
+            ctx.drawImage(lightMapCanvas, 0, 0, canvas.width, canvas.height);
 
-            // Pass 2: Add pure glow (no baseline!) on top
-            ctx.globalCompositeOperation = 'lighter';
-            lamps.forEach(lamp => {
-                if (lamp.isOff || hiddenEntities[lamp.id]) return;
-
-                const r = applyCurve(lamp.currentRgb[0], currentColorCurve);
-                const g = applyCurve(lamp.currentRgb[1], currentColorCurve);
-                const b = applyCurve(lamp.currentRgb[2], currentColorCurve);
-                
-                const baseRadius = 35 + (lamp.currentBrightness / 4);
-                const glowRadius = baseRadius * 15 * Math.sqrt(lightInfluence); 
-                const maxAlpha = Math.min(1.0, 0.6 * lightInfluence) * 0.8; // slightly softer additive glow to maintain contrast
-
-                drawSingleGlow(ctx, lamp, r, g, b, glowRadius, maxAlpha);
-            });
+            // Pass 2: Additive glow bloom — rendered at half-res to match lightmap cost
+            if (glowCanvas && glowCtx) {
+                glowCtx.clearRect(0, 0, glowCanvas.width, glowCanvas.height);
+                glowCtx.globalCompositeOperation = 'lighter';
+                lamps.forEach(lamp => {
+                    if (lamp.isOff || hiddenEntities[lamp.id]) return;
+                    const [r, g, b] = curvedRgb.get(lamp.id);
+                    const baseRadius = 35 + (lamp.currentBrightness / 4);
+                    const glowRadius = baseRadius * 15 * Math.sqrt(lightInfluence);
+                    const maxAlpha = Math.min(1.0, 0.6 * lightInfluence) * 0.8;
+                    drawSingleGlow(glowCtx, lamp.x * LM_SCALE, lamp.y * LM_SCALE, r, g, b, glowRadius * LM_SCALE, maxAlpha);
+                });
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.drawImage(glowCanvas, 0, 0, canvas.width, canvas.height);
+            }
         } else if (blendMode === 'multiply') {
             ctx.globalCompositeOperation = 'multiply';
-            ctx.drawImage(lightMapCanvas, 0, 0);
+            ctx.drawImage(lightMapCanvas, 0, 0, canvas.width, canvas.height);
         } else if (blendMode === 'overlay') {
             ctx.globalCompositeOperation = 'overlay';
-            ctx.drawImage(lightMapCanvas, 0, 0);
+            ctx.drawImage(lightMapCanvas, 0, 0, canvas.width, canvas.height);
         } else if (blendMode === 'color-dodge') {
             ctx.globalCompositeOperation = 'color-dodge';
-            ctx.drawImage(lightMapCanvas, 0, 0);
+            ctx.drawImage(lightMapCanvas, 0, 0, canvas.width, canvas.height);
         }
     } else {
-        // Simple background color fallback (remains completely unchanged!)
+        // Simple background color fallback
         ctx.globalCompositeOperation = 'source-over';
         ctx.fillStyle = `rgb(${wallColor.r}, ${wallColor.g}, ${wallColor.b})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.globalCompositeOperation = 'multiply';
-        ctx.drawImage(lightMapCanvas, 0, 0);
+        ctx.drawImage(lightMapCanvas, 0, 0, canvas.width, canvas.height);
 
         ctx.globalCompositeOperation = 'lighter';
-        ctx.drawImage(lightMapCanvas, 0, 0);
+        ctx.drawImage(lightMapCanvas, 0, 0, canvas.width, canvas.height);
     }
 
     // 5. Lampen-Körper zeichnen
@@ -401,10 +498,8 @@ function drawLoop(now) {
             ctx.save();
             if (isHidden) ctx.globalAlpha = 0.3;
  
-            const r = applyCurve(lamp.currentRgb[0], currentColorCurve);
-            const g = applyCurve(lamp.currentRgb[1], currentColorCurve);
-            const b = applyCurve(lamp.currentRgb[2], currentColorCurve);
-            
+            const [r, g, b] = curvedRgb.get(lamp.id);
+
             // Body
             ctx.beginPath();
             ctx.arc(lamp.x, lamp.y, 25, 0, Math.PI * 2);
@@ -497,6 +592,7 @@ export function updateLampEntities(doc, roomElement) {
 export function setLampColor(id, rgbArray, transition, brightness, isOff) {
     const lamp = lamps.get(id);
     if (lamp) {
+        isDirty = true;
         const now = performance.now();
         lamp.startRgb = [...lamp.currentRgb];
         lamp.targetRgb = [...rgbArray];
@@ -520,6 +616,7 @@ export function setLampColor(id, rgbArray, transition, brightness, isOff) {
 }
 
 export function resetLamps() {
+    isDirty = true;
     lamps.forEach(lamp => {
         lamp.targetRgb = [255, 255, 255];
         lamp.targetBrightness = 0;

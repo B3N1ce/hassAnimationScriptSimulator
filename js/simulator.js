@@ -74,14 +74,19 @@ function checkCondition(conds, vars) {
 }
 
 async function pausableDelay(ms, sid) {
+    const interval = 16;
     let elapsed = 0;
-    const interval = 50;
+    let lastTime = performance.now();
+
     while (elapsed < ms) {
         if (sid !== playSessionId) return;
-        if (!isPaused) {
-            elapsed += interval;
-        }
         await new Promise(r => setTimeout(r, interval));
+        if (sid !== playSessionId) return;
+        const now = performance.now();
+        if (!isPaused) {
+            elapsed += now - lastTime;
+        }
+        lastTime = now;
     }
 }
 

@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode, setAmbientLevel, getAmbientLevel, hasBackgroundImage, setOnBackgroundChange } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode, setAmbientLevel, getAmbientLevel, hasBackgroundImage, setOnBackgroundChange, getDebugStats } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -621,7 +621,7 @@ function init() {
     if (inputAmbient && inputAmbientText) {
         const initAmb = getAmbientLevel();
         const initAmbPct = (initAmb * 100);
-        inputAmbient.value = Math.min(10, Math.max(1, initAmbPct));
+        inputAmbient.value = Math.min(50, Math.max(0, initAmbPct));
         inputAmbientText.value = initAmbPct.toFixed(1) + '%';
 
         inputAmbient.addEventListener('input', (e) => {
@@ -636,7 +636,7 @@ function init() {
             if (isNaN(pct) || pct < 0) pct = 2;
             setAmbientLevel(pct / 100);
             inputAmbientText.value = pct.toFixed(1) + '%';
-            inputAmbient.value = Math.min(10, Math.max(1, pct));
+            inputAmbient.value = Math.min(50, Math.max(0, pct));
         });
 
         inputAmbientText.addEventListener('keydown', (e) => {
@@ -686,6 +686,9 @@ function init() {
                     bgDropdownMenu.classList.remove('active');
                 } else if (action === 'upload') {
                     inputRoomImage.click();
+                    bgDropdownMenu.classList.remove('active');
+                } else if (action === 'reset') {
+                    setBackgroundImage(null);
                     bgDropdownMenu.classList.remove('active');
                 } else if (action === 'cancel') {
                     bgDropdownMenu.classList.remove('active');
@@ -741,12 +744,59 @@ function init() {
     });
 
     // 10. Notifications Modal
+    let _statsInterval = null;
+
+    function updateDebugStats() {
+        const s = getDebugStats();
+
+        const fpsEl = document.getElementById('dbg-fps');
+        const dotEl = document.getElementById('dbg-fps-dot');
+        if (fpsEl) fpsEl.textContent = s.rendering ? `${s.fps}` : '—';
+        if (dotEl) {
+            const col = !s.rendering ? '#444'
+                      : s.fps >= 55  ? '#50fa7b'
+                      : s.fps >= 30  ? '#f1fa8c'
+                      :                '#ff5555';
+            dotEl.style.color = col;
+        }
+
+        const fmEl = document.getElementById('dbg-framems');
+        if (fmEl) fmEl.textContent = s.rendering ? `${s.frameMs} ms` : '—';
+
+        const cvEl = document.getElementById('dbg-canvas');
+        if (cvEl) cvEl.textContent = s.canvasW ? `${s.canvasW}×${s.canvasH}` : '—';
+
+        const lmEl = document.getElementById('dbg-lm');
+        if (lmEl) lmEl.textContent = s.lmW ? `${s.lmW}×${s.lmH}` : '—';
+
+        const lpEl = document.getElementById('dbg-lamps');
+        if (lpEl) lpEl.textContent = `${s.lampActive}/${s.lampTotal} aktiv, ${s.lampTransitioning} trans.`;
+
+        const simEl = document.getElementById('dbg-sim');
+        if (simEl) {
+            if (isPlaying && !isPausedState) {
+                simEl.textContent = '▶ läuft';
+                simEl.style.color = '#50fa7b';
+            } else if (isPausedState) {
+                simEl.textContent = '⏸ pausiert';
+                simEl.style.color = '#f1fa8c';
+            } else {
+                simEl.textContent = '⏹ idle';
+                simEl.style.color = '#555';
+            }
+        }
+    }
+
     btnNotifications.addEventListener('click', () => {
         notifModal.style.display = 'flex';
         updateNotifUI();
+        updateDebugStats();
+        _statsInterval = setInterval(updateDebugStats, 250);
     });
     btnCloseNotifs.addEventListener('click', () => {
         notifModal.style.display = 'none';
+        clearInterval(_statsInterval);
+        _statsInterval = null;
     });
     btnClearNotifs.addEventListener('click', () => {
         notifications = [];

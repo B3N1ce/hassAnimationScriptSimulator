@@ -159,10 +159,19 @@
                                     <span class="item-title">Home Office</span>
                                     <span class="item-desc">Arbeitszimmer bei Nacht</span>
                                 </div>
+                                <div class="dropdown-item" data-bg="backgrounds/lightstudio.png">
+                                    <span class="item-title">Light Studio</span>
+                                    <span class="item-desc">Neutral dunkler Testraum</span>
+                                </div>
                                 <div class="dropdown-divider"></div>
                                 <div id="btn-upload-custom-bg" class="dropdown-item" data-action="upload">
                                     <span class="item-title">Eigenes Foto...</span>
                                     <span class="item-desc">Bild von deinem Raum laden</span>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item" data-action="reset">
+                                    <span class="item-title">Einfarbig (Zurücksetzen)</span>
+                                    <span class="item-desc">Hintergrundbild entfernen</span>
                                 </div>
                                 <div class="dropdown-divider"></div>
                                 <div class="dropdown-item cancel" data-action="cancel">
@@ -208,7 +217,7 @@
                             <path d="M12 3v1m0 16v1m-9-9h1m16 0h1m-2.636-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707"/>
                             <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3"/>
                         </svg>
-                        <input type="range" id="input-ambient" min="1" max="10" step="0.5" value="2" class="premium-slider slider-wide ambient-slider">
+                        <input type="range" id="input-ambient" min="0" max="50" step="1" value="2" class="premium-slider slider-wide ambient-slider">
                         <input type="text" id="input-ambient-text" class="slider-textbox" value="2%">
                     </div>
 
@@ -325,6 +334,35 @@
                     <button id="btn-clear-notifs" class="btn-secondary" style="padding: 4px 8px;"
                         data-i18n="clear_all">Alle löschen</button>
                     <button id="btn-close-notifs" class="close-btn" style="font-size: 20px;">&times;</button>
+                </div>
+            </div>
+            <div id="debug-stats-panel" style="padding: 8px 16px 10px; background: rgba(0,0,0,0.25); border-bottom: 1px solid #333; font-family: 'Courier New', monospace; font-size: 11px;">
+                <div style="color: #555; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px;">Debug</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 24px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#555;">FPS</span>
+                        <span><span id="dbg-fps" style="color:#f8f8f2;">—</span> <span id="dbg-fps-dot" style="font-size:8px;">●</span></span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#555;">Frame</span>
+                        <span id="dbg-framems" style="color:#f8f8f2;">—</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#555;">Canvas</span>
+                        <span id="dbg-canvas" style="color:#f8f8f2;">—</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#555;">Lightmap</span>
+                        <span id="dbg-lm" style="color:#f8f8f2;">—</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#555;">Lampen</span>
+                        <span id="dbg-lamps" style="color:#f8f8f2;">—</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#555;">Simulation</span>
+                        <span id="dbg-sim" style="color:#f8f8f2;">—</span>
+                    </div>
                 </div>
             </div>
             <div id="notif-list" class="modal-body"></div>
