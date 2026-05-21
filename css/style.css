@@ -1175,6 +1175,9 @@ label {
     padding: 2px 5px;
     border-radius: 3px;
     font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-icon:hover {
@@ -1410,25 +1413,13 @@ label {
     #app-container {
         display: flex;
         flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+        height: 0;
     }
 
     .resizer {
         display: none;
-    }
-
-    .panel {
-        display: none;
-        flex-grow: 1;
-        border-right: none;
-    }
-
-    #app-container {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        overflow: hidden;
-        height: 0;
-        /* Zwingt Flexbox den verfügbaren Platz zu nutzen */
     }
 
     .panel {
@@ -1448,39 +1439,122 @@ label {
         flex-shrink: 0;
     }
 
+    /* ── Global Header ── */
     #global-header {
         flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-        padding: 10px;
+        gap: 6px;
+        padding: 6px 12px;
         flex-shrink: 0;
+        justify-content: space-between;
     }
 
-    .header-logo {
-        display: flex;
+    /* Hide the subheadline — too long for mobile */
+    .header-subheadline {
+        display: none;
     }
 
     .header-actions {
+        display: flex;
         flex-wrap: wrap;
-        justify-content: center;
-        width: 100%;
         gap: 5px;
+        align-items: center;
+        flex: 1;
+        justify-content: flex-end;
     }
 
+    /* Playback takes its own full row */
     .playback-controls {
+        order: 10;
         width: 100%;
-        margin-bottom: 5px;
+        gap: 6px;
     }
+
+    /* Validate sits before playback row */
+    #btn-validate { order: 1; flex: 1; min-width: 0; }
+
+    /* Icon buttons stay on first row */
+    #btn-notifications { order: 2; }
+    #btn-language      { order: 3; }
 
     .btn-header {
         flex: 1;
-        padding: 12px;
-        font-size: 12px;
-        min-width: 128px;
+        padding: 10px 8px;
+        font-size: 11px;
+        min-width: 0;
     }
 
     #toast-container {
         bottom: 100px;
+    }
+
+    /* ── Simulation Panel Header: two rows ── */
+    #panel-preview .panel-header {
+        flex-direction: column;
+        height: auto;
+        padding: 0 10px;
+        align-items: stretch;
+        gap: 0;
+    }
+
+    /* Row 1: title + thin separator */
+    #panel-preview .panel-title {
+        height: 36px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #333;
+        flex-shrink: 0;
+    }
+
+    /* Row 2: all tools, horizontally scrollable */
+    #panel-preview .panel-tools {
+        overflow-x: auto;
+        overflow-y: visible;
+        flex-wrap: nowrap;
+        padding: 5px 0 7px;
+        gap: 6px;
+        /* hide scrollbar visually but keep it functional */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    #panel-preview .panel-tools::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Move toggle buttons to the front for easy reach */
+    #btn-toggle-entities { order: -2; }
+    #btn-toggle-labels   { order: -1; }
+
+    /* Narrower select dropdowns */
+    #sel-color-curve {
+        max-width: 80px;
+        font-size: 10px;
+    }
+
+    #sel-blend-mode {
+        max-width: 90px;
+        font-size: 10px;
+    }
+}
+
+/* Touch devices (phones/tablets): no hover → sliders always visible, but narrower */
+@media (hover: none) {
+    .slider-container .premium-slider {
+        max-width: 200px;
+        opacity: 1;
+        pointer-events: auto;
+        /* Prevent the scrollable toolbar from intercepting horizontal drag —
+           the browser treats the touch as a slider interaction, not a scroll. */
+        touch-action: none;
+    }
+
+    /* Narrower tracks to save space */
+    .slider-container .premium-slider.slider-wide {
+        width: 60px;
+    }
+
+    .slider-container .premium-slider:not(.slider-wide) {
+        width: 50px;
     }
 }
 
@@ -1970,4 +2044,24 @@ body.simulation-running .panel-tab.active {
 
 .slider-textbox:hover {
     border-color: #6272a4;
+}
+
+/* Collapsible slider tracks: hidden by default, expand on hover / active edit */
+.slider-container .premium-slider {
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: max-width 0.22s ease, opacity 0.18s ease;
+}
+
+.slider-container:hover .premium-slider,
+.slider-container:focus-within .premium-slider {
+    max-width: 200px;   /* larger than any actual slider width; lets width prop take over */
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.slider-container:hover {
+    border-color: #666;
+    background: rgba(255, 255, 255, 0.08);
 }

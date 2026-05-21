@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode, setAmbientLevel, getAmbientLevel, hasBackgroundImage, setOnBackgroundChange, getDebugStats } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode, setAmbientLevel, getAmbientLevel, setExposure, getExposure, hasBackgroundImage, setOnBackgroundChange, getDebugStats } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -643,6 +643,41 @@ function init() {
             if (e.key === 'Enter') { e.target.blur(); }
         });
     }
+
+    // 10.4 Exposure Slider + Textbox
+    const inputExposure = document.getElementById('input-exposure');
+    const inputExposureText = document.getElementById('input-exposure-text');
+    if (inputExposure && inputExposureText) {
+        const initExp = getExposure();
+        inputExposure.value = Math.min(4.0, Math.max(0.1, initExp));
+        inputExposureText.value = parseFloat(initExp).toFixed(1) + 'x';
+
+        inputExposure.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            setExposure(val);
+            inputExposureText.value = val.toFixed(1) + 'x';
+        });
+
+        inputExposureText.addEventListener('change', (e) => {
+            let raw = e.target.value.replace('x', '').trim();
+            let val = parseFloat(raw);
+            if (isNaN(val) || val <= 0) val = 1.0;
+            setExposure(val);
+            inputExposureText.value = val.toFixed(1) + 'x';
+            inputExposure.value = Math.min(4.0, Math.max(0.1, val));
+        });
+
+        inputExposureText.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.target.blur(); }
+        });
+    }
+
+    // Blur range inputs on pointer-up so the slider collapses when the mouse leaves
+    // (range inputs keep :focus after a click/drag, which would keep :focus-within active)
+    ['input-light-influence', 'input-ambient', 'input-exposure'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('pointerup', () => el.blur());
+    });
 
     // 11. Background Menu Logic
     const btnBgMenu = document.getElementById('btn-bg-menu');
