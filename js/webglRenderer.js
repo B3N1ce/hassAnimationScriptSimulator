@@ -178,9 +178,10 @@ export function initWebGL(container) {
     container.style.position = 'relative';
     container.insertBefore(glCanvas, container.firstChild);
 
-    gl = glCanvas.getContext('webgl2')
-      || glCanvas.getContext('webgl')
-      || glCanvas.getContext('experimental-webgl');
+    const ctxOpts = { preserveDrawingBuffer: true };
+    gl = glCanvas.getContext('webgl2', ctxOpts)
+      || glCanvas.getContext('webgl', ctxOpts)
+      || glCanvas.getContext('experimental-webgl', ctxOpts);
 
     if (!gl) {
         console.warn('WebGL not available — falling back to Canvas 2D rendering.');

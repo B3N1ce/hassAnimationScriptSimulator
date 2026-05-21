@@ -8,9 +8,9 @@ const otherEntities = {};
 let selectedEntityCallback = null;
 let currentColorCurve = 'linear';
 
-// Groups & Visibility Storage
-let groups = JSON.parse(localStorage.getItem('ha_simulator_groups')) || {};
-let hiddenEntities = JSON.parse(localStorage.getItem('ha_simulator_hidden')) || {};
+// Groups, Visibility & Positions Storage
+let groups        = JSON.parse(localStorage.getItem('ha_simulator_groups'))        || {};
+let hiddenEntities = JSON.parse(localStorage.getItem('ha_simulator_hidden'))       || {};
 let storedPositions = JSON.parse(localStorage.getItem('ha_simulator_lamp_positions')) || {};
 
 // Canvas State
@@ -61,8 +61,8 @@ function uploadBgTexture() {
 export function getGroups() { return groups; }
 export function getAvailableEntities() { return Array.from(lamps.keys()); }
 
-function saveGroups() { localStorage.setItem('ha_simulator_groups', JSON.stringify(groups)); }
-function saveHidden() { localStorage.setItem('ha_simulator_hidden', JSON.stringify(hiddenEntities)); }
+function saveGroups()  { localStorage.setItem('ha_simulator_groups',  JSON.stringify(groups));         }
+function saveHidden()  { localStorage.setItem('ha_simulator_hidden',  JSON.stringify(hiddenEntities)); }
 function savePositions() {
     const positions = {};
     lamps.forEach((lamp, id) => {
@@ -262,6 +262,7 @@ function handleMouseDown(e) {
             dragTarget = lamp;
             dragOffset.x = dx;
             dragOffset.y = dy;
+            canvas.style.cursor = 'grabbing';
 
             if (selectedEntityCallback) {
                 const rgb = lamp.currentRgb;
@@ -298,7 +299,7 @@ function handleMouseMove(e) {
                 break;
             }
         }
-        canvas.style.cursor = isHovering ? 'move' : 'default';
+        canvas.style.cursor = isHovering ? 'grab' : 'default';
     }
 }
 
@@ -307,6 +308,7 @@ function handleMouseUp() {
         dragTarget.nx = dragTarget.x / canvas.width;
         dragTarget.ny = dragTarget.y / canvas.height;
         savePositions();
+        canvas.style.cursor = 'grab';
     }
     dragTarget = null;
 }
@@ -352,7 +354,7 @@ function drawLoop(now) {
         if (lamp.transitionEnd > now) {
             const total = lamp.transitionEnd - lamp.transitionStart;
             const elapsed = now - lamp.transitionStart;
-            const t = Math.min(1, elapsed / total);
+            const t = total > 0 ? Math.min(1, elapsed / total) : 1;
 
             lamp.currentRgb[0] = lerp(lamp.startRgb[0], lamp.targetRgb[0], t);
             lamp.currentRgb[1] = lerp(lamp.startRgb[1], lamp.targetRgb[1], t);
@@ -367,7 +369,7 @@ function drawLoop(now) {
     // WebGL renders background + lighting (all lamps except visibility-hidden ones)
     if (isWebGLAvailable()) {
         renderScene({
-            lamps: [...lamps.values()].filter(l => !hiddenEntities[l.id]),
+            lamps: [...lamps.values()].filter(l => !hiddenEntities[l.id] && !groups[l.id]),
             ambient: ambientLevel,
             wallColor,
             exposure,
@@ -387,9 +389,9 @@ function drawLoop(now) {
 
     if (entitiesVisible) {
         lamps.forEach(lamp => {
-            const isHidden = hiddenEntities[lamp.id];
             ctx.save();
-            if (isHidden) ctx.globalAlpha = 0.3;
+            if (hiddenEntities[lamp.id] && groups[lamp.id]) ctx.globalAlpha = 0;
+            else if (hiddenEntities[lamp.id] || groups[lamp.id]) ctx.globalAlpha = 0.2;
 
             const [r, g, b] = lamp.currentRgb;
 
@@ -483,12 +485,12 @@ export function updateLampEntities(doc, roomElement) {
                 currentRgb: [255, 255, 255],
                 startRgb: [255, 255, 255],
                 targetRgb: [255, 255, 255],
-                currentBrightness: 0,
-                startBrightness: 0,
-                targetBrightness: 0,
+                currentBrightness: 100,
+                startBrightness: 100,
+                targetBrightness: 100,
                 transitionStart: 0,
                 transitionEnd: 0,
-                isOff: true
+                isOff: false
             });
         }
     });
@@ -511,14 +513,18 @@ export function setLampColor(id, rgbArray, transition, brightness, isOff) {
         lamp.isOff = isOff;
 
         // Update Browser Badge
-        const rgbString = `rgb(${Math.round(rgbArray[0])}, ${Math.round(rgbArray[1])}, ${Math.round(rgbArray[2])})`;
+        const safeR = isNaN(rgbArray[0]) ? 255 : Math.round(rgbArray[0]);
+        const safeG = isNaN(rgbArray[1]) ? 255 : Math.round(rgbArray[1]);
+        const safeB = isNaN(rgbArray[2]) ? 255 : Math.round(rgbArray[2]);
+        const safeBr = isNaN(brightness) ? 100 : Math.round(brightness);
+        const rgbString = `rgb(${safeR}, ${safeG}, ${safeB})`;
         const stateBody = document.getElementById('state-' + id.replace(/\./g, '-'));
         if (stateBody) {
             const badge = stateBody.querySelector('.entity-badge');
             const span = stateBody.querySelector('span');
             badge.style.backgroundColor = isOff ? '#222' : rgbString;
             badge.style.boxShadow = isOff ? 'none' : `0 0 5px ${rgbString}`;
-            span.innerText = isOff ? t('off') : `${Math.round(brightness)}% | RGB(${Math.round(rgbArray[0])},${Math.round(rgbArray[1])},${Math.round(rgbArray[2])})`;
+            span.innerText = isOff ? t('off') : `${safeBr}% | RGB(${safeR},${safeG},${safeB})`;
         }
     }
 }
@@ -526,22 +532,31 @@ export function setLampColor(id, rgbArray, transition, brightness, isOff) {
 export function resetLamps() {
     isDirty = true;
     lamps.forEach(lamp => {
+        lamp.currentRgb = [255, 255, 255];
+        lamp.startRgb = [255, 255, 255];
         lamp.targetRgb = [255, 255, 255];
-        lamp.targetBrightness = 0;
+        lamp.currentBrightness = 100;
+        lamp.startBrightness = 100;
+        lamp.targetBrightness = 100;
         lamp.transitionEnd = 0;
-        lamp.isOff = true;
+        lamp.isOff = false;
     });
 
-    // Reset browser states
-    document.querySelectorAll('.entity-body span').forEach(s => s.innerText = t('off'));
+    // Reset inspector badges to white/on state
+    const rgbString = 'rgb(255, 255, 255)';
+    document.querySelectorAll('.entity-body span').forEach(s => s.innerText = `100% | RGB(255,255,255)`);
     document.querySelectorAll('.entity-badge').forEach(b => {
-        b.style.backgroundColor = '#222';
-        b.style.boxShadow = 'none';
+        b.style.backgroundColor = rgbString;
+        b.style.boxShadow = `0 0 5px ${rgbString}`;
     });
 }
 
 export function hasModifiedLamps() {
-    return Array.from(lamps.values()).some(l => !l.isOff);
+    return Array.from(lamps.values()).some(l =>
+        l.isOff ||
+        l.targetBrightness !== 100 ||
+        l.targetRgb[0] !== 255 || l.targetRgb[1] !== 255 || l.targetRgb[2] !== 255
+    );
 }
 
 export function snapLampsToTarget() {
@@ -619,6 +634,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
     btnVis.onclick = () => {
         hiddenEntities[id] = !hiddenEntities[id];
         saveHidden();
+        isDirty = true;
         btnVis.classList.toggle('active', !hiddenEntities[id]);
     };
     actions.appendChild(btnVis);
@@ -631,6 +647,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         btnMakeGroup.onclick = () => {
             groups[id] = [];
             saveGroups();
+            isDirty = true;
             renderEntityBrowser(Array.from(lamps.keys()));
         };
         actions.appendChild(btnMakeGroup);
@@ -644,6 +661,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         btnRemove.onclick = () => {
             groups[parentId] = groups[parentId].filter(c => c !== id);
             saveGroups();
+            isDirty = true;
             renderEntityBrowser(Array.from(lamps.keys()));
         };
         actions.appendChild(btnRemove);
@@ -657,6 +675,7 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
         btnUngroup.onclick = () => {
             delete groups[id];
             saveGroups();
+            isDirty = true;
             renderEntityBrowser(Array.from(lamps.keys()));
         };
         actions.appendChild(btnUngroup);
@@ -675,8 +694,30 @@ function createEntityNode(id, isGroup, isChild, parentId = null) {
     item.appendChild(body);
 
     const lamp = lamps.get(id);
-    if (lamp && !lamp.isOff) {
-        setTimeout(() => setLampColor(id, lamp.currentRgb, 0, lamp.currentBrightness, false), 10);
+    if (lamp) {
+        // Update the badge DOM only — never call setLampColor here, as that would
+        // overwrite the simulation's pending targetRgb (race: rAF fires ~16ms,
+        // but this timeout fires at 10ms, before currentRgb reflects targetRgb).
+        setTimeout(() => {
+            const stateBody = document.getElementById('state-' + id.replace(/\./g, '-'));
+            if (!stateBody) return;
+            const badge = stateBody.querySelector('.entity-badge');
+            const span  = stateBody.querySelector('span');
+            if (lamp.isOff) {
+                badge.style.backgroundColor = '#222';
+                badge.style.boxShadow = 'none';
+                span.innerText = t('off');
+            } else {
+                const r  = isNaN(lamp.currentRgb[0]) ? 255 : Math.round(lamp.currentRgb[0]);
+                const g  = isNaN(lamp.currentRgb[1]) ? 255 : Math.round(lamp.currentRgb[1]);
+                const b  = isNaN(lamp.currentRgb[2]) ? 255 : Math.round(lamp.currentRgb[2]);
+                const br = isNaN(lamp.currentBrightness) ? 100 : Math.round(lamp.currentBrightness);
+                const rgbStr = `rgb(${r}, ${g}, ${b})`;
+                badge.style.backgroundColor = rgbStr;
+                badge.style.boxShadow = `0 0 5px ${rgbStr}`;
+                span.innerText = `${br}% | RGB(${r},${g},${b})`;
+            }
+        }, 10);
     }
 
     return item;

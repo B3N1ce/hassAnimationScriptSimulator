@@ -185,6 +185,11 @@ function renderSequence(steps, parentObj, key) {
         return seqEl;
     }
 
+    // Add button before the first step (insert at position 0)
+    const firstAddBtn = makeAddBtn(() => showAddMenu(firstAddBtn, steps, 0, () => rebuild()));
+    seqEl.appendChild(firstAddBtn);
+    seqEl.appendChild(connector());
+
     for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
         const wrapper = el('div', 'step-wrapper');
@@ -288,34 +293,29 @@ function renderActionNode(step, steps, index, onRebuild) {
         pushToYaml();
     }, 'entity_id')));
 
-    // Smart Properties for light.turn_on
-    if (step.action === 'light.turn_on') {
-        const props = el('div', 'node-props-section');
-        props.appendChild(makeSectionLabel('Light Properties'));
+    // Light Properties (always visible)
+    const props = el('div', 'node-props-section');
+    props.appendChild(makeSectionLabel('Light Properties'));
 
-        step.data = step.data || {};
+    step.data = step.data || {};
 
-        // Brightness
-        props.appendChild(makeSmartRange('Brightness', step.data.brightness_pct, 0, 100, '%', v => {
-            if (v === '') delete step.data.brightness_pct;
-            else step.data.brightness_pct = (typeof v === 'string' && v.includes('{')) ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
-            pushToYaml();
-        }));
+    props.appendChild(makeSmartRange('Brightness', step.data.brightness_pct, 0, 100, '%', v => {
+        if (v === '') delete step.data.brightness_pct;
+        else step.data.brightness_pct = (typeof v === 'string' && v.includes('{')) ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
+        pushToYaml();
+    }));
 
-        // Color (Multi-mode)
-        props.appendChild(makeSmartColor('Color', step.data, () => {
-            pushToYaml();
-        }));
+    props.appendChild(makeSmartColor('Color', step.data, () => {
+        pushToYaml();
+    }));
 
-        // Transition
-        props.appendChild(makeSmartField('Transition', step.data.transition, 'seconds', v => {
-            if (v === '') delete step.data.transition;
-            else step.data.transition = isNaN(parseFloat(v)) ? v : parseFloat(v);
-            pushToYaml();
-        }));
+    props.appendChild(makeSmartField('Transition', step.data.transition, 'seconds', v => {
+        if (v === '') delete step.data.transition;
+        else step.data.transition = isNaN(parseFloat(v)) ? v : parseFloat(v);
+        pushToYaml();
+    }));
 
-        body.appendChild(props);
-    }
+    body.appendChild(props);
 
     // Data fields (Custom)
     const dataSection = el('div');
@@ -323,11 +323,11 @@ function renderActionNode(step, steps, index, onRebuild) {
     const dataObj = step.data || {};
     step.data = dataObj;
 
-    // Filter out keys already handled by smart UI to avoid confusion
+    // Always filter smart keys so they don't appear twice
     const filteredData = {};
     const smartKeys = ['brightness_pct', 'rgb_color', 'hs_color', 'xy_color', 'transition'];
     Object.keys(dataObj).forEach(k => {
-        if (!smartKeys.includes(k) || step.action !== 'light.turn_on') {
+        if (!smartKeys.includes(k)) {
             filteredData[k] = dataObj[k];
         }
     });
@@ -833,10 +833,7 @@ const STEP_TYPES = [
 
 function showAddMenu(anchorBtn, steps, insertAt, onAdded) {
     // Close any open menus
-    document.querySelectorAll('.node-add-menu.open').forEach(m => {
-        m.classList.remove('open');
-        m.remove();
-    });
+    document.querySelectorAll('.node-add-menu.open').forEach(m => m.remove());
 
     const menu = el('div', 'node-add-menu open');
     STEP_TYPES.forEach(({ type, icon, label, template }) => {
@@ -855,17 +852,44 @@ function showAddMenu(anchorBtn, steps, insertAt, onAdded) {
         menu.appendChild(item);
     });
 
-    anchorBtn.style.position = 'relative';
-    anchorBtn.appendChild(menu);
+    // Attach to body so overflow/stacking-context of node editor can't clip it
+    document.body.appendChild(menu);
 
-    // Close on outside click
+    // Smart positioning: measure after attach, then place
+    const anchor = anchorBtn.getBoundingClientRect();
+    const mW = menu.offsetWidth  || 160;
+    const mH = menu.offsetHeight || (STEP_TYPES.length * 29 + 8);
+    const vW = window.innerWidth;
+    const vH = window.innerHeight;
+    const gap = 6;
+
+    // Horizontal: centre on button, clamp inside viewport
+    let left = anchor.left + anchor.width / 2 - mW / 2;
+    left = Math.max(8, Math.min(left, vW - mW - 8));
+
+    // Vertical: prefer below, flip above if too close to bottom edge
+    let top;
+    if (anchor.bottom + gap + mH > vH && anchor.top - gap - mH >= 0) {
+        top = anchor.top - gap - mH; // open upward
+    } else {
+        top = anchor.bottom + gap;   // open downward
+    }
+    top = Math.max(8, Math.min(top, vH - mH - 8));
+
+    menu.style.left = `${left}px`;
+    menu.style.top  = `${top}px`;
+
+    // Close on outside click or any scroll inside the node editor
+    function close(e) {
+        if (!menu.contains(e.target) && e.target !== anchorBtn) {
+            menu.remove();
+            document.removeEventListener('click', close);
+            document.removeEventListener('scroll', close, true);
+        }
+    }
     setTimeout(() => {
-        document.addEventListener('click', function close(e) {
-            if (!menu.contains(e.target) && e.target !== anchorBtn) {
-                menu.remove();
-                document.removeEventListener('click', close);
-            }
-        });
+        document.addEventListener('click', close);
+        document.addEventListener('scroll', close, true);
     }, 0);
 }
 
@@ -1543,6 +1567,10 @@ export function getCurrentDoc() {
 }
 
 export function setCurrentDoc(doc) {
+    // During pushToYaml the editor fires a change event synchronously.
+    // Overwriting _currentDoc here would break all live object references
+    // held by rendered node fields, causing subsequent edits to be lost.
+    if (_isSyncing) return;
     _currentDoc = doc;
     if (_currentDoc) assignPaths(_currentDoc);
 }

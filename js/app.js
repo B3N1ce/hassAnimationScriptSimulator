@@ -262,6 +262,10 @@ function init() {
     // Tab switching
     document.querySelectorAll('#panel-editor .panel-tab').forEach(tab => {
         tab.addEventListener('click', () => {
+            // Commit any in-progress field edit before switching views
+            if (document.activeElement && document.activeElement !== document.body) {
+                document.activeElement.blur();
+            }
             document.querySelectorAll('#panel-editor .panel-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.editor-view').forEach(v => v.classList.remove('active'));
             tab.classList.add('active');
@@ -457,6 +461,7 @@ function init() {
             stopBtn.className = 'btn-header btn-stop-style';
             stopBtn.disabled = false;
             stopBtn.classList.remove('btn-disabled');
+            if (btnNewScript) { btnNewScript.disabled = true; btnNewScript.classList.add('btn-disabled'); }
         } else {
             wrapper.classList.remove('disabled-dim');
             toggleBtn.innerHTML = t('start');
@@ -470,6 +475,7 @@ function init() {
             stopBtn.disabled = !canReset;
             if (canReset) stopBtn.classList.remove('btn-disabled');
             else stopBtn.classList.add('btn-disabled');
+            if (btnNewScript) { btnNewScript.disabled = false; btnNewScript.classList.remove('btn-disabled'); }
         }
     }
 
@@ -498,7 +504,6 @@ function init() {
         const doc = validateAndSync();
         if (!doc) return;
 
-        resetLamps();
         resetRuntimeVariablesUI();
         setUIRunning(true, false);
 

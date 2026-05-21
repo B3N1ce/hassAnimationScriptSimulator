@@ -238,6 +238,7 @@ async function executeSteps(steps, sid, vars = {}) {
 
                     const processId = (rId) => {
                         rId = rId.trim();
+                        if (!rId.includes('.')) rId = 'light.' + rId; // Normalize bare IDs like 'light' → 'light.light'
                         if (groups[rId]) {
                             expandedIds.push(...groups[rId]); // Add all children of the group
                         } else {

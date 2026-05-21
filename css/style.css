@@ -728,19 +728,16 @@ button {
     background: #1a2e1a;
 }
 
-/* Add step dropdown menu */
+/* Add step dropdown menu – rendered on document.body, smart-positioned via JS */
 .node-add-menu {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     background: #282a36;
     border: 1px solid #44475a;
     border-radius: 6px;
     padding: 4px 0;
-    z-index: 100;
+    z-index: 9999;
     min-width: 160px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
     display: none;
 }
 
