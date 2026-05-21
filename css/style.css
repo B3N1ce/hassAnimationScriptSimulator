@@ -41,6 +41,25 @@ body {
     position: fixed;
     /* Verhindert das Scrollen des gesamten Bodys auf Mobilgeräten */
     width: 100%;
+    user-select: none;
+}
+
+/* Re-enable text selection where it makes sense */
+.CodeMirror,
+.CodeMirror *,
+#panel-inspector,
+#panel-inspector *,
+input[type="text"],
+input[type="number"],
+input:not([type="color"]):not([type="range"]):not([type="checkbox"]),
+textarea,
+[contenteditable],
+.node-input,
+.node-color-picker,
+.color-picker-section,
+.variable-value,
+.runtime-var-value {
+    user-select: text;
 }
 
 /* Global Header */
