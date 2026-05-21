@@ -93,10 +93,6 @@
                                 <span class="item-title" data-i18n="new_template">Beginner Template</span>
                                 <span class="item-desc" data-i18n="new_template_desc">Mit Beispiel-Code starten</span>
                             </div>
-                            <div class="dropdown-divider"></div>
-                            <div class="dropdown-item cancel" data-action="cancel">
-                                <span class="item-title" data-i18n="cancel">Abbrechen</span>
-                            </div>
                         </div>
                     </div>
                     <button id="btn-copy-code" class="btn-editor-icon" data-i18n-title="copy_code"
@@ -146,62 +142,82 @@
                         <input type="color" id="picker-wall-color" value="#ffffff" style="width: 18px; height: 18px; padding: 0; border: 1px solid #666; background: none; cursor: pointer; border-radius: 2px;">
                         
                         <div class="dropdown-container">
-                            <button id="btn-bg-menu" class="btn-editor-icon" style="background: none; border: none; padding: 0;" title="Hintergrund wählen / Choose Background" data-i18n-title="choose_bg">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                                    <polyline points="21 15 16 10 5 21"/>
-                                </svg>
-                            </button>
+                            <button id="btn-bg-menu" class="btn-editor-icon" style="background: none; border: none; padding: 0;" title="Hintergrund wählen / Choose Background" data-i18n-title="choose_bg"></button>
                             <div id="bg-dropdown-menu" class="dropdown-menu">
-                                <div class="dropdown-item" data-bg="backgrounds/living_room.png">
-                                    <span class="item-title" data-i18n="bg_living_room">Wohnzimmer</span>
-                                    <span class="item-desc" data-i18n="bg_living_room_desc">Moderner Loft-Style</span>
+                                <div class="dropdown-item mode-item" data-bg="backgrounds/living_room.png">
+                                    <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2 L12 6 L12 12 L2 12 L2 6 Z"/><path d="M5 12 L5 9 L9 9 L9 12"/></svg>
+                                    <div><span class="item-title" data-i18n="bg_living_room">Wohnzimmer</span><span class="item-desc" data-i18n="bg_living_room_desc">Moderner Loft-Style</span></div>
                                 </div>
-                                <div class="dropdown-item" data-bg="backgrounds/bedroom.png">
-                                    <span class="item-title" data-i18n="bg_bedroom">Schlafzimmer</span>
-                                    <span class="item-desc" data-i18n="bg_bedroom_desc">Gemütliches Ambiente</span>
+                                <div class="dropdown-item mode-item" data-bg="backgrounds/bedroom.png">
+                                    <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="7" width="12" height="5" rx="1"/><path d="M1 9 L13 9"/><path d="M7 7 L7 9"/><circle cx="4" cy="5" r="1.5"/></svg>
+                                    <div><span class="item-title" data-i18n="bg_bedroom">Schlafzimmer</span><span class="item-desc" data-i18n="bg_bedroom_desc">Gemütliches Ambiente</span></div>
                                 </div>
-                                <div class="dropdown-item" data-bg="backgrounds/office.png">
-                                    <span class="item-title" data-i18n="bg_office">Home Office</span>
-                                    <span class="item-desc" data-i18n="bg_office_desc">Arbeitszimmer bei Nacht</span>
+                                <div class="dropdown-item mode-item" data-bg="backgrounds/office.png">
+                                    <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="12" height="8" rx="1"/><path d="M4 10 L4 12 M10 10 L10 12 M3 12 L11 12"/></svg>
+                                    <div><span class="item-title" data-i18n="bg_office">Home Office</span><span class="item-desc" data-i18n="bg_office_desc">Arbeitszimmer bei Nacht</span></div>
                                 </div>
-                                <div class="dropdown-item" data-bg="backgrounds/lightstudio.png">
-                                    <span class="item-title" data-i18n="bg_lightstudio">Light Studio</span>
-                                    <span class="item-desc" data-i18n="bg_lightstudio_desc">Neutral dunkler Testraum</span>
-                                </div>
-                                <div class="dropdown-divider"></div>
-                                <div id="btn-upload-custom-bg" class="dropdown-item" data-action="upload">
-                                    <span class="item-title" data-i18n="bg_upload">Eigenes Foto...</span>
-                                    <span class="item-desc" data-i18n="bg_upload_desc">Bild von deinem Raum laden</span>
+                                <div class="dropdown-item mode-item" data-bg="backgrounds/lightstudio.png">
+                                    <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="5" r="3"/><path d="M5 8 Q5 10 7 10 Q9 10 9 8"/><line x1="5.5" y1="10" x2="8.5" y2="10"/><line x1="6" y1="11.5" x2="8" y2="11.5"/></svg>
+                                    <div><span class="item-title" data-i18n="bg_lightstudio">Light Studio</span><span class="item-desc" data-i18n="bg_lightstudio_desc">Neutral dunkler Testraum</span></div>
                                 </div>
                                 <div class="dropdown-divider"></div>
-                                <div class="dropdown-item" data-action="reset">
-                                    <span class="item-title" data-i18n="bg_reset">Einfarbig (Zurücksetzen)</span>
-                                    <span class="item-desc" data-i18n="bg_reset_desc">Hintergrundbild entfernen</span>
+                                <div id="btn-upload-custom-bg" class="dropdown-item mode-item" data-action="upload">
+                                    <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9 L7 2"/><path d="M4 5 L7 2 L10 5"/><path d="M2 11 L2 13 L12 13 L12 11"/></svg>
+                                    <div><span class="item-title" data-i18n="bg_upload">Eigenes Foto...</span><span class="item-desc" data-i18n="bg_upload_desc">Bild von deinem Raum laden</span></div>
                                 </div>
                                 <div class="dropdown-divider"></div>
-                                <div class="dropdown-item cancel" data-action="cancel">
-                                    <span class="item-title" data-i18n="cancel">Abbrechen</span>
+                                <div class="dropdown-item mode-item" data-action="reset">
+                                    <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>
+                                    <div><span class="item-title" data-i18n="bg_reset">Einfarbig</span><span class="item-desc" data-i18n="bg_reset_desc">Hintergrundbild entfernen</span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <input type="file" id="input-room-image" accept="image/*" style="display: none;">
 
-                    <select id="sel-color-curve" class="dropdown-small">
-                        <option value="linear" data-i18n="gamma_linear">Linear (Raw)</option>
-                        <option value="gamma22" data-i18n="gamma_22">Gamma 2.2</option>
-                        <option value="gamma28" data-i18n="gamma_28">Gamma 2.8</option>
-                        <option value="cie" data-i18n="gamma_cie">CIE L* (Perceptual)</option>
-                    </select>
+                    <div class="dropdown-container" id="color-curve-container">
+                        <button id="btn-color-curve" class="btn-editor-icon" title="Color Space"></button>
+                        <div id="color-curve-menu" class="dropdown-menu">
+                            <div class="dropdown-item mode-item" data-value="linear">
+                                <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="12" x2="12" y2="2"/></svg>
+                                <div><span class="item-title">Linear (Raw)</span><span class="item-desc">Keine Gammakorrektur</span></div>
+                            </div>
+                            <div class="dropdown-item mode-item" data-value="gamma22">
+                                <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12 C5 12 9 2 12 2"/></svg>
+                                <div><span class="item-title">Gamma 2.2</span><span class="item-desc">Standard sRGB</span></div>
+                            </div>
+                            <div class="dropdown-item mode-item" data-value="gamma28">
+                                <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12 C2 10 3 2 12 2"/></svg>
+                                <div><span class="item-title">Gamma 2.8</span><span class="item-desc">Stärker komprimiert</span></div>
+                            </div>
+                            <div class="dropdown-item mode-item" data-value="cie">
+                                <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 7 C3 3 11 3 13 7 C11 11 3 11 1 7 Z"/><circle cx="7" cy="7" r="2"/></svg>
+                                <div><span class="item-title">CIE L* (Perceptual)</span><span class="item-desc">Wahrnehmungsoptimiert</span></div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <select id="sel-blend-mode" class="dropdown-small" title="Mischmodus / Blend Mode" data-i18n-title="blend_mode_title">
-                        <option value="multiply-glow" data-i18n="blend_realistic">Realistisch (Multi + Glow)</option>
-                        <option value="multiply" data-i18n="blend_multiply">Multiplizieren (Schatten)</option>
-                        <option value="overlay" data-i18n="blend_overlay">Overlay (Kontrastreich)</option>
-                        <option value="color-dodge" data-i18n="blend_dodge">Farbig abwedeln (Neon)</option>
-                    </select>
+                    <div class="dropdown-container" id="blend-mode-container">
+                        <button id="btn-blend-mode" class="btn-editor-icon" title="Blend Mode"></button>
+                        <div id="blend-mode-menu" class="dropdown-menu">
+                            <div class="dropdown-item mode-item" data-value="multiply-glow">
+                                <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="2.5"/><line x1="7" y1="1" x2="7" y2="3.5"/><line x1="7" y1="10.5" x2="7" y2="13"/><line x1="1" y1="7" x2="3.5" y2="7"/><line x1="10.5" y1="7" x2="13" y2="7"/><line x1="3" y1="3" x2="4.2" y2="4.2"/><line x1="9.8" y1="9.8" x2="11" y2="11"/><line x1="11" y1="3" x2="9.8" y2="4.2"/><line x1="4.2" y1="9.8" x2="3" y2="11"/></svg>
+                                <div><span class="item-title">Realistisch</span><span class="item-desc">Multiply + Glow</span></div>
+                            </div>
+                            <div class="dropdown-item mode-item" data-value="multiply">
+                                <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="7" r="3.5"/><circle cx="9" cy="7" r="3.5"/></svg>
+                                <div><span class="item-title">Multiplizieren</span><span class="item-desc">Kontrastschatten</span></div>
+                            </div>
+                            <div class="dropdown-item mode-item" data-value="overlay">
+                                <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="8" height="7" rx="1"/><rect x="5" y="2" width="8" height="7" rx="1"/></svg>
+                                <div><span class="item-title">Overlay</span><span class="item-desc">Kontrastreich</span></div>
+                            </div>
+                            <div class="dropdown-item mode-item" data-value="color-dodge">
+                                <svg class="mode-item-icon" width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1 L8.3 5.5 L13 7 L8.3 8.5 L7 13 L5.7 8.5 L1 7 L5.7 5.5 Z"/></svg>
+                                <div><span class="item-title">Farbig abwedeln</span><span class="item-desc">Neon-Effekt</span></div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="slider-container" title="Licht-Einfluss auf Hintergrund" data-i18n-title="light_influence">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="slider-icon">

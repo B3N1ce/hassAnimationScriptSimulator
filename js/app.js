@@ -17,8 +17,35 @@ const toggleBtn = document.getElementById('toggle-btn');
 const stopBtn = document.getElementById('stop-btn');
 const btnValidate = document.getElementById('btn-validate');
 const room = document.getElementById('room');
-const selColorCurve = document.getElementById('sel-color-curve');
+const btnColorCurve = document.getElementById('btn-color-curve');
 const btnCopyCode = document.getElementById('btn-copy-code');
+
+const COLOR_CURVE_ICONS = {
+    linear:  `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="12" x2="12" y2="2"/></svg>`,
+    gamma22: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12 C5 12 9 2 12 2"/></svg>`,
+    gamma28: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12 C2 10 3 2 12 2"/></svg>`,
+    cie:     `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 7 C3 3 11 3 13 7 C11 11 3 11 1 7 Z"/><circle cx="7" cy="7" r="2"/></svg>`,
+};
+const BLEND_MODE_ICONS = {
+    'multiply-glow': `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="2.5"/><line x1="7" y1="1" x2="7" y2="3.5"/><line x1="7" y1="10.5" x2="7" y2="13"/><line x1="1" y1="7" x2="3.5" y2="7"/><line x1="10.5" y1="7" x2="13" y2="7"/><line x1="3" y1="3" x2="4.2" y2="4.2"/><line x1="9.8" y1="9.8" x2="11" y2="11"/><line x1="11" y1="3" x2="9.8" y2="4.2"/><line x1="4.2" y1="9.8" x2="3" y2="11"/></svg>`,
+    'multiply':      `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="7" r="3.5"/><circle cx="9" cy="7" r="3.5"/></svg>`,
+    'overlay':       `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="8" height="7" rx="1"/><rect x="5" y="2" width="8" height="7" rx="1"/></svg>`,
+    'color-dodge':   `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1 L8.3 5.5 L13 7 L8.3 8.5 L7 13 L5.7 8.5 L1 7 L5.7 5.5 Z"/></svg>`,
+};
+
+function setColorCurveUI(val) {
+    if (btnColorCurve) btnColorCurve.innerHTML = COLOR_CURVE_ICONS[val] || COLOR_CURVE_ICONS.linear;
+    document.querySelectorAll('#color-curve-menu .dropdown-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.value === val);
+    });
+}
+function setBlendModeUI(val) {
+    const btn = document.getElementById('btn-blend-mode');
+    if (btn) btn.innerHTML = BLEND_MODE_ICONS[val] || BLEND_MODE_ICONS['multiply-glow'];
+    document.querySelectorAll('#blend-mode-menu .dropdown-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.value === val);
+    });
+}
 const btnSaveCode = document.getElementById('btn-save-code');
 const toastContainer = document.getElementById('toast-container');
 
@@ -129,24 +156,14 @@ function init() {
     // 1.2 Persistenz: Layout laden (Bereits oben initialisiert)
 
     // 1.3 Persistenz: Farbraum laden
-    const savedCurve = localStorage.getItem('ha_simulator_color_curve');
-    if (savedCurve) {
-        const selColorCurve = document.getElementById('sel-color-curve');
-        if (selColorCurve) {
-            selColorCurve.value = savedCurve;
-            setColorCurve(savedCurve);
-        }
-    }
+    const savedCurve = localStorage.getItem('ha_simulator_color_curve') || 'linear';
+    setColorCurve(savedCurve);
+    setColorCurveUI(savedCurve);
 
     // 1.4 Persistenz: Mischmodus laden
-    const savedBlendMode = localStorage.getItem('ha_simulator_blend_mode');
-    if (savedBlendMode) {
-        const selBlendMode = document.getElementById('sel-blend-mode');
-        if (selBlendMode) {
-            selBlendMode.value = savedBlendMode;
-            setBlendMode(savedBlendMode);
-        }
-    }
+    const savedBlendMode = localStorage.getItem('ha_simulator_blend_mode') || 'multiply-glow';
+    setBlendMode(savedBlendMode);
+    setBlendModeUI(savedBlendMode);
 
     // Fix: Remove trailing newlines on paste (avoids issues on some mobile devices/HASS copy)
     editor.on('paste', (cm, e) => {
@@ -381,31 +398,39 @@ function init() {
         localStorage.setItem('ha_animation_script', editor.getValue());
     });
 
-    // Helper: position a fixed dropdown below its trigger button
+    // Helper: position a fixed dropdown below its trigger button (right-aligned to button)
     function positionDropdown(triggerBtn, menu) {
         const rect = triggerBtn.getBoundingClientRect();
         menu.style.top = (rect.bottom + 4) + 'px';
-        menu.style.left = Math.max(0, rect.right - menu.offsetWidth) + 'px';
+        menu.style.left = 'auto';
+        menu.style.right = (window.innerWidth - rect.right) + 'px';
     }
+
+    // Close all dropdown menus
+    function closeAllMenus() {
+        document.querySelectorAll('.dropdown-menu.active').forEach(m => m.classList.remove('active'));
+    }
+
+    // Toggle a single menu, closing all others first
+    function toggleDropdown(e, triggerBtn, menu) {
+        e.stopPropagation();
+        const isOpen = menu.classList.contains('active');
+        closeAllMenus();
+        if (!isOpen) {
+            menu.classList.add('active');
+            positionDropdown(triggerBtn, menu);
+        }
+    }
+
+    // Single global handler: close all menus on outside click
+    document.addEventListener('click', closeAllMenus);
 
     // 6. New Script Dropdown Logic
     const btnNewScript = document.getElementById('btn-new-script');
     const newScriptMenu = document.getElementById('new-script-menu');
 
     if (btnNewScript && newScriptMenu) {
-        // Toggle Menu
-        btnNewScript.addEventListener('click', (e) => {
-            e.stopPropagation();
-            newScriptMenu.classList.toggle('active');
-            if (newScriptMenu.classList.contains('active')) {
-                positionDropdown(btnNewScript, newScriptMenu);
-            }
-        });
-
-        // Close when clicking outside
-        document.addEventListener('click', () => {
-            newScriptMenu.classList.remove('active');
-        });
+        btnNewScript.addEventListener('click', (e) => toggleDropdown(e, btnNewScript, newScriptMenu));
 
         // Handle Item Clicks
         newScriptMenu.querySelectorAll('.dropdown-item').forEach(item => {
@@ -545,25 +570,34 @@ function init() {
         }
     });
 
-    // 8. Color Curve Selector
-    selColorCurve.addEventListener('change', (e) => {
-        const val = e.target.value;
-        setColorCurve(val);
-        localStorage.setItem('ha_simulator_color_curve', val);
-        if (!isPlaying) {
-            validateAndSync();
-        }
-    });
+    // 8. Color Curve Dropdown
+    const colorCurveMenu = document.getElementById('color-curve-menu');
+    if (btnColorCurve && colorCurveMenu) {
+        btnColorCurve.addEventListener('click', (e) => toggleDropdown(e, btnColorCurve, colorCurveMenu));
+        colorCurveMenu.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const val = item.dataset.value;
+                setColorCurve(val);
+                setColorCurveUI(val);
+                localStorage.setItem('ha_simulator_color_curve', val);
+                if (!isPlaying) validateAndSync();
+            });
+        });
+    }
 
-    // 8.1 Blend Mode Selector
-    const selBlendMode = document.getElementById('sel-blend-mode');
-    if (selBlendMode) {
-        selBlendMode.addEventListener('change', (e) => {
-            const val = e.target.value;
-            setBlendMode(val);
-            if (!isPlaying) {
-                validateAndSync();
-            }
+    // 8.1 Blend Mode Dropdown
+    const btnBlendMode = document.getElementById('btn-blend-mode');
+    const blendModeMenu = document.getElementById('blend-mode-menu');
+    if (btnBlendMode && blendModeMenu) {
+        btnBlendMode.addEventListener('click', (e) => toggleDropdown(e, btnBlendMode, blendModeMenu));
+        blendModeMenu.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const val = item.dataset.value;
+                setBlendMode(val);
+                setBlendModeUI(val);
+                localStorage.setItem('ha_simulator_blend_mode', val);
+                if (!isPlaying) validateAndSync();
+            });
         });
     }
 
@@ -690,32 +724,43 @@ function init() {
     const btnBgMenu = document.getElementById('btn-bg-menu');
     const bgDropdownMenu = document.getElementById('bg-dropdown-menu');
     const inputRoomImage = document.getElementById('input-room-image');
-    const selBlendModeEl = document.getElementById('sel-blend-mode');
 
-    // Helper: show/hide blend-mode selector based on background state
+    const BG_MODE_ICONS = {
+        'backgrounds/living_room.png': `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2 L12 6 L12 12 L2 12 L2 6 Z"/><path d="M5 12 L5 9 L9 9 L9 12"/></svg>`,
+        'backgrounds/bedroom.png':     `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="7" width="12" height="5" rx="1"/><path d="M1 9 L13 9"/><path d="M7 7 L7 9"/><circle cx="4" cy="5" r="1.5"/></svg>`,
+        'backgrounds/office.png':      `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="12" height="8" rx="1"/><path d="M4 10 L4 12 M10 10 L10 12 M3 12 L11 12"/></svg>`,
+        'backgrounds/lightstudio.png': `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="5" r="3"/><path d="M5 8 Q5 10 7 10 Q9 10 9 8"/><line x1="5.5" y1="10" x2="8.5" y2="10"/><line x1="6" y1="11.5" x2="8" y2="11.5"/></svg>`,
+        upload: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9 L7 2"/><path d="M4 5 L7 2 L10 5"/><path d="M2 11 L2 13 L12 13 L12 11"/></svg>`,
+        reset:  `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>`,
+    };
+
+    function setBgUI(url) {
+        const btn = document.getElementById('btn-bg-menu');
+        const iconKey = !url ? 'reset' : (url.startsWith('data:') ? 'upload' : url);
+        if (btn) btn.innerHTML = BG_MODE_ICONS[iconKey] || BG_MODE_ICONS.reset;
+        document.querySelectorAll('#bg-dropdown-menu .dropdown-item').forEach(item => {
+            const isActive =
+                (!url && item.dataset.action === 'reset') ||
+                (url && item.dataset.bg === url) ||
+                (url && url.startsWith('data:') && item.dataset.action === 'upload');
+            item.classList.toggle('active', !!isActive);
+        });
+    }
+
+    // Helper: show/hide blend-mode button and update bg button icon
     function updatePhotoModeUI() {
-        if (selBlendModeEl) {
-            selBlendModeEl.style.display = hasBackgroundImage() ? '' : 'none';
+        const blendContainer = document.getElementById('blend-mode-container');
+        if (blendContainer) {
+            blendContainer.style.display = hasBackgroundImage() ? '' : 'none';
         }
+        setBgUI(localStorage.getItem('ha_simulator_bg'));
     }
 
     // Register callback so ANY background change (wall color picker, menu, etc.) updates UI
     setOnBackgroundChange(updatePhotoModeUI);
 
     if (btnBgMenu && bgDropdownMenu) {
-        // Toggle Menu
-        btnBgMenu.addEventListener('click', (e) => {
-            e.stopPropagation();
-            bgDropdownMenu.classList.toggle('active');
-            if (bgDropdownMenu.classList.contains('active')) {
-                positionDropdown(btnBgMenu, bgDropdownMenu);
-            }
-        });
-
-        // Close when clicking outside
-        document.addEventListener('click', () => {
-            bgDropdownMenu.classList.remove('active');
-        });
+        btnBgMenu.addEventListener('click', (e) => toggleDropdown(e, btnBgMenu, bgDropdownMenu));
 
         // Handle Item Clicks
         bgDropdownMenu.querySelectorAll('.dropdown-item').forEach(item => {
@@ -731,9 +776,6 @@ function init() {
                     bgDropdownMenu.classList.remove('active');
                 } else if (action === 'reset') {
                     setBackgroundImage(null);
-                    bgDropdownMenu.classList.remove('active');
-                } else if (action === 'cancel') {
-                    bgDropdownMenu.classList.remove('active');
                 }
             });
         });

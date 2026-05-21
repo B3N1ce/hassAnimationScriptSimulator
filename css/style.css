@@ -1973,6 +1973,33 @@ body.simulation-running .panel-tab.active {
     background: rgba(255, 85, 85, 0.1);
 }
 
+.dropdown-item.mode-item {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+}
+.dropdown-item.mode-item > div {
+    display: flex;
+    flex-direction: column;
+}
+.mode-item-icon {
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+.dropdown-item.mode-item:hover .mode-item-icon { opacity: 0.9; }
+.dropdown-item.mode-item .item-desc { margin-top: 1px; }
+.dropdown-item.mode-item.active { background: rgba(189, 147, 249, 0.1); }
+.dropdown-item.mode-item.active .mode-item-icon { opacity: 1; color: #bd93f9; }
+.dropdown-item.mode-item.active .item-title { color: #bd93f9; }
+.dropdown-item.mode-item.active::after {
+    content: '✓';
+    margin-left: auto;
+    color: #bd93f9;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
 /* Premium Slider in Simulation Header */
 .slider-container {
     display: flex;
