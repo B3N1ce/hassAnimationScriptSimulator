@@ -13,9 +13,10 @@ let groups        = JSON.parse(localStorage.getItem('ha_simulator_groups'))     
 let hiddenEntities = JSON.parse(localStorage.getItem('ha_simulator_hidden'))       || {};
 let storedPositions = JSON.parse(localStorage.getItem('ha_simulator_lamp_positions')) || {};
 
+const ROOM_SIZE = 800;
+
 // Canvas State
 let canvas, ctx;
-let canvasRect = null;
 let isDirty = true;
 let lastFrameTime = performance.now();
 
@@ -27,6 +28,11 @@ let _statFps = 0;
 let _statFrameMs = 0;
 let dragTarget = null;
 let dragOffset = { x: 0, y: 0 };
+
+// Simulation room pan/zoom state
+let simPanX = 0, simPanY = 0, simZoom = 1.0;
+let simIsPanning = false, simPanLastX = 0, simPanLastY = 0;
+const SIM_ZOOM_MIN = 0.15, SIM_ZOOM_MAX = 3.0;
 let wallColor = { r: 255, g: 255, b: 255 };
 let labelsVisible = localStorage.getItem('ha_simulator_labels_visible') !== 'false';
 let entitiesVisible = localStorage.getItem('ha_simulator_entities_visible') !== 'false';
@@ -37,23 +43,23 @@ let ambientLevel = parseFloat(localStorage.getItem('ha_simulator_ambient')) || 0
 let exposure = parseFloat(localStorage.getItem('ha_simulator_exposure')) || 1.0;
 let backgroundChangeCallback = null;
 
-// Uploads backgroundImage to WebGL as an aspect-ratio-correct cover crop
-// at the current canvas resolution. Re-called on every canvas resize.
+// Uploads backgroundImage to WebGL as a cover crop into the square ROOM_SIZE canvas.
 function uploadBgTexture() {
-    if (!backgroundImage || !canvas) { setBackgroundTexture(null); return; }
-    const ca = canvas.width / canvas.height;
+    if (!backgroundImage) { setBackgroundTexture(null); return; }
     const ia = backgroundImage.width / backgroundImage.height;
     let sx, sy, sw, sh;
-    if (ca > ia) {
-        sw = canvas.width; sh = canvas.width / ia;
-        sx = 0;           sy = (canvas.height - sh) / 2;
+    if (ia >= 1) {
+        // Landscape/square: fill height, crop sides
+        sh = ROOM_SIZE; sw = ROOM_SIZE * ia;
+        sx = (ROOM_SIZE - sw) / 2; sy = 0;
     } else {
-        sh = canvas.height; sw = canvas.height * ia;
-        sx = (canvas.width - sw) / 2; sy = 0;
+        // Portrait: fill width, crop top/bottom
+        sw = ROOM_SIZE; sh = ROOM_SIZE / ia;
+        sx = 0; sy = (ROOM_SIZE - sh) / 2;
     }
     const off = document.createElement('canvas');
-    off.width  = canvas.width;
-    off.height = canvas.height;
+    off.width  = ROOM_SIZE;
+    off.height = ROOM_SIZE;
     off.getContext('2d').drawImage(backgroundImage, sx, sy, sw, sh);
     setBackgroundTexture(off);
 }
@@ -79,11 +85,14 @@ export function initEntityManager(callback) {
         ctx = canvas.getContext('2d');
         canvas.style.background = 'transparent';
 
-        // Initialize WebGL renderer first (inserts WebGL canvas behind simulation-canvas)
-        initWebGL(canvas.parentElement);
+        // Insert WebGL canvas inside #simulation-room (behind simulation-canvas)
+        const simRoom = document.getElementById('simulation-room');
+        initWebGL(simRoom);
+        simRoom.style.position = 'absolute';  // override what initWebGL sets to 'relative'
 
         resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('resize', resetSimView);
+        initSimPanZoom();
 
         canvas.addEventListener('mousedown', handleMouseDown);
         window.addEventListener('mousemove', handleMouseMove);
@@ -216,41 +225,36 @@ export function hasBackgroundImage() {
 
 export function resizeCanvas() {
     if (!canvas) return;
-    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width  = ROOM_SIZE;
+    canvas.height = ROOM_SIZE;
 
-    canvas.width  = rect.width;
-    canvas.height = rect.height;
-    canvasRect = canvas.getBoundingClientRect();
-
-    resizeWebGL(canvas.width, canvas.height);
+    resizeWebGL(ROOM_SIZE, ROOM_SIZE);
     if (backgroundImage) uploadBgTexture();
 
-    // Reproject lamp positions from normalized coords to new pixel dimensions
     lamps.forEach(lamp => {
-        lamp.x = lamp.nx * canvas.width;
-        lamp.y = lamp.ny * canvas.height;
+        lamp.x = lamp.nx * ROOM_SIZE;
+        lamp.y = lamp.ny * ROOM_SIZE;
     });
 
     isDirty = true;
 }
 
 export function keepLampsInBounds() {
-    if (!canvas) return;
-    const mx = 40 / canvas.width;
-    const my = 40 / canvas.height;
+    const margin = 40 / ROOM_SIZE;
     lamps.forEach(lamp => {
-        lamp.nx = Math.max(mx, Math.min(lamp.nx, 1 - mx));
-        lamp.ny = Math.max(my, Math.min(lamp.ny, 1 - my));
-        lamp.x  = lamp.nx * canvas.width;
-        lamp.y  = lamp.ny * canvas.height;
+        lamp.nx = Math.max(margin, Math.min(lamp.nx, 1 - margin));
+        lamp.ny = Math.max(margin, Math.min(lamp.ny, 1 - margin));
+        lamp.x  = lamp.nx * ROOM_SIZE;
+        lamp.y  = lamp.ny * ROOM_SIZE;
     });
     isDirty = true;
 }
 
 function handleMouseDown(e) {
-    if (!entitiesVisible || !canvasRect) return;
-    const x = e.clientX - canvasRect.left;
-    const y = e.clientY - canvasRect.top;
+    if (e.button !== 0 || !entitiesVisible || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / simZoom;
+    const y = (e.clientY - rect.top) / simZoom;
 
     dragTarget = null;
 
@@ -275,42 +279,116 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
-    if (!canvas || !canvasRect) return;
+    if (!canvas) return;
     if (!entitiesVisible) {
-        if (canvas.style.cursor !== 'default') {
-            canvas.style.cursor = 'default';
-        }
+        if (canvas.style.cursor !== 'default') canvas.style.cursor = 'default';
         return;
     }
-    const mx = e.clientX - canvasRect.left;
-    const my = e.clientY - canvasRect.top;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / simZoom;
+    const my = (e.clientY - rect.top) / simZoom;
 
     if (dragTarget) {
         dragTarget.x = mx - dragOffset.x;
         dragTarget.y = my - dragOffset.y;
         canvas.style.cursor = 'grabbing';
+        isDirty = true;
     } else {
         let isHovering = false;
         for (const lamp of lamps.values()) {
             const dx = mx - lamp.x;
             const dy = my - lamp.y;
-            if (dx * dx + dy * dy < 35 * 35) {
-                isHovering = true;
-                break;
-            }
+            if (dx * dx + dy * dy < 35 * 35) { isHovering = true; break; }
         }
         canvas.style.cursor = isHovering ? 'grab' : 'default';
     }
 }
 
-function handleMouseUp() {
+function handleMouseUp(e) {
+    if (e.button !== 0) return;
     if (dragTarget && canvas) {
-        dragTarget.nx = dragTarget.x / canvas.width;
-        dragTarget.ny = dragTarget.y / canvas.height;
+        dragTarget.nx = dragTarget.x / ROOM_SIZE;
+        dragTarget.ny = dragTarget.y / ROOM_SIZE;
         savePositions();
         canvas.style.cursor = 'grab';
     }
     dragTarget = null;
+}
+
+function initSimPanZoom() {
+    const room = document.getElementById('room');
+    if (!room) return;
+
+    room.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = room.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        const cx = (mx - simPanX) / simZoom;
+        const cy = (my - simPanY) / simZoom;
+        simZoom = Math.min(SIM_ZOOM_MAX, Math.max(SIM_ZOOM_MIN, simZoom * factor));
+        simPanX = mx - cx * simZoom;
+        simPanY = my - cy * simZoom;
+        applySimTransform();
+    }, { passive: false });
+
+    room.addEventListener('mousedown', (e) => {
+        if (e.button !== 1) return;
+        e.preventDefault();
+        simIsPanning = true;
+        simPanLastX = e.clientX;
+        simPanLastY = e.clientY;
+        room.classList.add('panning');
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!simIsPanning) return;
+        simPanX += e.clientX - simPanLastX;
+        simPanY += e.clientY - simPanLastY;
+        simPanLastX = e.clientX;
+        simPanLastY = e.clientY;
+        applySimTransform();
+    });
+    window.addEventListener('mouseup', (e) => {
+        if (e.button !== 1) return;
+        simIsPanning = false;
+        room.classList.remove('panning');
+    });
+
+document.getElementById('sim-zoom-in')?.addEventListener('click',
+        () => { simZoom = Math.min(SIM_ZOOM_MAX, simZoom + 0.1); applySimTransform(); });
+    document.getElementById('sim-zoom-out')?.addEventListener('click',
+        () => { simZoom = Math.max(SIM_ZOOM_MIN, simZoom - 0.1); applySimTransform(); });
+    document.getElementById('sim-zoom-label')?.addEventListener('click', () => {
+        const room = document.getElementById('room');
+        if (!room) return;
+        simZoom = 1.0;
+        simPanX = (room.offsetWidth  - ROOM_SIZE) / 2;
+        simPanY = (room.offsetHeight - ROOM_SIZE) / 2;
+        applySimTransform();
+    });
+    document.getElementById('sim-zoom-fit')?.addEventListener('click', resetSimView);
+
+    requestAnimationFrame(resetSimView);
+}
+
+function applySimTransform() {
+    const simRoom = document.getElementById('simulation-room');
+    if (simRoom) simRoom.style.transform = `translate(${simPanX}px, ${simPanY}px) scale(${simZoom})`;
+    const label = document.getElementById('sim-zoom-label');
+    if (label) label.textContent = Math.round(simZoom * 100) + '%';
+}
+
+function resetSimView() {
+    const room = document.getElementById('room');
+    if (!room) return;
+    const rw = room.offsetWidth;
+    const rh = room.offsetHeight;
+    const fitZoom = Math.min(rw / ROOM_SIZE, rh / ROOM_SIZE);
+    simZoom = Math.max(SIM_ZOOM_MIN, fitZoom);
+    simPanX = (rw - ROOM_SIZE * simZoom) / 2;
+    simPanY = (rh - ROOM_SIZE * simZoom) / 2;
+    applySimTransform();
 }
 
 export function setColorCurve(curve) {
@@ -480,8 +558,8 @@ export function updateLampEntities(doc, roomElement) {
             lamps.set(id, {
                 id,
                 nx, ny,
-                x: nx * (canvas ? canvas.width  : 600),
-                y: ny * (canvas ? canvas.height : 400),
+                x: nx * ROOM_SIZE,
+                y: ny * ROOM_SIZE,
                 currentRgb: [255, 255, 255],
                 startRgb: [255, 255, 255],
                 targetRgb: [255, 255, 255],

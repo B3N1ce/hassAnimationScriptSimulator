@@ -960,9 +960,22 @@ button {
 /* Preview Specific */
 #room {
     flex-grow: 1;
-    background: #000;
+    background: #111114;
     position: relative;
     overflow: hidden;
+    cursor: default;
+    user-select: none;
+}
+#room.panning { cursor: grabbing; }
+
+#simulation-room {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 800px;
+    height: 800px;
+    transform-origin: 0 0;
+    will-change: transform;
 }
 
 #simulation-canvas {
@@ -973,6 +986,42 @@ button {
     height: 100%;
     display: block;
 }
+
+#sim-zoom-toolbar {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(20, 20, 24, 0.92);
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 12px;
+    z-index: 10;
+    pointer-events: all;
+}
+#sim-zoom-toolbar button {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+#sim-zoom-toolbar button:hover { color: #fff; background: rgba(255,255,255,0.08); }
+#sim-zoom-label {
+    color: #ccc;
+    min-width: 38px;
+    text-align: center;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+#sim-zoom-label:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
 .dropdown-small {
     background: #1e1e24;
