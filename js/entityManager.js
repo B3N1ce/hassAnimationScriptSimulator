@@ -224,10 +224,20 @@ export function hasBackgroundImage() {
     return backgroundImage !== null;
 }
 
+function updateOverlayResolution() {
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const newSize = Math.round(ROOM_SIZE * Math.min(Math.max(simZoom, 1) * dpr, 4));
+    if (canvas.width !== newSize) {
+        canvas.width  = newSize;
+        canvas.height = newSize;
+        isDirty = true;
+    }
+}
+
 export function resizeCanvas() {
     if (!canvas) return;
-    canvas.width  = ROOM_SIZE;
-    canvas.height = ROOM_SIZE;
+    updateOverlayResolution();
 
     resizeWebGL(ROOM_SIZE, ROOM_SIZE);
     if (backgroundImage) uploadBgTexture();
@@ -389,6 +399,7 @@ function applySimTransform() {
     if (simRoom) simRoom.style.transform = `translate(${simPanX}px, ${simPanY}px) scale(${simZoom})`;
     const label = document.getElementById('sim-zoom-label');
     if (label) label.textContent = Math.round(simZoom * 100) + '%';
+    updateOverlayResolution();
 }
 
 export function resetSimView() {
@@ -478,10 +489,16 @@ function drawLoop(now) {
     }
 
     // Entity bodies on the transparent Canvas 2D overlay
+    // canvas.width may be larger than ROOM_SIZE (HiDPI/zoom scaling) — use ctx.scale
+    // so all drawing coords remain in the stable [0, ROOM_SIZE] space.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.globalCompositeOperation = 'source-over';
 
     if (entitiesVisible) {
+        const pixelScale = canvas.width / ROOM_SIZE;
+        ctx.save();
+        ctx.scale(pixelScale, pixelScale);
+
         lamps.forEach(lamp => {
             ctx.save();
             if (hiddenEntities[lamp.id] && groups[lamp.id]) ctx.globalAlpha = 0;
@@ -515,6 +532,8 @@ function drawLoop(now) {
 
             ctx.restore();
         });
+
+        ctx.restore();
     }
 
     requestAnimationFrame(drawLoop);
