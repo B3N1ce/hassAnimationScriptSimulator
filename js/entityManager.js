@@ -32,6 +32,7 @@ let dragOffset = { x: 0, y: 0 };
 // Simulation room pan/zoom state
 let simPanX = 0, simPanY = 0, simZoom = 1.0;
 let simIsPanning = false, simPanLastX = 0, simPanLastY = 0;
+let simZoomUserSet = false;
 const SIM_ZOOM_MIN = 0.15, SIM_ZOOM_MAX = 3.0;
 let wallColor = { r: 255, g: 255, b: 255 };
 let labelsVisible = localStorage.getItem('ha_simulator_labels_visible') !== 'false';
@@ -321,6 +322,7 @@ function initSimPanZoom() {
 
     room.addEventListener('wheel', (e) => {
         e.preventDefault();
+        simZoomUserSet = true;
         const rect = room.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
@@ -355,11 +357,18 @@ function initSimPanZoom() {
         room.classList.remove('panning');
     });
 
-document.getElementById('sim-zoom-in')?.addEventListener('click',
-        () => { simZoom = Math.min(SIM_ZOOM_MAX, simZoom + 0.1); applySimTransform(); });
-    document.getElementById('sim-zoom-out')?.addEventListener('click',
-        () => { simZoom = Math.max(SIM_ZOOM_MIN, simZoom - 0.1); applySimTransform(); });
+    document.getElementById('sim-zoom-in')?.addEventListener('click', () => {
+        simZoomUserSet = true;
+        simZoom = Math.min(SIM_ZOOM_MAX, simZoom + 0.1);
+        applySimTransform();
+    });
+    document.getElementById('sim-zoom-out')?.addEventListener('click', () => {
+        simZoomUserSet = true;
+        simZoom = Math.max(SIM_ZOOM_MIN, simZoom - 0.1);
+        applySimTransform();
+    });
     document.getElementById('sim-zoom-label')?.addEventListener('click', () => {
+        simZoomUserSet = true;
         const room = document.getElementById('room');
         if (!room) return;
         simZoom = 1.0;
@@ -367,7 +376,10 @@ document.getElementById('sim-zoom-in')?.addEventListener('click',
         simPanY = (room.offsetHeight - ROOM_SIZE) / 2;
         applySimTransform();
     });
-    document.getElementById('sim-zoom-fit')?.addEventListener('click', resetSimView);
+    document.getElementById('sim-zoom-fit')?.addEventListener('click', () => {
+        simZoomUserSet = false;
+        resetSimView();
+    });
 
     requestAnimationFrame(resetSimView);
 }
@@ -379,13 +391,17 @@ function applySimTransform() {
     if (label) label.textContent = Math.round(simZoom * 100) + '%';
 }
 
-function resetSimView() {
+export function resetSimView() {
     const room = document.getElementById('room');
     if (!room) return;
     const rw = room.offsetWidth;
     const rh = room.offsetHeight;
-    const fitZoom = Math.min(rw / ROOM_SIZE, rh / ROOM_SIZE);
-    simZoom = Math.max(SIM_ZOOM_MIN, fitZoom);
+    if (!simZoomUserSet) {
+        // Fill the full panel — scale to the larger axis so no space is wasted.
+        // The smaller axis may overflow slightly but is reachable via pan.
+        simZoom = Math.max(SIM_ZOOM_MIN, Math.max(rw / ROOM_SIZE, rh / ROOM_SIZE));
+    }
+    // Always re-center at whatever zoom is active
     simPanX = (rw - ROOM_SIZE * simZoom) / 2;
     simPanY = (rh - ROOM_SIZE * simZoom) / 2;
     applySimTransform();

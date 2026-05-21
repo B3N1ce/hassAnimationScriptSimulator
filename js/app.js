@@ -1,6 +1,6 @@
 // js/app.js
 
-import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode, setAmbientLevel, getAmbientLevel, setExposure, getExposure, hasBackgroundImage, setOnBackgroundChange, getDebugStats } from './entityManager.js';
+import { initEntityManager, updateLampEntities, resetLamps, hasModifiedLamps, setColorCurve, resizeCanvas, resetSimView, toggleLabels, setBackgroundImage, toggleEntities, getEntitiesVisible, getLabelsVisible, setLightInfluence, getLightInfluence, setBlendMode, getBlendMode, setAmbientLevel, getAmbientLevel, setExposure, getExposure, hasBackgroundImage, setOnBackgroundChange, getDebugStats } from './entityManager.js';
 import { ColorPicker } from './colorPicker.js';
 import { startSimulation, stopSimulation, pauseSimulation, resumeSimulation, setVarUpdateCallback, toggleBreakpoint, breakpoints } from './simulator.js';
 import { t, setLang, getLang, applyTranslations } from './i18n.js';
@@ -317,7 +317,7 @@ function init() {
         appContainer.style.gridTemplateColumns = savedLayout || "350px 8px 1fr 8px 320px";
         
         // WICHTIG: Canvas nach Layout-Wiederherstellung neu berechnen
-        setTimeout(resizeCanvas, 50); 
+        setTimeout(resetSimView, 50);
     }
 
     let isResizingLeft = false;
@@ -352,12 +352,12 @@ function init() {
             newLeftW = Math.max(200, Math.min(newLeftW, containerRect.width - rightW - 100));
             appContainer.style.gridTemplateColumns = `${newLeftW}px 8px 1fr 8px ${rightW}px`;
             editor.refresh();
-            resizeCanvas();
+            resetSimView();
         } else if (isResizingRight) {
             let newRightW = containerRect.right - e.clientX;
             newRightW = Math.max(200, Math.min(newRightW, containerRect.width - leftW - 100));
             appContainer.style.gridTemplateColumns = `${leftW}px 8px 1fr 8px ${newRightW}px`;
-            resizeCanvas();
+            resetSimView();
         }
     });
 
