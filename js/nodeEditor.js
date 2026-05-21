@@ -258,11 +258,11 @@ function renderSequence(steps, parentObj, key) {
     const seqEl = el('div', 'node-sequence');
 
     const rebuild = () => {
-        const container = document.getElementById('node-container');
-        const graph = container.firstChild;
-        // re-render this sequence in place
-        const newSeq = renderSequence(parentObj[key], parentObj, key);
-        seqEl.parentNode.replaceChild(newSeq, seqEl);
+        const canvas = document.getElementById('node-canvas');
+        if (!canvas || !_currentDoc) return;
+        assignPaths(_currentDoc);
+        canvas.innerHTML = '';
+        renderGraph(canvas, _currentDoc);
         pushToYaml();
     };
 
