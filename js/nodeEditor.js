@@ -408,6 +408,7 @@ function renderBranchColumns(container, branches, onRebuild) {
             const rmBtn = document.createElement('button');
             rmBtn.textContent = ' ✕';
             rmBtn.style.cssText = 'background:none;border:none;color:#ff5555;cursor:pointer;font-size:10px;';
+            rmBtn.classList.add('btn-remove-field');
             rmBtn.onclick = () => { branches.splice(i, 1); onRebuild(); pushToYaml(); };
             label.appendChild(rmBtn);
         }
@@ -1362,7 +1363,7 @@ function showVariableEditor(key, value) {
     footer.style.padding = '10px';
     footer.style.gap = '10px';
 
-    const saveBtn = el('button', 'btn-header btn-start');
+    const saveBtn = el('button', 'btn-header btn-start btn-var-save');
     saveBtn.textContent = 'Save Changes';
     saveBtn.style.width = 'auto';
     saveBtn.onclick = () => {

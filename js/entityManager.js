@@ -66,7 +66,7 @@ function saveHidden() { localStorage.setItem('ha_simulator_hidden', JSON.stringi
 function savePositions() {
     const positions = {};
     lamps.forEach((lamp, id) => {
-        positions[id] = { x: lamp.x, y: lamp.y };
+        positions[id] = { nx: lamp.nx, ny: lamp.ny };
     });
     localStorage.setItem('ha_simulator_lamp_positions', JSON.stringify(positions));
 }
@@ -225,16 +225,24 @@ export function resizeCanvas() {
     resizeWebGL(canvas.width, canvas.height);
     if (backgroundImage) uploadBgTexture();
 
-    keepLampsInBounds();
+    // Reproject lamp positions from normalized coords to new pixel dimensions
+    lamps.forEach(lamp => {
+        lamp.x = lamp.nx * canvas.width;
+        lamp.y = lamp.ny * canvas.height;
+    });
+
     isDirty = true;
 }
 
 export function keepLampsInBounds() {
     if (!canvas) return;
-    const margin = 40;
+    const mx = 40 / canvas.width;
+    const my = 40 / canvas.height;
     lamps.forEach(lamp => {
-        lamp.x = Math.max(margin, Math.min(lamp.x, canvas.width - margin));
-        lamp.y = Math.max(margin, Math.min(lamp.y, canvas.height - margin));
+        lamp.nx = Math.max(mx, Math.min(lamp.nx, 1 - mx));
+        lamp.ny = Math.max(my, Math.min(lamp.ny, 1 - my));
+        lamp.x  = lamp.nx * canvas.width;
+        lamp.y  = lamp.ny * canvas.height;
     });
     isDirty = true;
 }
@@ -295,7 +303,9 @@ function handleMouseMove(e) {
 }
 
 function handleMouseUp() {
-    if (dragTarget) {
+    if (dragTarget && canvas) {
+        dragTarget.nx = dragTarget.x / canvas.width;
+        dragTarget.ny = dragTarget.y / canvas.height;
         savePositions();
     }
     dragTarget = null;
@@ -451,10 +461,25 @@ export function updateLampEntities(doc, roomElement) {
     uniqueIds.forEach((id, index) => {
         if (!lamps.has(id)) {
             const stored = storedPositions[id];
+            let nx, ny;
+            if (stored && stored.nx !== undefined) {
+                nx = stored.nx;
+                ny = stored.ny;
+            } else if (stored && canvas) {
+                // Migrate old pixel-based format
+                nx = stored.x / canvas.width;
+                ny = stored.y / canvas.height;
+            } else {
+                nx = 0.1 + (lamps.size * 0.15);
+                ny = 0.15;
+            }
+            nx = Math.max(0, Math.min(1, nx));
+            ny = Math.max(0, Math.min(1, ny));
             lamps.set(id, {
                 id,
-                x: stored ? stored.x : (100 + (lamps.size * 120)),
-                y: stored ? stored.y : 100,
+                nx, ny,
+                x: nx * (canvas ? canvas.width  : 600),
+                y: ny * (canvas ? canvas.height : 400),
                 currentRgb: [255, 255, 255],
                 startRgb: [255, 255, 255],
                 targetRgb: [255, 255, 255],

@@ -1748,13 +1748,14 @@ label {
 
 /* Disable editing during simulation */
 body.simulation-running .color-picker-section,
-body.simulation-running #variable-list,
 body.simulation-running .node-input,
 body.simulation-running .node-slider,
 body.simulation-running .node-color-picker,
 body.simulation-running .node-input-mode,
 body.simulation-running .node-select,
 body.simulation-running .btn-var-insert,
+body.simulation-running .btn-var-save,
+body.simulation-running .node-add-btn,
 body.simulation-running .btn-add-field,
 body.simulation-running .btn-remove-field,
 body.simulation-running .btn-entity-header-delete,
@@ -1780,14 +1781,13 @@ body.simulation-running .btn-breakpoint {
     pointer-events: auto !important;
 }
 
-/* Ensure Color Picker Tool is also disabled */
-body.simulation-running #color-tool,
-body.simulation-running .inspector-section,
+/* Block code-inserting actions in inspector; entity/group actions remain enabled */
 body.simulation-running .code-snippet,
 body.simulation-running .favorite-add {
     pointer-events: none !important;
-    opacity: 0.6;
+    opacity: 0.4;
     filter: grayscale(0.5);
+    cursor: default;
 }
 
 /* Floating Tooltip */
