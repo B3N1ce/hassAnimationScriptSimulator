@@ -9,6 +9,11 @@ let _currentDoc = null; // live JS object (source of truth for nodes→YAML)
 let _lastFocusedElement = null;
 let _currentRuntimeVars = {};
 
+// Pan/Zoom state
+let panX = 0, panY = 0, zoom = 1.0;
+let isPanning = false, panLastX = 0, panLastY = 0;
+const ZOOM_MIN = 0.2, ZOOM_MAX = 2.5;
+
 export function updateRuntimeVariablesUI(vars) {
     _currentRuntimeVars = { ...vars };
     for (const [key, val] of Object.entries(vars)) {
@@ -47,6 +52,86 @@ export function initNodeEditor(cmEditor) {
             _lastFocusedElement = e.target;
         }
     });
+
+    initPanZoom();
+}
+
+function initPanZoom() {
+    const container = document.getElementById('node-container');
+    if (!container) return;
+
+    // Zoom via scroll wheel (zoom-to-cursor)
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = container.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        const cx = (mx - panX) / zoom;
+        const cy = (my - panY) / zoom;
+        zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * factor));
+        panX = mx - cx * zoom;
+        panY = my - cy * zoom;
+        applyTransform();
+    }, { passive: false });
+
+    // Pan via middle mouse button
+    container.addEventListener('mousedown', (e) => {
+        if (e.button !== 1) return;
+        e.preventDefault();
+        isPanning = true;
+        panLastX = e.clientX;
+        panLastY = e.clientY;
+        container.classList.add('panning');
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        panX += e.clientX - panLastX;
+        panY += e.clientY - panLastY;
+        panLastX = e.clientX;
+        panLastY = e.clientY;
+        applyTransform();
+    });
+    window.addEventListener('mouseup', (e) => {
+        if (e.button !== 1) return;
+        isPanning = false;
+        container.classList.remove('panning');
+    });
+
+    // Double-click on empty area → reset view
+    container.addEventListener('dblclick', (e) => {
+        if (e.target === container || e.target.id === 'node-canvas') resetView();
+    });
+
+    // Zoom toolbar buttons
+    document.getElementById('node-zoom-in')?.addEventListener('click', () => {
+        zoom = Math.min(ZOOM_MAX, zoom + 0.1);
+        applyTransform();
+    });
+    document.getElementById('node-zoom-out')?.addEventListener('click', () => {
+        zoom = Math.max(ZOOM_MIN, zoom - 0.1);
+        applyTransform();
+    });
+    document.getElementById('node-zoom-label')?.addEventListener('click', resetView);
+}
+
+function applyTransform() {
+    const canvas = document.getElementById('node-canvas');
+    if (canvas) canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    const label = document.getElementById('node-zoom-label');
+    if (label) label.textContent = Math.round(zoom * 100) + '%';
+}
+
+function resetView() {
+    const container = document.getElementById('node-container');
+    const canvas = document.getElementById('node-canvas');
+    if (!container || !canvas) return;
+    zoom = 1.0;
+    const cw = container.offsetWidth;
+    const gw = canvas.scrollWidth;
+    panX = Math.max(20, (cw - gw) / 2);
+    panY = 30;
+    applyTransform();
 }
 
 export function assignPaths(obj, currentPath = "root") {
@@ -67,18 +152,19 @@ export function assignPaths(obj, currentPath = "root") {
 export function syncYamlToNodes() {
     if (_isSyncing) return;
     const code = _editor.getValue().trim();
-    const container = document.getElementById('node-container');
-    if (!container) return;
-    container.innerHTML = '';
+    const canvas = document.getElementById('node-canvas');
+    if (!canvas) return;
+    canvas.innerHTML = '';
 
     if (!code) {
-        renderEmpty(container);
+        renderEmpty(canvas);
+        requestAnimationFrame(resetView);
         return;
     }
     try {
         const loaded = jsyaml.load(code);
         _currentDoc = (loaded && typeof loaded === 'object') ? loaded : {};
-        
+
         assignPaths(_currentDoc);
 
         // Ensure explicit defaults
@@ -87,11 +173,13 @@ export function syncYamlToNodes() {
         if (!_currentDoc.sequence) _currentDoc.sequence = [];
 
     } catch (e) {
-        container.innerHTML = `<div class="node-empty"><span style="color:#ff5555">YAML error: ${e.message}</span></div>`;
+        canvas.innerHTML = `<div class="node-empty"><span style="color:#ff5555">YAML error: ${e.message}</span></div>`;
+        requestAnimationFrame(resetView);
         return;
     }
-    renderGraph(container, _currentDoc);
+    renderGraph(canvas, _currentDoc);
     updateVariablePanel();
+    requestAnimationFrame(resetView);
 }
 
 // Called after any node edit to push back to CodeMirror

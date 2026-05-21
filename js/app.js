@@ -433,7 +433,9 @@ function init() {
                     
                     // UI Sync
                     if (typeof validateAndSync === 'function') validateAndSync();
-                    
+                    const activeTab = document.querySelector('#panel-editor .panel-tab.active');
+                    if (activeTab && activeTab.dataset.tab === 'nodes') syncYamlToNodes();
+
                     showToast(t('new_script_created') || "Neues Skript erstellt", "success");
                 }
                 
